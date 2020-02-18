@@ -251,7 +251,7 @@ public class Convert{
    * @param       position        the position of tht value in data[]
    * @exception   java.io.IOException I/O errors
    */
- public static void setStrValue (String value, int position, byte []data)
+ public static void setStrValue (String value, int position, byte []data, int size)
         throws java.io.IOException
  {
   /* creates a new data output stream to write data to
@@ -270,7 +270,7 @@ public class Convert{
    
    int sz =outstr.size();  
    // copies the contents of this byte array into data[]
-   System.arraycopy (B, 0, data, position, sz);
+   System.arraycopy (B, 0, data, position, size);
    
  }
   

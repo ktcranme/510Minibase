@@ -14,39 +14,47 @@ import global.*;
 //as for other things, I'm not sure yet
 
 public class Map implements GlobalConst{
-
-	public static final int max_size = MINIBASE_PAGESIZE; //Maximum size of any map		NOTE: I assume this will be the same
+	//public static final int max_size = MINIBASE_PAGESIZE; //Maximum size of any map		NOTE: I assume this will be the same
+	public static final int map_size = MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE;		//NOTE: this could change if the map_offset is actually not always 0
 	private byte [] data; //a byte array to hold data
 	private int map_offset; //start position of this tuple in data[]		NOTE: I don't understand what this is. Wouldn't the tuple be at the start of the byte array everytime???
 	private int map_length; //length of this tuple
-	private short fldCnt; //Number of fields in this tuple		NOTE: I believe this will always be 4
-	private short [] fldOffset; //Array of offsets of the fields		NOTE: I don't believe we can hardcode anything for this one because the fields are strings
+	private short fldCnt = 4; //Number of fields in this tuple		NOTE: I believe this will always be 4
+	private short [] fldOffset; //Array of offsets of the fields
+
 	
-	
-	
-	/*
-	* Class constructor
-	* Create a new Map with length = max_size,map_offset = 0.
-	*/
-	public  Map()
+	private short[] getFldOffsetArray()
 	{
-		// Create a new map
-		data = new byte[max_size];
-		map_offset = 0;
-		map_length = max_size;
-		//may need to set the fldOffset in here
+		return new short[] {(short) map_offset, (short) (map_offset + MAXROWLABELSIZE), 
+				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE),
+				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4),
+				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE),
+				};
 	}
 	
 	/*
 	* Class constructor
-	* Create a new Map with length = max_size,tuple offset = 0.
+	* Create a new Map with length = map_size, map_offset = 0.
+	*/
+	public  Map()
+	{
+		// Create a new map
+		data = new byte[map_size];
+		map_offset = 0;
+		map_length = map_size;
+		fldOffset = getFldOffsetArray();
+	}
+	
+	/*
+	* Class constructor
+	* Create a new Map with length = map_size, map_offset = 0.
 	*/
 	public Map(byte[] amap, int offset)
 	{
 		data = amap;
 		map_offset = offset;
-		map_length = max_size; //I feel like this should just be amap.length but idk...
-		//may need to set the fldOffset in here
+		map_length = map_size; 
+		fldOffset = getFldOffsetArray();
 	}
 	
 	/* Copy a tuple to the current map position
@@ -58,7 +66,7 @@ public class Map implements GlobalConst{
 		byte [] temparray = fromMap.getMapByteArray();
 		System.arraycopy(temparray, 0, data, map_offset, map_length);   
 		//this arraycopy method could teach us what map_offset and map_length are
-		//may need to set the fldOffset in here
+		fldOffset = getFldOffsetArray();
 	}
 	
 	/*
@@ -133,7 +141,7 @@ public class Map implements GlobalConst{
 	*/
 	public Map setRowLabel(String val) throws IOException
 	{
-		Convert.setStrValue (val, fldOffset[0], data);
+		Convert.setStrValue (val, fldOffset[0], data, MAXROWLABELSIZE);
 		return this;
 	}
 	
@@ -145,7 +153,7 @@ public class Map implements GlobalConst{
 	*/
 	public Map setColumnLabel(String val) throws IOException
 	{
-		Convert.setStrValue (val, fldOffset[1], data);
+		Convert.setStrValue (val, fldOffset[1], data, MAXCOLUMNLABELSIZE);
 		return this;
 	}
 	
@@ -169,7 +177,8 @@ public class Map implements GlobalConst{
 	*/
 	public Map setValue(String val) throws IOException
 	{
-		Convert.setStrValue (val, fldOffset[3], data);
+		
+		Convert.setStrValue (val, fldOffset[3], data, MAXVALUESIZE);
 		return this;
 	}
 	
@@ -179,9 +188,9 @@ public class Map implements GlobalConst{
 	*/
 	public byte [] getMapByteArray() 
 	{
-		byte [] tuplecopy = new byte [map_length];
-		System.arraycopy(data, map_offset, tuplecopy, 0, map_length);
-		return tuplecopy;
+		byte [] mapcopy = new byte [map_length];
+		System.arraycopy(data, map_offset, mapcopy, 0, map_length);
+		return mapcopy;
 	}
 	
 	/* Print out the map into console in the following format:
@@ -233,7 +242,7 @@ public class Map implements GlobalConst{
 	*/
 	public short size()
 	{
-		return ((short) (fldOffset[fldCnt] - map_offset));
+		return ((short) (fldOffset[fldCnt] - map_offset));		//SHOULD WORK BUT map_size SHOULD ALSO WORK
 	}
 	
 	
