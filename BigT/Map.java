@@ -64,8 +64,8 @@ public class Map implements GlobalConst{
 	public Map(Map fromMap)
 	{
 		byte [] temparray = fromMap.getMapByteArray();
-		System.arraycopy(temparray, 0, data, map_offset, map_length);   
-		//this arraycopy method could teach us what map_offset and map_length are
+		data = new byte[map_size];	//NOTE: was getting a NULLPointer exception without this line. but Tuple.java doesn't use it...
+		System.arraycopy(temparray, 0, data, map_offset, map_size);   
 		fldOffset = getFldOffsetArray();
 	}
 	
@@ -141,7 +141,7 @@ public class Map implements GlobalConst{
 	*/
 	public Map setRowLabel(String val) throws IOException
 	{
-		Convert.setStrValue (val, fldOffset[0], data, MAXROWLABELSIZE);
+		Convert.setStrValue (val, fldOffset[0], data);
 		return this;
 	}
 	
@@ -153,7 +153,7 @@ public class Map implements GlobalConst{
 	*/
 	public Map setColumnLabel(String val) throws IOException
 	{
-		Convert.setStrValue (val, fldOffset[1], data, MAXCOLUMNLABELSIZE);
+		Convert.setStrValue (val, fldOffset[1], data);
 		return this;
 	}
 	
@@ -178,7 +178,7 @@ public class Map implements GlobalConst{
 	public Map setValue(String val) throws IOException
 	{
 		
-		Convert.setStrValue (val, fldOffset[3], data, MAXVALUESIZE);
+		Convert.setStrValue (val, fldOffset[3], data);
 		return this;
 	}
 	
@@ -188,8 +188,8 @@ public class Map implements GlobalConst{
 	*/
 	public byte [] getMapByteArray() 
 	{
-		byte [] mapcopy = new byte [map_length];
-		System.arraycopy(data, map_offset, mapcopy, 0, map_length);
+		byte [] mapcopy = new byte [map_size];
+		System.arraycopy(data, map_offset, mapcopy, 0, map_size);
 		return mapcopy;
 	}
 	
@@ -259,8 +259,9 @@ public class Map implements GlobalConst{
 	public void mapCopy(Map fromMap)
 	{
 		byte [] temparray = fromMap.getMapByteArray();
-		System.arraycopy(temparray, 0, data, map_offset, map_length);
+		System.arraycopy(temparray, 0, data, map_offset, map_size);
 		//may need to set the fldOffset in here
+		fldOffset = getFldOffsetArray();
 	}
 	
 	/* This is used when you don't want to use the constructor
@@ -271,19 +272,20 @@ public class Map implements GlobalConst{
 	{
 		data = amap;
 		map_offset = offset;
-		//map_length = length;	NOTE: think we delete completely? Idk where map_length gets set then tho
+		map_length = map_size;
+		fldOffset = getFldOffsetArray();
 	}
 	
 	/*
-	* Set a map with the given map length and offset
+	* Set a map with the given map offset
 	* @param	record	a byte array contains the map
 	* @param	offset  the offset of the map ( =0 by default)
 	*/
 	public void mapSet(byte [] frommap, int offset)  
 	{
-		//System.arraycopy(frommap, offset, data, 0, length);	NOTE: Idk what to replace 'length' with on this line
-		map_offset = 0;
-		//map_length = length;	NOTE: think we delete completely? Idk where map_length gets set then tho
+		System.arraycopy(frommap, offset, data, map_offset, map_size);
+		map_length = map_size;	
+		fldOffset = getFldOffsetArray();
 	}
-
+	
 }
