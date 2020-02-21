@@ -1,6 +1,6 @@
 # modify the paths appropriately
-JDKPATH = C:/Program Files/Java/jdk1.8.0_144
-LIBPATH = C:/Users/cranm/OneDrive/Documents/CSE510/minjava/minjava/javaminibase/src
+JDKPATH = $(JAVA_HOME)
+LIBPATH = .:..
 CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
