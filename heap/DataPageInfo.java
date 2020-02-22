@@ -12,7 +12,7 @@ import java.io.*;
 * April 9, 1998
 */
 
-class DataPageInfo implements GlobalConst{
+public class DataPageInfo implements GlobalConst{
 
 
   /** HFPage returns int for avail space, so we use int here */
@@ -31,6 +31,10 @@ class DataPageInfo implements GlobalConst{
   private byte [] data;  // a data buffer
   
   private int offset;
+
+  public PageId getPageId() {
+    return pageId;
+  }
 
 
 /**

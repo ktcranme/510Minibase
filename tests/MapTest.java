@@ -2,6 +2,10 @@ package tests;
 
 import java.io.*;
 import java.util.*;
+
+import BigT.Map;
+import BigT.Stream;
+
 import java.lang.*;
 import heap.*;
 import bufmgr.*;
@@ -14,7 +18,7 @@ import chainexception.*;
   protected as opposed to the private type in C++.
   */
 
-class HFDriver extends TestDriver implements GlobalConst
+class MapDriver extends TestDriver implements GlobalConst
 {
 
   private final static boolean OK = true;
@@ -23,9 +27,9 @@ class HFDriver extends TestDriver implements GlobalConst
   private int choice;
   private final static int reclen = 32;
 
-  public HFDriver () {
-    super("hptest");
-    choice = 100;      // big enough for file to occupy > 1 data page
+  public MapDriver () {
+    super("maptest");
+    choice = 10;      // big enough for file to occupy > 1 data page
     //choice = 2000;   // big enough for file to occupy > 1 directory page
     //choice = 5;
   }
@@ -118,13 +122,21 @@ class HFDriver extends TestDriver implements GlobalConst
       for (int i =0; (i < choice) && (status == OK); i++) {
 
         //fixed length record
-        DummyRecord rec = new DummyRecord(reclen);
-        rec.ival = i;
-        rec.fval = (float) (i*2.5);
-        rec.name = "record" + i;
+        Map m1 = new Map();
+        try {
+          m1.setRowLabel("row" + i);
+          m1.setColumnLabel("col" + i);
+          m1.setTimeStamp(i);
+          m1.setValue(Integer.toString(i));
+
+        } catch (Exception e) {
+          status = FAIL;
+          System.err.println ("*** Could not create heap file\n");
+          e.printStackTrace();
+        }
 
         try {
-          rid = f.insertRecord(rec.toByteArray());
+          rid = f.insertRecord(m1.getMapByteArray());
         }
         catch (Exception e) {
           status = FAIL;
@@ -158,13 +170,13 @@ class HFDriver extends TestDriver implements GlobalConst
     // insertions.  However, we're inserting fixed-length records here, and
     // in this case the scan must return the insertion order.
 
-    Scan scan = null;
+    Stream stream = null;
 
     if ( status == OK ) {	
       System.out.println ("  - Scan the records just inserted\n");
 
       try {
-        scan = f.openScan();
+        stream = f.openStream();
       }
       catch (Exception e) {
         status = FAIL;
@@ -181,14 +193,13 @@ class HFDriver extends TestDriver implements GlobalConst
 
     if ( status == OK ) {
       int len, i = 0;
-      DummyRecord rec = null;
-      Tuple tuple = new Tuple();
+      Map m2 = new Map();
 
       boolean done = false;
       while (!done) { 
         try {
-          tuple = scan.getNext(rid);
-          if (tuple == null) {
+          m2 = stream.getNext(rid);
+          if (m2 == null) {
             done = true;
             break;
           }
@@ -199,16 +210,8 @@ class HFDriver extends TestDriver implements GlobalConst
         }
 
         if (status == OK && !done) {
-          try {
-            rec = new DummyRecord(tuple);
-          }
-          catch (Exception e) {
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-
-          len = tuple.getLength();
-          if ( len != reclen ) {
+          len = m2.getLength();
+          if ( len != MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE ) {
             System.err.println ("*** Record " + i + " had unexpected length " 
                 + len + "\n");
             status = FAIL;
@@ -224,21 +227,32 @@ class HFDriver extends TestDriver implements GlobalConst
               }
           String name = ("record" + i );
 
-          if( (rec.ival != i)
-              || (rec.fval != (float)i*2.5)
-              || (!name.equals(rec.name)) ) {
-            System.err.println ("*** Record " + i
-                + " differs from what we inserted\n");
-            System.err.println ("rec.ival: "+ rec.ival
-                + " should be " + i + "\n");
-            System.err.println ("rec.fval: "+ rec.fval
-                + " should be " + (i*2.5) + "\n");
-            System.err.println ("rec.name: " + rec.name
-                + " should be " + name + "\n");
+          try {
+            if( (!m2.getRowLabel().equals("row" + i))
+                || (!m2.getColumnLabel().equals("col" + i))
+                || (!m2.getValue().equals(Integer.toString(i)))
+                || (m2.getTimeStamp() != i)) {
+              System.err.println ("*** Record " + i
+                  + " differs from what we inserted\n");
+              System.err.println ("Row: " + m2.getRowLabel()
+                  + " should be " + "row" + i + "\n");
+              System.err.println ("Column: "+ m2.getColumnLabel()
+                  + " should be " + "col" + i + "\n");
+              System.err.println ("Timestamp: " + m2.getTimeStamp()
+                  + " should be " + i + "\n");
+              System.err.println ("Value: " + m2.getValue()
+                  + " should be " + Integer.toString(i) + "\n");
+              status = FAIL;
+              break;
+            } else {
+              System.out.println(m2.getRowLabel() + ", " + m2.getColumnLabel() + ", " + Integer.toString(m2.getTimeStamp()) + ", " + m2.getValue());
+            }
+          } catch (Exception e) {
             status = FAIL;
-            break;
-              }
-        }	
+            System.out.println (""+e);
+            e.printStackTrace();
+          }
+        } 	
         ++i;
       }
 
@@ -777,12 +791,13 @@ class HFDriver extends TestDriver implements GlobalConst
     boolean _passAll = OK;
 
     if (!test1()) { _passAll = FAIL; }
-    if (!test2()) { _passAll = FAIL; }
-    if (!test3()) { _passAll = FAIL; }
-    if (!test4()) { _passAll = FAIL; }
-    if (!test5()) { _passAll = FAIL; }
-    if (!test6()) { _passAll = FAIL; }
-
+    /*
+       if (!test2()) { _passAll = FAIL; }
+       if (!test3()) { _passAll = FAIL; }
+       if (!test4()) { _passAll = FAIL; }
+       if (!test5()) { _passAll = FAIL; }
+       if (!test6()) { _passAll = FAIL; }
+       */
     return _passAll;
   }
 
@@ -893,11 +908,11 @@ class DummyRecord  {
   }  
 }
 
-public class HFTest {
+public class MapTest {
 
   public static void main (String argv[]) {
 
-    HFDriver hd = new HFDriver();
+    MapDriver hd = new MapDriver();
     boolean dbstatus;
 
     dbstatus = hd.runTests();

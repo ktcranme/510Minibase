@@ -1,8 +1,8 @@
-package heap;
+package BigT;
 
 /** JAVA */
 /**
- * Scan.java-  class Scan
+ * Stream.java-  class Stream
  *
  */
 
@@ -10,17 +10,23 @@ import java.io.*;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
+import heap.Heapfile;
+import heap.InvalidTupleSizeException;
+import heap.HFPage;
+import heap.HFBufMgrException;
+import heap.DataPageInfo;
+import heap.Tuple;
 
 
 /**	
- * A Scan object is created ONLY through the function openScan
+ * A Stream object is created ONLY through the function openStream
  * of a HeapFile. It supports the getNext interface which will
  * simply retrieve the next record in the heapfile.
  *
  * An object of type scan will always have pinned one directory page
  * of the heapfile.
  */
-public class Scan implements GlobalConst{
+public class Stream implements GlobalConst{
 
   /**
    * Note that one record in our way-cool HeapFile implementation is
@@ -59,13 +65,14 @@ public class Scan implements GlobalConst{
    * and initializes its private data members from the private
    * data member from hf
    *
-   * @exception InvalidTupleSizeException Invalid tuple size
+   * @exception InvalidMapSizeException Invalid tuple size
    * @exception IOException I/O errors
    *
    * @param hf A HeapFile object
    */
-  public Scan(Heapfile hf) 
-      throws InvalidTupleSizeException,
+  public Stream(Heapfile hf) 
+      throws InvalidMapSizeException,
+            InvalidTupleSizeException,
                       IOException
              {
                init(hf);
@@ -75,17 +82,18 @@ public class Scan implements GlobalConst{
 
   /** Retrieve the next record in a sequential scan
    *
-   * @exception InvalidTupleSizeException Invalid tuple size
+   * @exception InvalidMapSizeException Invalid tuple size
    * @exception IOException I/O errors
    *
    * @param rid Record ID of the record
-   * @return the Tuple of the retrieved record.
+   * @return the Map of the retrieved record.
    */
-  public Tuple getNext(RID rid) 
-      throws InvalidTupleSizeException,
+  public Map getNext(RID rid) 
+      throws InvalidMapSizeException,
+                      InvalidTupleSizeException,
                       IOException
              {
-               Tuple recptrtuple = null;
+               Map recptrtuple = null;
 
                if (nextUserStatus != true) {
                  nextDataPage();
@@ -98,11 +106,11 @@ public class Scan implements GlobalConst{
                rid.slotNo = userrid.slotNo;
 
                try {
-                 recptrtuple = datapage.getRecord(rid);
+                 recptrtuple = datapage.getMap(rid);
                }
 
                catch (Exception e) {
-                 //    System.err.println("SCAN: Error in Scan" + e);
+                 //    System.err.println("SCAN: Error in Stream" + e);
                  e.printStackTrace();
                }   
 
@@ -116,14 +124,14 @@ public class Scan implements GlobalConst{
 
   /** Position the scan cursor to the record with the given rid.
    * 
-   * @exception InvalidTupleSizeException Invalid tuple size
+   * @exception InvalidMapSizeException Invalid tuple size
    * @exception IOException I/O errors
    * @param rid Record ID of the given record
    * @return 	true if successful, 
    *			false otherwise.
    */
   public boolean position(RID rid) 
-      throws InvalidTupleSizeException,
+      throws InvalidMapSizeException,
                       IOException
              { 
                RID    nxtrid = new RID();
@@ -182,13 +190,14 @@ public class Scan implements GlobalConst{
 
   /** Do all the constructor work
    *
-   * @exception InvalidTupleSizeException Invalid tuple size
+   * @exception InvalidMapSizeException Invalid tuple size
    * @exception IOException I/O errors
    *
    * @param hf A HeapFile object
    */
   private void init(Heapfile hf) 
-      throws InvalidTupleSizeException,
+      throws InvalidMapSizeException,
+                      InvalidTupleSizeException,
                       IOException
              {
                _hf = hf;
@@ -197,8 +206,8 @@ public class Scan implements GlobalConst{
              }
 
 
-  /** Closes the Scan object */
-  public void closescan()
+  /** Closes the Stream object */
+  public void closestream()
   {
     reset();
   }
@@ -214,7 +223,7 @@ public class Scan implements GlobalConst{
         unpinPage(datapageId, false);
       }
       catch (Exception e){
-        // 	System.err.println("SCAN: Error in Scan" + e);
+        // 	System.err.println("SCAN: Error in Stream" + e);
         e.printStackTrace();
       }  
     }
@@ -227,7 +236,7 @@ public class Scan implements GlobalConst{
         unpinPage(dirpageId, false);
       }
       catch (Exception e){
-        //     System.err.println("SCAN: Error in Scan: " + e);
+        //     System.err.println("SCAN: Error in Stream: " + e);
         e.printStackTrace();
       }
     }
@@ -239,13 +248,14 @@ public class Scan implements GlobalConst{
 
 
   /** Move to the first data page in the file. 
-   * @exception InvalidTupleSizeException Invalid tuple size
+   * @exception InvalidMapSizeException Invalid tuple size
    * @exception IOException I/O errors
    * @return true if successful
    *         false otherwise
    */
   private boolean firstDataPage() 
-      throws InvalidTupleSizeException,
+      throws InvalidMapSizeException,
+             InvalidTupleSizeException,
                       IOException
              {
                DataPageInfo dpinfo;
@@ -254,7 +264,7 @@ public class Scan implements GlobalConst{
 
                /** copy data about first directory page */
 
-               dirpageId.pid = _hf._firstDirPageId.pid;  
+               dirpageId.pid = _hf.getFirstDirPageId().pid;  
                nextUserStatus = true;
 
                /** get first directory page and pin it */
@@ -279,12 +289,12 @@ public class Scan implements GlobalConst{
                  }  
 
                  catch (Exception e) {
-                   //	System.err.println("SCAN: Chain Error in Scan: " + e);
+                   //	System.err.println("SCAN: Chain Error in Stream: " + e);
                    e.printStackTrace();
                  }		
 
                  dpinfo = new DataPageInfo(rectuple);
-                 datapageId.pid = dpinfo.pageId.pid;
+                 datapageId.pid = dpinfo.getPageId().pid;
 
                } else {
 
@@ -349,7 +359,7 @@ public class Scan implements GlobalConst{
                        return false;
 
                      dpinfo = new DataPageInfo(rectuple);
-                     datapageId.pid = dpinfo.pageId.pid;
+                     datapageId.pid = dpinfo.getPageId().pid;
 
                    } else {
                      // heapfile empty
@@ -395,7 +405,8 @@ public class Scan implements GlobalConst{
    *			false if unsuccessful
    */
   private boolean nextDataPage() 
-      throws InvalidTupleSizeException,
+      throws InvalidMapSizeException,
+                      InvalidTupleSizeException,
                       IOException
              {
                DataPageInfo dpinfo;
@@ -431,7 +442,7 @@ public class Scan implements GlobalConst{
                      dirpage = null;
                    }
                    catch (Exception e){
-                     //  System.err.println("Scan: Chain Error: " + e);
+                     //  System.err.println("Stream: Chain Error: " + e);
                      e.printStackTrace();
                    }
 
@@ -542,22 +553,22 @@ public class Scan implements GlobalConst{
                }
 
                catch (Exception e) {
-                 System.err.println("HeapFile: Error in Scan" + e);
+                 System.err.println("HeapFile: Error in Stream" + e);
                }
 
                if (rectuple.getLength() != DataPageInfo.size)
                  return false;
 
                dpinfo = new DataPageInfo(rectuple);
-               datapageId.pid = dpinfo.pageId.pid;
+               datapageId.pid = dpinfo.getPageId().pid;
 
                try {
                  datapage = new HFPage();
-                 pinPage(dpinfo.pageId, (Page) datapage, false);
+                 pinPage(dpinfo.getPageId(), (Page) datapage, false);
                }
 
                catch (Exception e) {
-                 System.err.println("HeapFile: Error in Scan" + e);
+                 System.err.println("HeapFile: Error in Stream" + e);
                }
 
 
@@ -591,7 +602,7 @@ public class Scan implements GlobalConst{
    * Also returns the RID of the (new) current record.
    */
   private boolean mvNext(RID rid) 
-      throws InvalidTupleSizeException,
+      throws InvalidMapSizeException,
                       IOException
              {
                RID nextrid;
@@ -630,7 +641,7 @@ public class Scan implements GlobalConst{
         SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
       }
       catch (Exception e) {
-        throw new HFBufMgrException(e,"Scan.java: pinPage() failed");
+        throw new HFBufMgrException(e,"Stream.java: pinPage() failed");
       }
 
   } // end of pinPage
@@ -646,7 +657,7 @@ public class Scan implements GlobalConst{
         SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
       }
       catch (Exception e) {
-        throw new HFBufMgrException(e,"Scan.java: unpinPage() failed");
+        throw new HFBufMgrException(e,"Stream.java: unpinPage() failed");
       }
 
   } // end of unpinPage
