@@ -30,4 +30,10 @@ public interface GlobalConst {
   public static final int MAX_NAME = 50;
 
   public static final int INVALID_PAGE = -1;
+  
+  
+
+  public static final int MAXROWLABELSIZE  = 32;          
+  public static final int MAXCOLUMNLABELSIZE = 32;
+  public static final int MAXVALUESIZE  = 32;
 }
