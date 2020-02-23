@@ -5,6 +5,7 @@ import diskmgr.*;
 import bufmgr.*;
 import global.*;
 import BigT.Stream;
+import BigT.Map;
 import BigT.InvalidMapSizeException;
 
 /**  This heapfile implementation is directory-based. We maintain a
@@ -813,6 +814,54 @@ public class Heapfile implements Filetype,  GlobalConst {
              }
 
 
+  public boolean updateMap(RID rid, Map newtuple) 
+      throws InvalidSlotNumberException, 
+                      InvalidUpdateException, 
+                      InvalidTupleSizeException,
+                      HFException, 
+                      HFDiskMgrException,
+                      HFBufMgrException,
+                      Exception
+             {
+               boolean status;
+               HFPage dirPage = new HFPage();
+               PageId currentDirPageId = new PageId();
+               HFPage dataPage = new HFPage();
+               PageId currentDataPageId = new PageId();
+               RID currentDataPageRid = new RID();
+
+               status = _findDataPage(rid,
+                   currentDirPageId, dirPage, 
+                   currentDataPageId, dataPage,
+                   currentDataPageRid);
+
+               if(status != true) return status;	// record not found
+               Map atuple = new Map();
+               atuple = dataPage.returnMap(rid);
+
+               // Assume update a record with a record whose length is equal to
+               // the original record
+
+               if(newtuple.getLength() != atuple.getLength())
+               {
+                 unpinPage(currentDataPageId, false /*undirty*/);
+                 unpinPage(currentDirPageId, false /*undirty*/);
+
+                 throw new InvalidUpdateException(null, "invalid record update");
+
+               }
+
+               // new copy of this record fits in old space;
+               atuple.mapCopy(newtuple);
+               unpinPage(currentDataPageId, true /* = DIRTY */);
+
+               unpinPage(currentDirPageId, false /*undirty*/);
+
+
+               return true;
+             }
+
+
   /** Read record from file, returning pointer and length.
    * @param rid Record ID
    *
@@ -865,6 +914,47 @@ public class Heapfile implements Filetype,  GlobalConst {
                return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
 
              }
+
+  public  Map getMap(RID rid) 
+      throws InvalidSlotNumberException, 
+                      InvalidTupleSizeException, 
+                      HFException, 
+                      HFDiskMgrException,
+                      HFBufMgrException,
+                      Exception
+             {
+               boolean status;
+               HFPage dirPage = new HFPage();
+               PageId currentDirPageId = new PageId();
+               HFPage dataPage = new HFPage();
+               PageId currentDataPageId = new PageId();
+               RID currentDataPageRid = new RID();
+
+               status = _findDataPage(rid,
+                   currentDirPageId, dirPage, 
+                   currentDataPageId, dataPage,
+                   currentDataPageRid);
+
+               if(status != true) return null; // record not found 
+
+               Map atuple = new Map();
+               atuple = dataPage.getMap(rid);
+
+               /*
+                * getRecord has copied the contents of rid into recPtr and fixed up
+                * recLen also.  We simply have to unpin dirpage and datapage which
+                * were originally pinned by _findDataPage.
+                */    
+
+               unpinPage(currentDataPageId,false /*undirty*/);
+
+               unpinPage(currentDirPageId,false /*undirty*/);
+
+
+               return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
+
+             }
+
 
 
 

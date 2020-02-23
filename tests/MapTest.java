@@ -29,7 +29,7 @@ class MapDriver extends TestDriver implements GlobalConst
 
   public MapDriver () {
     super("maptest");
-    choice = 10;      // big enough for file to occupy > 1 data page
+    choice = 50;      // big enough for file to occupy > 1 data page
     //choice = 2000;   // big enough for file to occupy > 1 directory page
     //choice = 5;
   }
@@ -100,6 +100,7 @@ class MapDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     RID rid = new RID();
     Heapfile f = null;
+    int rec_cnt = 0;
 
     System.out.println ("  - Create a heap file\n");
     try {
@@ -200,8 +201,16 @@ class MapDriver extends TestDriver implements GlobalConst
         try {
           m2 = stream.getNext(rid);
           if (m2 == null) {
+            if (rec_cnt != choice) {
+              status = FAIL;
+              System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
+              break;
+            }
+            rec_cnt = 0;
             done = true;
             break;
+          } else {
+            rec_cnt++;
           }
         }
         catch (Exception e) {
@@ -284,9 +293,10 @@ class MapDriver extends TestDriver implements GlobalConst
 
     System.out.println ("\n  Test 2: Delete fixed-size records\n");
     boolean status = OK;
-    Scan scan = null;
+    Stream stream = null;
     RID rid = new RID();
     Heapfile f = null;
+    int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as test 1\n");
     try {
@@ -301,7 +311,7 @@ class MapDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
       System.out.println ("  - Delete half the records\n");
       try {
-        scan = f.openScan();
+        stream = f.openStream();
       }
       catch (Exception e) {
         status = FAIL;
@@ -312,14 +322,22 @@ class MapDriver extends TestDriver implements GlobalConst
 
     if ( status == OK ) {
       int len, i = 0;
-      Tuple tuple = new Tuple();
+      Map m1 = new Map();
       boolean done = false;
 
       while (!done) { 
         try {
-          tuple = scan.getNext(rid);
-          if (tuple == null) {
+          m1 = stream.getNext(rid);
+          if (m1 == null) {
+            if (rec_cnt != choice) {
+              status = FAIL;
+              System.err.println ("*** Record count before deletion does not match!!! Found " + rec_cnt + " records!");
+              break;
+            }
             done = true;
+            rec_cnt = 0;
+          } else {
+            rec_cnt++;
           }
         }
         catch (Exception e) {
@@ -347,8 +365,8 @@ class MapDriver extends TestDriver implements GlobalConst
       }
     }
 
-    scan.closescan();	//  destruct scan!!!!!!!!!!!!!!!
-    scan = null;
+    stream.closestream();	//  destruct scan!!!!!!!!!!!!!!!
+    stream = null;
 
     if ( status == OK && SystemDefs.JavabaseBM.getNumUnpinnedBuffers() 
         != SystemDefs.JavabaseBM.getNumBuffers() ) {
@@ -364,7 +382,7 @@ class MapDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
       System.out.println ("  - Scan the remaining records\n");
       try {
-        scan = f.openScan();
+        stream = f.openStream();
       }
       catch (Exception e ) {
         status = FAIL;
@@ -376,14 +394,21 @@ class MapDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
       int len, i = 0;
       DummyRecord rec = null;
-      Tuple tuple = new Tuple();
+      Map m2 = new Map();
       boolean done = false;
 
       while ( !done ) {
         try {
-          tuple = scan.getNext(rid);
-          if (tuple == null) {
+          m2 = stream.getNext(rid);
+          if (m2 == null) {
+            if (rec_cnt != choice/2) {
+              status = FAIL;
+              System.err.println ("*** Record count after deletion does not match!!! Found " + rec_cnt + " records!");
+              break;
+            }
             done = true;
+          } else {
+            rec_cnt++;
           }
         }
         catch (Exception e) {
@@ -392,25 +417,31 @@ class MapDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
-          try {
-            rec = new DummyRecord(tuple);
-          }
-          catch (Exception e) {
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
 
-          if( (rec.ival != i)  ||
-              (rec.fval != (float)i*2.5) ) {
-            System.err.println ("*** Record " + i
-                + " differs from what we inserted\n");
-            System.err.println ("rec.ival: "+ rec.ival
-                + " should be " + i + "\n");
-            System.err.println ("rec.fval: "+ rec.fval
-                + " should be " + (i*2.5) + "\n");
+          try {
+            if( (!m2.getRowLabel().equals("row" + i))
+                || (!m2.getColumnLabel().equals("col" + i))
+                || (!m2.getValue().equals(Integer.toString(i)))
+                || (m2.getTimeStamp() != i)) {
+              System.err.println ("*** Record " + i
+                  + " differs from what we inserted\n");
+              System.err.println ("Row: " + m2.getRowLabel()
+                  + " should be " + "row" + i + "\n");
+              System.err.println ("Column: "+ m2.getColumnLabel()
+                  + " should be " + "col" + i + "\n");
+              System.err.println ("Timestamp: " + m2.getTimeStamp()
+                  + " should be " + i + "\n");
+              System.err.println ("Value: " + m2.getValue()
+                  + " should be " + Integer.toString(i) + "\n");
             status = FAIL;
             break;
               }
+          } catch (Exception e) {
+            System.err.println(e);
+            status = FAIL;
+            break;
+          }
+
           i += 2;     // Because we deleted the odd ones...
         }
       }
@@ -426,9 +457,10 @@ class MapDriver extends TestDriver implements GlobalConst
 
     System.out.println ("\n  Test 3: Update fixed-size records\n");
     boolean status = OK;
-    Scan scan = null;
+    Stream stream = null;
     RID rid = new RID();
     Heapfile f = null; 
+    int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as tests 1 and 2\n");
     try {
@@ -443,7 +475,7 @@ class MapDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
       System.out.println ("  - Change the records\n");
       try {
-        scan = f.openScan();
+        stream = f.openStream();
       }
       catch (Exception e) {
         status = FAIL;
@@ -456,14 +488,22 @@ class MapDriver extends TestDriver implements GlobalConst
 
       int len, i = 0;
       DummyRecord rec = null; 
-      Tuple tuple = new Tuple();
+      Map m = new Map();
       boolean done = false;
 
       while ( !done ) {
         try {
-          tuple = scan.getNext(rid);
-          if (tuple == null) {
+          m = stream.getNext(rid);
+          if (m == null) {
+            if (rec_cnt != choice/2) {
+              status = FAIL;
+              System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
+              break;
+            }
+            rec_cnt = 0;
             done = true;
+          } else {
+            rec_cnt++;
           }
         }
         catch (Exception e) {
@@ -473,18 +513,15 @@ class MapDriver extends TestDriver implements GlobalConst
 
         if (!done && status == OK) {
           try {
-            rec = new DummyRecord(tuple);
-          }
-          catch (Exception e) {
+            m.setValue(Integer.toString(10 * i));
+          } catch (Exception e) {
+            status = FAIL;
             System.err.println (""+e);
             e.printStackTrace();
           }
-
-          rec.fval =(float) 7*i;     // We'll check that i==rec.ival below.
-
-          Tuple newTuple = null; 
+          Map newMap = null; 
           try {
-            newTuple = new Tuple (rec.toByteArray(),0,rec.getRecLength()); 
+            newMap = new Map (m.getMapByteArray(),0); 
           }
           catch (Exception e) {
             status = FAIL;
@@ -492,7 +529,7 @@ class MapDriver extends TestDriver implements GlobalConst
             e.printStackTrace();
           }
           try {
-            status = f.updateRecord(rid, newTuple); 
+            status = f.updateMap(rid, newMap); 
           }
           catch (Exception e) {
             status = FAIL;
@@ -508,7 +545,7 @@ class MapDriver extends TestDriver implements GlobalConst
       }
     }
 
-    scan = null;
+    stream = null;
 
     if ( status == OK && SystemDefs.JavabaseBM.getNumUnpinnedBuffers() 
         != SystemDefs.JavabaseBM.getNumBuffers() ) {
@@ -525,7 +562,7 @@ class MapDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
       System.out.println ("  - Check that the updates are really there\n");
       try {
-        scan = f.openScan();
+        stream = f.openStream();
       }
       catch (Exception e) {
         status = FAIL;
@@ -538,18 +575,24 @@ class MapDriver extends TestDriver implements GlobalConst
 
     if ( status == OK ) {
       int len, i = 0;
-      DummyRecord rec = null;
-      DummyRecord rec2 = null;
-      Tuple tuple = new Tuple(); 
-      Tuple tuple2 = new Tuple(); 
+      Map m = new Map(); 
+      Map m2 = new Map(); 
       boolean done = false;
 
       while ( !done ) {
         try {
-          tuple = scan.getNext(rid);
-          if (tuple == null) {
+          m = stream.getNext(rid);
+          if (m == null) {
+            if (rec_cnt != choice/2) {
+              status = FAIL;
+              System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
+              break;
+            }
+            rec_cnt = 0;
             done = true;
             break;
+          } else {
+            rec_cnt++;
           }
         }
         catch (Exception e) {
@@ -558,16 +601,9 @@ class MapDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
-          try {
-            rec = new DummyRecord(tuple);
-          }
-          catch (Exception e) {
-            System.err.println (""+e);
-          }
-
           // While we're at it, test the getRecord method too.
           try {
-            tuple2 = f.getRecord( rid ); 
+            m2 = f.getMap( rid );
           }
           catch (Exception e) {
             status = FAIL;
@@ -576,26 +612,22 @@ class MapDriver extends TestDriver implements GlobalConst
             break;
           }
 
+
           try {
-            rec2 = new DummyRecord(tuple2);
+            if( !m.getValue().equals(Integer.toString(i * 10)) || !m2.getValue().equals(Integer.toString(i * 10))) {
+              System.err.println ("*** Record " + i
+                  + " differs from our update\n");
+              System.err.println ("m.value: "+ m.getValue()
+                  + " should be " + Integer.toString(i * 10) + "\n");
+              System.err.println ("m2.value: "+ m2.getValue()
+                  + " should be " + Integer.toString(i * 10) + "\n");
+              status = FAIL;
+              break;
+            }
+          } catch (Exception e) {
+              status = FAIL;
+              break;
           }
-          catch (Exception e) {
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-
-
-          if( (rec.ival != i) || (rec.fval != (float)i*7)
-              || (rec2.ival != i) || (rec2.fval != i*7) ) {
-            System.err.println ("*** Record " + i
-                + " differs from our update\n");
-            System.err.println ("rec.ival: "+ rec.ival
-                + " should be " + i + "\n");
-            System.err.println ("rec.fval: "+ rec.fval
-                + " should be " + (i*7.0) + "\n");
-            status = FAIL;
-            break;
-              }
 
         }
         i += 2;     // Because we deleted the odd ones...
@@ -791,13 +823,13 @@ class MapDriver extends TestDriver implements GlobalConst
     boolean _passAll = OK;
 
     if (!test1()) { _passAll = FAIL; }
+    if (!test2()) { _passAll = FAIL; }
+    if (!test3()) { _passAll = FAIL; }
     /*
-       if (!test2()) { _passAll = FAIL; }
-       if (!test3()) { _passAll = FAIL; }
-       if (!test4()) { _passAll = FAIL; }
-       if (!test5()) { _passAll = FAIL; }
-       if (!test6()) { _passAll = FAIL; }
-       */
+    if (!test4()) { _passAll = FAIL; }
+    if (!test5()) { _passAll = FAIL; }
+    if (!test6()) { _passAll = FAIL; }
+    */
     return _passAll;
   }
 

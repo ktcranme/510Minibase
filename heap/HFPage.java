@@ -657,6 +657,37 @@ public class HFPage extends Page
 
              }
 
+  public Map returnMap ( RID rid )
+      throws IOException, 
+                      InvalidSlotNumberException
+             {
+               short recLen;
+               short offset;
+               PageId pageNo = new PageId();
+               pageNo.pid = rid.pageNo.pid;
+
+               curPage.pid = Convert.getIntValue (CUR_PAGE, data);
+               int slotNo = rid.slotNo;
+
+               // length of record being returned
+               recLen = getSlotLength (slotNo);
+               slotCnt = Convert.getShortValue (SLOT_CNT, data);
+
+               if (( slotNo >=0) && (slotNo < slotCnt) && (recLen >0)
+                   && (pageNo.pid == curPage.pid))
+               {
+
+                 offset = getSlotOffset (slotNo);
+                 Map tuple = new Map(data, offset);
+                 return tuple;
+               }
+
+               else {   
+                 throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
+               }
+
+             }
+
   /**
    * returns the amount of available space on the page.
    * @return  the amount of available space on the page
