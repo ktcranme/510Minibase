@@ -4,7 +4,8 @@
 #the assignment to be generated
 
 JARFILES=bufmgr/*.class diskmgr/*.class global/*.class iterator/*.class\
-         heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class
+         heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class\
+				 BigT/*.class
 
 JDKPATH = $(JAVA_HOME)
 LIBPATH = .:..
@@ -37,6 +38,7 @@ db:
 	make -C heap
 	make -C index
 	make -C iterator
+	make -C BigT
 	
 doc:
 	$(JAVADOC) $(DOCFILES)
