@@ -132,6 +132,7 @@ public class Stream implements GlobalConst{
    */
   public boolean position(RID rid) 
       throws InvalidMapSizeException,
+             InvalidTupleSizeException,
                       IOException
              { 
                RID    nxtrid = new RID();
@@ -603,6 +604,7 @@ public class Stream implements GlobalConst{
    */
   private boolean mvNext(RID rid) 
       throws InvalidMapSizeException,
+             InvalidTupleSizeException,
                       IOException
              {
                RID nextrid;
