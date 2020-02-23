@@ -6,14 +6,15 @@ BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-sourcefiles = $(wildcard $(CURDIR)/*.java)
-
+sourcefiles = $(filter-out \
+	$(CURDIR)/TestDriver.java, $(wildcard $(CURDIR)/*.java))
+#sourcefiles = $(wildcard $(CURDIR)/*java)
 classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
 all: $(classfiles)
 
-$(CURDIR)/%.class: $(CURDIR)/%.java
-	$(JAVAC) $<
+$(CURDIR)/%.class: $(CURDIR)/%.java $(CURDIR)/TestDriver.java
+	$(JAVAC) $(CURDIR)/TestDriver.java $<
 
 run: all
 	$(JAVA) tests.SM_JoinTest
@@ -25,3 +26,7 @@ run: all
 	$(JAVA) tests.DBTest
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.MapTest
+
+clean:
+	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
+
