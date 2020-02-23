@@ -6,18 +6,14 @@ BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -g -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-PROGS = together
+sourcefiles = $(wildcard $(CURDIR)/*.java)
 
-all: $(PROGS)
+classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
-map:Map.java
-	$(JAVAC) Map.java
+all: $(classfiles)
 
-stream:Stream.java
-	$(JAVAC) Stream.java
-
-together:*.java
-	$(JAVAC) *.java
+$(CURDIR)/%.class: $(CURDIR)/%.java
+	$(JAVAC) $<
 
 clean:
 	\rm -f *.class *~ \#* core 

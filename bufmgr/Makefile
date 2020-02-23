@@ -5,15 +5,14 @@ BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-PROGS = together
+sourcefiles = $(wildcard $(CURDIR)/*.java)
 
-all: $(PROGS)
+classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
-bm:BufMgr.java
-	$(JAVAC) BufMgr.java
+all: $(classfiles)
 
-together:*.java
-	$(JAVAC) *.java
+$(CURDIR)/%.class: $(CURDIR)/%.java
+	$(JAVAC) $<
 
 clean:
 	\rm -f *.class *~ \#* core 

@@ -5,12 +5,15 @@ BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-PROGS = together
+sourcefiles = $(addprefix $(CURDIR)/, \
+  ChainException.java)
 
-all: $(PROGS)
+classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
-together:*.java
-	$(JAVAC) *.java
+all: $(classfiles)
+
+$(CURDIR)/%.class: $(CURDIR)/%.java
+	$(JAVAC) $<
 
 clean:
 	\rm -f *.class *~ \#* core 
