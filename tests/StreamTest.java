@@ -399,7 +399,6 @@ class StreamDriver extends TestDriver implements GlobalConst
 
     if ( status == OK ) {
       int len, i = 0;
-      DummyRecord rec = null;
       Map m2 = new Map();
       boolean done = false;
 
@@ -493,7 +492,6 @@ class StreamDriver extends TestDriver implements GlobalConst
     if ( status == OK ) {
 
       int len, i = 0;
-      DummyRecord rec = null; 
       Map m = new Map();
       boolean done = false;
 
