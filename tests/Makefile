@@ -27,6 +27,9 @@ run: all
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.MapTest
 
+runmap: $(CURDIR)/MapTest.class
+	$(JAVA) tests.MapTest
+
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
 

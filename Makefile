@@ -43,8 +43,11 @@ db:
 doc:
 	$(JAVADOC) $(DOCFILES)
 
-test: db
+testall: db
 	cd tests; make run
+
+testmap: db
+	cd tests; make runmap
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
