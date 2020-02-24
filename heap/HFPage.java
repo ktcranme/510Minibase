@@ -653,6 +653,8 @@ public class HFPage extends Page
 	  paramrid.slotNo = curMid.slotNo;
 	  RID rid = new RID();
 	  rid = nextRecord(paramrid);
+	  if(rid==null)
+		  return null;
 	  mid.pageNo = rid.pageNo;
 	  mid.slotNo = rid.slotNo;
 	  return mid;
