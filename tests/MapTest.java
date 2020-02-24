@@ -29,7 +29,7 @@ class MapDriver extends TestDriver implements GlobalConst
 
   public MapDriver () {
     super("maptest");
-    choice = 50;      // big enough for file to occupy > 1 data page
+    choice = 500;      // big enough for file to occupy > 1 data page
     //choice = 2000;   // big enough for file to occupy > 1 directory page
     //choice = 5;
   }
@@ -254,7 +254,7 @@ class MapDriver extends TestDriver implements GlobalConst
               status = FAIL;
               break;
             } else {
-              System.out.println(m2.getRowLabel() + ", " + m2.getColumnLabel() + ", " + Integer.toString(m2.getTimeStamp()) + ", " + m2.getValue());
+              //System.out.println(m2.getRowLabel() + ", " + m2.getColumnLabel() + ", " + Integer.toString(m2.getTimeStamp()) + ", " + m2.getValue());
             }
           } catch (Exception e) {
             status = FAIL;
@@ -337,6 +337,7 @@ class MapDriver extends TestDriver implements GlobalConst
             done = true;
             rec_cnt = 0;
           } else {
+            //System.out.println(m1.getRowLabel() + ", " + m1.getColumnLabel() + ", " + Integer.toString(m1.getTimeStamp()) + ", " + m1.getValue());
             rec_cnt++;
           }
         }
@@ -401,7 +402,7 @@ class MapDriver extends TestDriver implements GlobalConst
         try {
           m2 = stream.getNext(rid);
           if (m2 == null) {
-            if (rec_cnt != choice/2) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
               status = FAIL;
               System.err.println ("*** Record count after deletion does not match!!! Found " + rec_cnt + " records!");
               break;
@@ -495,7 +496,7 @@ class MapDriver extends TestDriver implements GlobalConst
         try {
           m = stream.getNext(rid);
           if (m == null) {
-            if (rec_cnt != choice/2) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -583,7 +584,7 @@ class MapDriver extends TestDriver implements GlobalConst
         try {
           m = stream.getNext(rid);
           if (m == null) {
-            if (rec_cnt != choice/2) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;

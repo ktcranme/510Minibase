@@ -234,8 +234,6 @@ public class Stream implements GlobalConst {
       InvalidTupleSizeException {
     System.out.println("Loading data page!!!!!!!");
     PageId nextDirPageId = new PageId();
-    DataPageInfo dpinfo;
-    Tuple rectuple = null;
 
     if (dirpage == null) {
       /** copy data about first directory page */
@@ -243,38 +241,27 @@ public class Stream implements GlobalConst {
       nextUserStatus = true;
     } else {
       nextDirPageId = dirpage.getNextPage();
-      if (nextDirPageId.pid == INVALID_PAGE) {
-        return false;
-      }
 
       unpinPage(dirpageId, false);
       dirpage = null;
+      datapageId.pid = INVALID_PAGE;
+
+      if (nextDirPageId.pid == INVALID_PAGE) {
+        return false;
+      }
     }
 
     /** get directory page and pin it */
-    dirpage = new HFPage();
-    pinPage(nextDirPageId, (Page) dirpage, false);
     dirpageId.pid = nextDirPageId.pid;
-
-    // Prepare to fetch datapage
-    try {
-      datapageRid = dirpage.firstRecord();
-    } catch (Exception e) {
-      datapageRid = null;
-    }
-
-    if (datapageRid == null) {
-      datapageId.pid = INVALID_PAGE;
-      return false;
-    }
-
-    rectuple = dirpage.getRecord(datapageRid);
+    dirpage = new HFPage();
+    pinPage(dirpageId, (Page) dirpage, false);
     
-    if (rectuple.getLength() != DataPageInfo.size)
+    if (dirpage == null)
       return false;
 
-    dpinfo = new DataPageInfo(rectuple);
-    datapageId.pid = dpinfo.getPageId().pid;
+    datapage = null;
+    datapageId.pid = 0;
+    datapageRid = null;
 
     return true;
   }
@@ -294,10 +281,35 @@ public class Stream implements GlobalConst {
       HFBufMgrException, InvalidSlotNumberException
              {
               dirpage = null;
+              DataPageInfo dpinfo;
+              Tuple rectuple = null;
+              
               if (!loadNextDirectoryPage() && !loadNextDirectoryPage()) {
                 // Heapfile is empty
                 System.err.println("Heapfile is empty!");
+                return false;
               }
+              
+              // Prepare to fetch datapage
+              try {
+                datapageRid = dirpage.firstRecord();
+              } catch (Exception e) {
+                datapageRid = null;
+                return false;
+              }
+
+              if (datapageRid == null) {
+                datapageId.pid = INVALID_PAGE;
+                return false;
+              }
+
+              rectuple = dirpage.getRecord(datapageRid);
+              
+              if (rectuple.getLength() != DataPageInfo.size)
+                return false;
+
+              dpinfo = new DataPageInfo(rectuple);
+              datapageId.pid = dpinfo.getPageId().pid;
 
                datapage = null;
 
@@ -418,55 +430,21 @@ public class Stream implements GlobalConst {
 
                datapageRid = dirpage.nextRecord(datapageRid);
 
-               if (datapageRid == null) {
-                 nextDataPageStatus = false;
-                 // we have read all datapage records on the current directory page
+              if (datapageRid == null) {
+                nextDataPageStatus = false;
+                // we have read all datapage records on the current directory page
 
-                 // get next directory page
-                 nextDirPageId = dirpage.getNextPage();
-
-                 // unpin the current directory page
-                 try {
-                   unpinPage(dirpageId, false /* not dirty */);
-                   dirpage = null;
-
-                   datapageId.pid = INVALID_PAGE;
-                 }
-
-                 catch (Exception e) {
-
-                 }
-
-                 if (nextDirPageId.pid == INVALID_PAGE)
-                   return false;
-                 else {
-                   // ASSERTION:
-                   // - nextDirPageId has correct id of the page which is to get
-
-                   dirpageId = nextDirPageId;
-
-                   try { 
-                     dirpage  = new HFPage();
-                     pinPage(dirpageId, (Page)dirpage, false);
-                   }
-
-                   catch (Exception e){
-
-                   }
-
-                   if (dirpage == null)
-                     return false;
-
-                   try {
-                     datapageRid = dirpage.firstRecord();
-                     nextDataPageStatus = true;
-                   }
-                   catch (Exception e){
-                     nextDataPageStatus = false;
-                     return false;
-                   } 
-                 }
-               }
+                try {
+                  if (!loadNextDirectoryPage()) {
+                    datapage = null;
+                    return false;
+                  }
+                  nextDataPageStatus = true;
+                } catch (Exception e) {
+                  System.err.println(e);
+                  return false;
+                }
+              }
 
                // ASSERTION:
                // - this->dirpageId, this->dirpage valid
