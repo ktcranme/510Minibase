@@ -260,7 +260,7 @@ public class Stream implements GlobalConst {
       return false;
 
     datapage = null;
-    datapageId.pid = 0;
+    datapageId.pid = INVALID_PAGE;
     datapageRid = null;
 
     return true;
@@ -300,6 +300,8 @@ public class Stream implements GlobalConst {
 
               if (datapageRid == null) {
                 datapageId.pid = INVALID_PAGE;
+                unpinPage(dirpageId, false);
+                dirpage = null;
                 return false;
               }
 

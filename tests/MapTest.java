@@ -24,14 +24,15 @@ class MapDriver extends TestDriver implements GlobalConst
   private final static boolean OK = true;
   private final static boolean FAIL = false;
 
-  private int choice;
+  private int choice = 100;
   private final static int reclen = 32;
 
   public MapDriver () {
     super("maptest");
-    choice = 500;      // big enough for file to occupy > 1 data page
-    //choice = 2000;   // big enough for file to occupy > 1 directory page
-    //choice = 5;
+  }
+  
+  public void setChoice(int c) {
+    choice = c;
   }
 
 
@@ -185,11 +186,15 @@ class MapDriver extends TestDriver implements GlobalConst
         e.printStackTrace();
       }
 
-      if ( status == OK &&  SystemDefs.JavabaseBM.getNumUnpinnedBuffers() 
-          == SystemDefs.JavabaseBM.getNumBuffers() ) {
+      if (status == OK && choice == 0 &&
+        SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers()) {
+        System.err.println ("*** The heap-file scan has pinned a page despite having 0 records\n");
+        status = FAIL;
+      } else if ( status == OK && choice != 0 &&
+        SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() ) {
         System.err.println ("*** The heap-file scan has not pinned the first page\n");
         status = FAIL;
-          }
+      }
     }	
 
     if ( status == OK ) {
@@ -772,6 +777,55 @@ public class MapTest {
     MapDriver hd = new MapDriver();
     boolean dbstatus;
 
+    hd.setChoice(0);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(50);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(100);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(500);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(179);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(366);
+    dbstatus = hd.runTests();
+
+    if (dbstatus != true) {
+      System.err.println ("Error encountered during buffer manager tests:\n");
+      Runtime.getRuntime().exit(1);
+    }
+
+    hd.setChoice(29);
     dbstatus = hd.runTests();
 
     if (dbstatus != true) {
