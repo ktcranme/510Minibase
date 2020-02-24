@@ -57,7 +57,8 @@ public class Map implements GlobalConst{
 		fldOffset = getFldOffsetArray();
 	}
 	
-	/* Copy a tuple to the current map position
+	/* Construct a map from another map through copy.
+	 * Copy a tuple to the current map position
 	* you must make sure the map lengths must be equal
 	* @param fromMap the map being copied
 	*/

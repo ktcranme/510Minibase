@@ -52,36 +52,15 @@ public boolean runTests () {
     
     // Commands here is very machine dependent.  We assume
     // user are on UNIX system here
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
     
     remove_logcmd = remove_cmd + newlogpath;
     remove_dbcmd = remove_cmd + newdbpath;
     
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
     
     //Run the tests. Return type different from C++
     boolean _pass = runAllTests();
     
     //Clean up again
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
     
     System.out.print ("\n" + "..." + testName() + " tests ");
     System.out.print (_pass==OK ? "completely successfully" : "failed");
