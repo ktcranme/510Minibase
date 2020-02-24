@@ -232,7 +232,6 @@ public class Stream implements GlobalConst {
 
   private boolean loadNextDirectoryPage() throws IOException, HFBufMgrException, InvalidSlotNumberException,
       InvalidTupleSizeException {
-    System.out.println("Loading data page!!!!!!!");
     PageId nextDirPageId = new PageId();
 
     if (dirpage == null) {
@@ -247,10 +246,15 @@ public class Stream implements GlobalConst {
       datapageId.pid = INVALID_PAGE;
 
       if (nextDirPageId.pid == INVALID_PAGE) {
+        datapage = null;
+        datapageId.pid = INVALID_PAGE;
+        datapageRid = null;
         return false;
       }
     }
 
+    // ASSERTION:
+    // - nextDirPageId has correct id of the page which is to get
     /** get directory page and pin it */
     dirpageId.pid = nextDirPageId.pid;
     dirpage = new HFPage();
@@ -284,7 +288,13 @@ public class Stream implements GlobalConst {
               DataPageInfo dpinfo;
               Tuple rectuple = null;
               
-              if (!loadNextDirectoryPage() && !loadNextDirectoryPage()) {
+              if (!loadNextDirectoryPage() &&
+                /** the first directory page is the only one which can possibly remain
+                  * empty: therefore try to get the next directory page and
+                  * check it. The next one has to contain a datapage record, unless
+                  * the heapfile is empty:
+                  */
+                !loadNextDirectoryPage()) {
                 // Heapfile is empty
                 System.err.println("Heapfile is empty!");
                 return false;
@@ -438,7 +448,6 @@ public class Stream implements GlobalConst {
 
                 try {
                   if (!loadNextDirectoryPage()) {
-                    datapage = null;
                     return false;
                   }
                   nextDataPageStatus = true;
