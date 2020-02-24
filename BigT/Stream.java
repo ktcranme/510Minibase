@@ -240,34 +240,24 @@ public class Stream implements GlobalConst {
       nextUserStatus = true;
     } else {
       nextDirPageId = dirpage.getNextPage();
-
       unpinPage(dirpageId, false);
       dirpage = null;
-      datapageId.pid = INVALID_PAGE;
-
-      if (nextDirPageId.pid == INVALID_PAGE) {
-        datapage = null;
-        datapageId.pid = INVALID_PAGE;
-        datapageRid = null;
-        return false;
-      }
     }
-
-    // ASSERTION:
-    // - nextDirPageId has correct id of the page which is to get
-    /** get directory page and pin it */
-    dirpageId.pid = nextDirPageId.pid;
-    dirpage = new HFPage();
-    pinPage(dirpageId, (Page) dirpage, false);
     
-    if (dirpage == null)
-      return false;
+    if (nextDirPageId.pid != INVALID_PAGE) {
+      // ASSERTION:
+      // - nextDirPageId has correct id of the page which is to get
+      /** get directory page and pin it */
+      dirpageId.pid = nextDirPageId.pid;
+      dirpage = new HFPage();
+      pinPage(dirpageId, (Page) dirpage, false);
+    }
 
     datapage = null;
     datapageId.pid = INVALID_PAGE;
     datapageRid = null;
 
-    return true;
+    return dirpage != null;
   }
 
 
