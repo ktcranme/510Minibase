@@ -25,10 +25,10 @@ run: all
 	$(JAVA) tests.HFTest
 	$(JAVA) tests.DBTest
 	$(JAVA) tests.BMTest
-	$(JAVA) tests.MapTest
+	$(JAVA) tests.StreamTest
 
-runmap: $(CURDIR)/MapTest.class
-	$(JAVA) tests.MapTest
+runstream: $(CURDIR)/StreamTest.class
+	$(JAVA) tests.StreamTest
 
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE

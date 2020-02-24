@@ -46,8 +46,8 @@ doc:
 testall: db
 	cd tests; make run
 
-testmap: db
-	cd tests; make runmap
+teststream: db
+	cd tests; make runstream
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
