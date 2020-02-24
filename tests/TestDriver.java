@@ -66,8 +66,9 @@ public class TestDriver {
 
   /** 
    * @return whether the test has completely successfully 
+ * @throws IOException 
    */
-  protected boolean test1 () { return true; }
+  protected boolean test1 () throws IOException { return true; }
   
   /** 
    * @return whether the test has completely successfully 
@@ -109,8 +110,9 @@ public class TestDriver {
    * running tests.
    *
    * @return a boolean value indicates whether ALL the tests have passed
+ * @throws IOException 
    */
-  public boolean runTests ()  {
+  public boolean runTests () throws IOException  {
     
     System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
     
@@ -149,7 +151,7 @@ public class TestDriver {
     return _pass;
   }
 
-  protected boolean runAllTests() {
+  protected boolean runAllTests() throws IOException {
 
     boolean _passAll = OK;
 
