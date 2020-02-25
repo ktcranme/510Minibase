@@ -55,7 +55,7 @@ public class Stream implements GlobalConst {
   private HFPage datapage = new HFPage();
 
   /** record ID of the current record (from the current data page) */
-  private RID userrid = new RID();
+  private MID userrid = new MID();
 
   /** Status of next user status */
   private boolean nextUserStatus;
@@ -85,7 +85,7 @@ public class Stream implements GlobalConst {
    * @param rid Record ID of the record
    * @return the Map of the retrieved record.
    */
-  public Map getNext(RID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
+  public Map getNext(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
     Map recptrtuple = null;
 
     if (nextUserStatus != true) {
@@ -107,7 +107,7 @@ public class Stream implements GlobalConst {
       e.printStackTrace();
     }
 
-    userrid = datapage.nextRecord(rid);
+    userrid = datapage.nextMap(rid);
     if (userrid == null)
       nextUserStatus = false;
     else
@@ -126,9 +126,9 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  public boolean position(RID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+  public boolean position(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
       HFBufMgrException, InvalidSlotNumberException {
-    RID nxtrid = new RID();
+    MID nxtrid = new MID();
     boolean bst;
 
     bst = peekNext(nxtrid);
@@ -160,7 +160,7 @@ public class Stream implements GlobalConst {
     // Now we are on the correct page.
 
     try {
-      userrid = datapage.firstRecord();
+      userrid = datapage.firstMap();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -400,7 +400,7 @@ public class Stream implements GlobalConst {
                    }
 
                    try {
-                     userrid = datapage.firstRecord();
+                     userrid = datapage.firstMap();
                    }
                    catch (Exception e) {
                      e.printStackTrace();
@@ -484,7 +484,7 @@ public class Stream implements GlobalConst {
                // - this->dirpageId, this->dirpage correct
                // - this->datapageId, this->datapage, this->datapageRid correct
 
-               userrid = datapage.firstRecord();
+               userrid = datapage.firstMap();
 
                if(userrid == null)
                {
@@ -496,7 +496,7 @@ public class Stream implements GlobalConst {
              }
 
 
-  private boolean peekNext(RID rid) {
+  private boolean peekNext(MID rid) {
 
     rid.pageNo.pid = userrid.pageNo.pid;
     rid.slotNo = userrid.slotNo;
@@ -508,18 +508,18 @@ public class Stream implements GlobalConst {
   /** Move to the next record in a sequential scan.
    * Also returns the RID of the (new) current record.
    */
-  private boolean mvNext(RID rid) 
+  private boolean mvNext(MID rid) 
       throws InvalidMapSizeException,
              InvalidTupleSizeException,
                       IOException
              {
-               RID nextrid;
+               MID nextrid;
                boolean status;
 
                if (datapage == null)
                  return false;
 
-               nextrid = datapage.nextRecord(rid);
+               nextrid = datapage.nextMap(rid);
 
                if( nextrid != null ){
                  userrid.pageNo.pid = nextrid.pageNo.pid;

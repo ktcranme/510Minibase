@@ -99,7 +99,7 @@ class StreamDriver extends TestDriver implements GlobalConst
 
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
-    RID rid = new RID();
+    MID rid = new MID();
     Heapfile f = null;
     int rec_cnt = 0;
 
@@ -138,7 +138,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         try {
-          rid = f.insertRecord(m1.getMapByteArray());
+          rid = f.insertMap(m1.getMapByteArray());
         }
         catch (Exception e) {
           status = FAIL;
@@ -299,7 +299,7 @@ class StreamDriver extends TestDriver implements GlobalConst
     System.out.println ("\n  Test 2: Delete fixed-size records\n");
     boolean status = OK;
     Stream stream = null;
-    RID rid = new RID();
+    MID rid = new MID();
     Heapfile f = null;
     int rec_cnt = 0;
 
@@ -357,7 +357,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           if ( i % 2 == 0 ) odd = false;
           if ( odd )  {       // Delete the odd-numbered ones.
             try {
-              status = f.deleteRecord( rid );
+              status = f.deleteMap( rid );
             }
             catch (Exception e) {
               status = FAIL;
@@ -463,7 +463,7 @@ class StreamDriver extends TestDriver implements GlobalConst
     System.out.println ("\n  Test 3: Update fixed-size records\n");
     boolean status = OK;
     Stream stream = null;
-    RID rid = new RID();
+    MID rid = new MID();
     Heapfile f = null; 
     int rec_cnt = 0;
 

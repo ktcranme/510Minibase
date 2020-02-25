@@ -8,7 +8,6 @@ package heap;
 
 import java.io.*;
 import global.*;
-import BigT.Map;
 import bufmgr.*;
 import diskmgr.*;
 
@@ -50,8 +49,7 @@ public class Scan implements GlobalConst{
     private HFPage datapage = new HFPage();
 
     /** record ID of the current record (from the current data page) */
-//    private RID userrid = new RID();
-    private MID userrid = new MID();
+    private RID userrid = new RID();
 
     /** Status of next user status */
     private boolean nextUserStatus;
@@ -83,44 +81,11 @@ public class Scan implements GlobalConst{
    * @param rid Record ID of the record
    * @return the Tuple of the retrieved record.
    */
-//  public Tuple getNext(RID rid) 
-//    throws InvalidTupleSizeException,
-//	   IOException
-//  {
-//    Tuple recptrtuple = null;
-//    
-//    if (nextUserStatus != true) {
-//        nextDataPage();
-//    }
-//     
-//    if (datapage == null)
-//      return null;
-//    
-//    rid.pageNo.pid = userrid.pageNo.pid;    
-//    rid.slotNo = userrid.slotNo;
-//         
-//    try {
-//      recptrtuple = datapage.getRecord(rid);
-//    }
-//    
-//    catch (Exception e) {
-//  //    System.err.println("SCAN: Error in Scan" + e);
-//      e.printStackTrace();
-//    }   
-//    
-//    userrid = datapage.nextRecord(rid);
-//    if(userrid == null) nextUserStatus = false;
-//    else nextUserStatus = true;
-//     
-//    return recptrtuple;
-//  }
-  
-  
-  public Map getNext(MID rid) 
+  public Tuple getNext(RID rid) 
     throws InvalidTupleSizeException,
 	   IOException
   {
-    Map recptrtuple = null;
+    Tuple recptrtuple = null;
     
     if (nextUserStatus != true) {
         nextDataPage();
@@ -133,7 +98,7 @@ public class Scan implements GlobalConst{
     rid.slotNo = userrid.slotNo;
          
     try {
-      recptrtuple = datapage.getMap(rid);
+      recptrtuple = datapage.getRecord(rid);
     }
     
     catch (Exception e) {
@@ -141,7 +106,7 @@ public class Scan implements GlobalConst{
       e.printStackTrace();
     }   
     
-    userrid = datapage.nextMap(rid);
+    userrid = datapage.nextRecord(rid);
     if(userrid == null) nextUserStatus = false;
     else nextUserStatus = true;
      
@@ -157,11 +122,11 @@ public class Scan implements GlobalConst{
      * @return 	true if successful, 
      *			false otherwise.
      */
-  public boolean position(MID rid) 
+  public boolean position(RID rid) 
     throws InvalidTupleSizeException,
 	   IOException
   { 
-    MID    nxtrid = new MID();
+    RID    nxtrid = new RID();
     boolean bst;
 
     bst = peekNext(nxtrid);
@@ -193,7 +158,7 @@ public class Scan implements GlobalConst{
     // Now we are on the correct page.
     
     try{
-    	userrid = datapage.firstMap();
+    	userrid = datapage.firstRecord();
 	}
     catch (Exception e) {
       e.printStackTrace();
@@ -482,7 +447,7 @@ public class Scan implements GlobalConst{
 	}
 	
 	try {
-	  userrid = datapage.firstMap();
+	  userrid = datapage.firstRecord();
 	}
 	catch (Exception e) {
 	  e.printStackTrace();
@@ -601,7 +566,7 @@ public class Scan implements GlobalConst{
      // - this->dirpageId, this->dirpage correct
      // - this->datapageId, this->datapage, this->datapageRid correct
 
-     userrid = datapage.firstMap();
+     userrid = datapage.firstRecord();
      
      if(userrid == null)
      {
@@ -613,7 +578,7 @@ public class Scan implements GlobalConst{
   }
 
 
-  private boolean peekNext(MID rid) {
+  private boolean peekNext(RID rid) {
     
     rid.pageNo.pid = userrid.pageNo.pid;
     rid.slotNo = userrid.slotNo;
@@ -625,17 +590,17 @@ public class Scan implements GlobalConst{
   /** Move to the next record in a sequential scan.
    * Also returns the RID of the (new) current record.
    */
-  private boolean mvNext(MID rid) 
+  private boolean mvNext(RID rid) 
     throws InvalidTupleSizeException,
 	   IOException
   {
-    MID nextrid;
+    RID nextrid;
     boolean status;
 
     if (datapage == null)
         return false;
 
-    	nextrid = datapage.nextMap(rid);
+    	nextrid = datapage.nextRecord(rid);
 	
 	if( nextrid != null ){
 	  userrid.pageNo.pid = nextrid.pageNo.pid;

@@ -1405,6 +1405,15 @@ public class Heapfile implements Filetype,  GlobalConst {
       
     }
 
+  public Stream openStream()
+      throws InvalidMapSizeException,
+                      InvalidTupleSizeException,
+                      IOException, HFBufMgrException, InvalidSlotNumberException
+             {
+               Stream newscan = new Stream(this);
+               return newscan;
+             }
+
   /** Initiate a sequential scan.
    * @exception InvalidTupleSizeException Invalid tuple size
    * @exception IOException I/O errors
