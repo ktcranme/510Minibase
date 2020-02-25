@@ -99,11 +99,12 @@ class SORTDriver extends TestDriver
       System.err.println (""+e);
     }
 
-    //Run the tests. Return type different from C++
-    boolean _pass = runAllTests();
-
-    //Clean up again
+    boolean _pass = false;
     try {
+      //Run the tests. Return type different from C++
+      _pass = runAllTests();
+
+      //Clean up again
       Runtime.getRuntime().exec(remove_logcmd);
       Runtime.getRuntime().exec(remove_dbcmd);
     } 

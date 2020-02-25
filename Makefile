@@ -4,10 +4,11 @@
 #the assignment to be generated
 
 JARFILES=bufmgr/*.class diskmgr/*.class global/*.class iterator/*.class\
-         heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class
+         heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class\
+				 BigT/*.class
 
-JDKPATH = C:/Program Files/Java/jdk1.8.0_144
-LIBPATH = C:/Users/cranm/OneDrive/Documents/CSE510/minjava/minjava/javaminibase/src
+JDKPATH = $(JAVA_HOME)
+LIBPATH = .:..
 CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
@@ -17,7 +18,7 @@ DOCFILES=bufmgr diskmgr global chainexception heap btree iterator index
 
 ##############  update the above for each assignment in making
 
-ASSIGN=C:/Users/cranm/OneDrive/Documents/CSE510/minjava/minjava/javaminibase/src
+ASSIGN=.:..
 LIBDIR=$(ASSIGN)/lib
 KEY=$(ASSIGN)/key
 SRC=$(ASSIGN)/src
@@ -37,12 +38,16 @@ db:
 	make -C heap
 	make -C index
 	make -C iterator
+	make -C BigT
 	
 doc:
 	$(JAVADOC) $(DOCFILES)
 
-test: 
-	cd tests; make bmtest dbtest; whoami; make hftest bttest indextest jointest sorttest sortmerge
+testall: db
+	cd tests; make run
+
+teststream: db
+	cd tests; make runstream
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE

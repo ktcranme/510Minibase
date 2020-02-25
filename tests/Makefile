@@ -1,75 +1,35 @@
 # modify the paths appropriately
-JDKPATH = C:/Program Files/Java/jdk1.8.0_144
-LIBPATH = C:/Users/cranm/OneDrive/Documents/CSE510/minjava/minjava/javaminibase/src
+JDKPATH = $(JAVA_HOME)
+LIBPATH = .:..
 CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-# test buffer manager
+sourcefiles = $(filter-out \
+	$(CURDIR)/TestDriver.java, $(wildcard $(CURDIR)/*.java))
+#sourcefiles = $(wildcard $(CURDIR)/*java)
+classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
-BMTest:BMTest.java
-	$(JAVAC) TestDriver.java BMTest.java
+all: $(classfiles)
 
-bmtest: BMTest
-	$(JAVA) tests.BMTest
+$(CURDIR)/%.class: $(CURDIR)/%.java $(CURDIR)/TestDriver.java
+	$(JAVAC) $(CURDIR)/TestDriver.java $<
 
-# test disk manager
-
-DBTest:DBTest.java
-	$(JAVAC) TestDriver.java DBTest.java
-
-dbtest: DBTest
-	$(JAVA) tests.DBTest
-
-# test heapfile 
-
-HFTest:HFTest.java
-	$(JAVAC) TestDriver.java HFTest.java
-
-hftest: HFTest
-	$(JAVA) tests.HFTest
-
-# test btree
-
-BTTest:BTTest.java
-	$(JAVAC) TestDriver.java BTTest.java
-
-bttest: BTTest
-	$(JAVA) tests.BTTest
-
-# test index
-
-IndexTest:IndexTest.java
-	$(JAVAC) TestDriver.java IndexTest.java
-
-indextest: IndexTest
-	$(JAVA) tests.IndexTest
-
-# test join
-
-JoinTest:JoinTest.java
-	$(JAVAC) TestDriver.java JoinTest.java
-
-jointest: JoinTest
-	$(JAVA) tests.JoinTest
-
-# test sort
-
-SortTest:SortTest.java
-	$(JAVAC) TestDriver.java SortTest.java
-
-sorttest: SortTest
-	$(JAVA) tests.SortTest
-
-# test sortMerge
-
-SMJoin:SM_JoinTest.java
-	$(JAVAC) SM_JoinTest.java TestDriver.java
-
-sortmerge: SMJoin
+run: all
 	$(JAVA) tests.SM_JoinTest
+	$(JAVA) tests.SortTest
+	$(JAVA) tests.JoinTest
+	$(JAVA) tests.IndexTest
+	$(JAVA) tests.BTTest
+	$(JAVA) tests.HFTest
+	$(JAVA) tests.DBTest
+	$(JAVA) tests.BMTest
+	$(JAVA) tests.StreamTest
 
+runstream: $(CURDIR)/StreamTest.class
+	$(JAVA) tests.StreamTest
 
-
+clean:
+	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
 

@@ -1,8 +1,9 @@
 JDKPATH = $(JAVA_HOME)
 LIBPATH = .:..
+
 CLASSPATH = $(JDKPATH)/lib/classes.zip:.:..:$(LIBPATH)
 BINPATH = $(JDKPATH)/bin
-JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
+JAVAC = $(JDKPATH)/bin/javac -g -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
 sourcefiles = $(wildcard $(CURDIR)/*.java)

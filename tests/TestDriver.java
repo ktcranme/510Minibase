@@ -54,8 +54,8 @@ public class TestDriver {
     //To port it to a different platform, get "user.name" should
     //still work well because this feature is not meant to be UNIX
     //dependent. 
-    dbpath = "/tmp/"+nameRoot+System.getProperty("user.name")+".minibase-db"; 
-    logpath = "/tmp/"+nameRoot +System.getProperty("user.name")+".minibase-log"; 
+    dbpath = "D:\\minibase_db\\"+nameRoot+System.getProperty("user.name")+".minibase-db"; 
+    logpath = "D:\\minibase_db\\"+nameRoot +System.getProperty("user.name")+".minibase-log"; 
   }
 
   /**
@@ -66,8 +66,9 @@ public class TestDriver {
 
   /** 
    * @return whether the test has completely successfully 
+ * @throws IOException 
    */
-  protected boolean test1 () { return true; }
+  protected boolean test1 () throws IOException { return true; }
   
   /** 
    * @return whether the test has completely successfully 
@@ -109,8 +110,9 @@ public class TestDriver {
    * running tests.
    *
    * @return a boolean value indicates whether ALL the tests have passed
+ * @throws IOException 
    */
-  public boolean runTests ()  {
+  public boolean runTests () throws IOException  {
     
     System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
     
@@ -129,13 +131,6 @@ public class TestDriver {
 
     // Commands here is very machine dependent.  We assume
     // user are on UNIX system here
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
     
     remove_logcmd = remove_cmd + newlogpath;
     remove_dbcmd = remove_cmd + newdbpath;
@@ -143,25 +138,11 @@ public class TestDriver {
     //This step seems redundant for me.  But it's in the original
     //C++ code.  So I am keeping it as of now, just in case I
     //I missed something
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
-
+    
     //Run the tests. Return type different from C++
     boolean _pass = runAllTests();
 
     //Clean up again
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
     
     System.out.println ("\n" + "..." + testName() + " tests ");
     System.out.print (_pass==OK ? "completely successfully" : "failed");
@@ -170,7 +151,7 @@ public class TestDriver {
     return _pass;
   }
 
-  protected boolean runAllTests() {
+  protected boolean runAllTests() throws IOException {
 
     boolean _passAll = OK;
 
