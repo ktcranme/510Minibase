@@ -368,8 +368,30 @@ public class Heapfile implements Filetype,  GlobalConst {
 	   IOException
   {
 	  return getRecCnt();
-  }
-  
+	}
+	
+	public HFPage batchInsert(Map[] maps) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+		HFPage currentDirPage = new HFPage();
+		HFPage currentDataPage = new HFPage();
+		DataPageInfo dpinfo = new DataPageInfo();
+		RID currentDataPageRid;
+		Tuple atuple;
+
+		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+		pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+
+		currentDataPage = _newDatapage(dpinfo); 
+
+		currentDataPage.batchInsert(maps);
+
+		atuple = dpinfo.convertToTuple();
+		  
+		byte [] tmpData = atuple.getTupleByteArray();
+		currentDataPageRid = currentDirPage.insertRecord(tmpData);
+
+		return currentDataPage;
+	}
+
   /** Insert record into file, return its Rid.
    *
    * @param recPtr pointer of the record

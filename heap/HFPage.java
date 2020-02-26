@@ -111,6 +111,34 @@ public class HFPage extends Page
       data = apage.getpage();
     }
   
+  public boolean batchInsert(Map[] maps) throws IOException {
+    usedPtr =  Convert.getShortValue (USED_PTR, data);
+    slotCnt = Convert.getShortValue (SLOT_CNT, data);
+    freeSpace = Convert.getShortValue (FREE_SPACE, data);
+  
+    for (Map map : maps) {
+      byte[] mapData = map.getMapByteArray(); 
+      usedPtr -= mapData.length;
+      freeSpace -= mapData.length;
+      //insert the slot info onto the data page
+      setSlot(slotCnt, mapData.length, usedPtr);  
+
+      slotCnt++;
+      // try {
+      //   System.arraycopy (mapData, 0, data, usedPtr, mapData.length);
+      // } catch (Exception e) {
+      //   return false;
+      // }
+      // insert data onto the data page
+      System.arraycopy (mapData, 0, data, usedPtr, mapData.length);
+    }
+    Convert.setShortValue (usedPtr, USED_PTR, data);
+    Convert.setShortValue (freeSpace, FREE_SPACE, data);
+    Convert.setShortValue (slotCnt, SLOT_CNT, data);
+
+    return true;
+  }
+
   /**
    * Constructor of class HFPage
    * initialize a new page

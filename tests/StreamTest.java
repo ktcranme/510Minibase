@@ -646,12 +646,47 @@ class StreamDriver extends TestDriver implements GlobalConst
 
 
   protected boolean runAllTests (){
-
     boolean _passAll = OK;
+    Heapfile f;
+    Map[] maps = new Map[8];
+    HFPage page;
+    Stream s = null;
 
-    if (!test1()) { _passAll = FAIL; }
-    if (!test2()) { _passAll = FAIL; }
-    if (!test3()) { _passAll = FAIL; }
+    try {
+    f = new Heapfile("file_1");
+    for (int i = 0; i < 8; i++) {
+      Map m = new Map();
+      m.setRowLabel("Row " + Integer.toString(i));
+      m.setColumnLabel("Col " + Integer.toString(i));
+      m.setTimeStamp(i);
+      m.setValue("Val " + Integer.toString(i));
+
+      maps[i] = m;
+    }
+
+    page = f.batchInsert(maps);
+    s = f.openStream();
+    MID rid = new MID();
+    Map m;
+    m = s.getNext(rid);
+    if (m == null) {
+      throw new Exception("Did not get results!");
+    }
+    while (m != null) {
+      System.out.println(m.getRowLabel() + ", " + m.getColumnLabel() + ", " + Integer.toString(m.getTimeStamp()) + ", " + m.getValue());
+      m = s.getNext(rid);
+    }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      _passAll = FAIL;
+    }
+    if (_passAll == OK)
+      return true;
+
+    if (_passAll != FAIL && !test1()) { _passAll = FAIL; }
+    if (_passAll != FAIL && !test2()) { _passAll = FAIL; }
+    if (_passAll != FAIL && !test3()) { _passAll = FAIL; }
     /*
      * These tests are not necessary since Map is fixed size
     if (!test4()) { _passAll = FAIL; }
