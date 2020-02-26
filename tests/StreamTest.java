@@ -648,13 +648,13 @@ class StreamDriver extends TestDriver implements GlobalConst
   protected boolean runAllTests (){
     boolean _passAll = OK;
     Heapfile f;
-    Map[] maps = new Map[8];
+    Map[] maps = new Map[800];
     HFPage page;
     Stream s = null;
 
     try {
     f = new Heapfile("file_1");
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 800; i++) {
       Map m = new Map();
       m.setRowLabel("Row " + Integer.toString(i));
       m.setColumnLabel("Col " + Integer.toString(i));

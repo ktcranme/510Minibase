@@ -430,7 +430,9 @@ public class Stream implements GlobalConst {
                  return false;
                }
 
+
                datapageRid = dirpage.nextRecord(datapageRid);
+
 
               if (datapageRid == null) {
                 nextDataPageStatus = false;
@@ -440,6 +442,7 @@ public class Stream implements GlobalConst {
                   if (!loadNextDirectoryPage()) {
                     return false;
                   }
+                  datapageRid = dirpage.firstRecord();
                   nextDataPageStatus = true;
                 } catch (Exception e) {
                   System.err.println(e);
@@ -462,9 +465,13 @@ public class Stream implements GlobalConst {
                catch (Exception e) {
                  System.err.println("HeapFile: Error in Stream" + e);
                }
-
+               try {
                if (rectuple.getLength() != DataPageInfo.size)
                  return false;
+                } catch (Exception e) {
+                  System.err.println(e);
+                  throw e;
+                }
 
                dpinfo = new DataPageInfo(rectuple);
                datapageId.pid = dpinfo.getPageId().pid;

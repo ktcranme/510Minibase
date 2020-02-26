@@ -52,7 +52,7 @@ public class Heapfile implements Filetype,  GlobalConst {
   int         _ftype;
   private     boolean     _file_deleted;
   private     String 	 _fileName;
-  private static int tempfilecount = 0;
+	private static int tempfilecount = 0;
 
 
   public PageId getFirstDirPageId() {
@@ -369,25 +369,93 @@ public class Heapfile implements Filetype,  GlobalConst {
   {
 	  return getRecCnt();
 	}
+
+  public boolean getNextDirectoryPage(HFPage dirPage, PageId dirPageId) throws HFBufMgrException, HFException,
+			IOException {
+		Page pageinbuffer = new Page();
+		if (dirPageId.pid != INVALID_PAGE && dirPage.available_space() >= DataPageInfo.size) { 
+		  return true;
+		}
+
+		if (dirPageId.pid == INVALID_PAGE && dirPage.curPage.pid == INVALID_PAGE) {
+			dirPageId.pid = _firstDirPageId.pid;
+			pinPage(dirPageId, dirPage, false);
+		}
+
+		if (dirPage.available_space() >= DataPageInfo.size) { 
+		  return true;
+		}
 	
+		if (dirPage.getNextPage().pid != INVALID_PAGE) {
+			unpinPage(dirPageId, true);
+			dirPageId.pid = dirPage.getNextPage().pid;
+			pinPage(dirPageId, dirPage, false);
+			return true;
+		}
+
+		PageId temppid = new PageId(dirPageId.pid);
+		dirPageId = newPage(pageinbuffer, 1);
+		System.out.println("Creating new directory page ID: " + dirPageId.pid);
+		if (dirPageId == null)
+			throw new HFException(null, "can't create new dirpage!");
+
+		// update current directory page and unpin it
+		// currentDirPage is already locked in the Exclusive mode
+		dirPage.setNextPage(dirPageId);
+		unpinPage(temppid, true/*dirty*/);
+
+		// initialize new directory page
+		dirPage.init(dirPageId, pageinbuffer);
+		dirPage.setNextPage(new PageId(INVALID_PAGE));
+		dirPage.setPrevPage(temppid);
+
+		return true;
+	}
+
 	public HFPage batchInsert(Map[] maps) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
-		HFPage currentDirPage = new HFPage();
-		HFPage currentDataPage = new HFPage();
+		HFPage currentDirPage = new HFPage(true);
+		HFPage currentDataPage = null;
 		DataPageInfo dpinfo = new DataPageInfo();
 		RID currentDataPageRid;
 		Tuple atuple;
 
-		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
-		pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+		PageId currentDirPageId = new PageId(INVALID_PAGE);
 
-		currentDataPage = _newDatapage(dpinfo); 
+		int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
+		int pagesNeeded = (int) java.lang.Math.ceil(maps.length / (double) mapsInPage);
 
-		currentDataPage.batchInsert(maps);
+		System.out.println("Maps require " + pagesNeeded + " pages to store.");
 
-		atuple = dpinfo.convertToTuple();
+		for (int i = 0; i < pagesNeeded; i++) {
+			if (!getNextDirectoryPage(currentDirPage, currentDirPageId)) {
+				throw new HFException(null, "Could not get next directory page!");
+			}
+
+			currentDataPage = _newDatapage(dpinfo); 
+
+			currentDataPage.batchInsert(maps, i * mapsInPage, i * mapsInPage + mapsInPage);
+	
+			atuple = dpinfo.convertToTuple();
+			System.out.println("Stored data to datapage ID " + dpinfo.pageId.pid);
+				
+			byte [] tmpData = atuple.getTupleByteArray();
+			currentDataPageRid = currentDirPage.insertRecord(tmpData);
+		}
+
+		// if (!getNextDirectoryPage(currentDirPage, currentDirPageId)) {
+		// 	throw new HFException(null, "Could not get next directory page!");
+		// }
+
+		// // pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+
+		// currentDataPage = _newDatapage(dpinfo); 
+
+		// currentDataPage.batchInsert(maps, 0, maps.length);
+
+		// atuple = dpinfo.convertToTuple();
 		  
-		byte [] tmpData = atuple.getTupleByteArray();
-		currentDataPageRid = currentDirPage.insertRecord(tmpData);
+		// byte [] tmpData = atuple.getTupleByteArray();
+		// currentDataPageRid = currentDirPage.insertRecord(tmpData);
 
 		return currentDataPage;
 	}
