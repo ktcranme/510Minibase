@@ -394,7 +394,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 		}
 
 		PageId temppid = new PageId(dirPageId.pid);
-		dirPageId = newPage(pageinbuffer, 1);
+		dirPageId.pid = newPage(pageinbuffer, 1).pid;
 		System.out.println("Creating new directory page ID: " + dirPageId.pid);
 		if (dirPageId == null)
 			throw new HFException(null, "can't create new dirpage!");
@@ -433,14 +433,21 @@ public class Heapfile implements Filetype,  GlobalConst {
 
 			currentDataPage = _newDatapage(dpinfo); 
 
-			currentDataPage.batchInsert(maps, i * mapsInPage, i * mapsInPage + mapsInPage);
+			int recordsInserted = currentDataPage.batchInsert(maps, i * mapsInPage, i * mapsInPage + mapsInPage);
 	
-			atuple = dpinfo.convertToTuple();
-			System.out.println("Stored data to datapage ID " + dpinfo.pageId.pid);
+			dpinfo.recct = recordsInserted;
+			dpinfo.availspace = (HFPage.MAX_SPACE - HFPage.DPFIXED) - recordsInserted * (Map.map_size + HFPage.SIZE_OF_SLOT);
+			System.out.println("Stored data to datapage ID " + dpinfo.pageId.pid + ". Left space: " + dpinfo.availspace);
 				
+			atuple = dpinfo.convertToTuple();
 			byte [] tmpData = atuple.getTupleByteArray();
 			currentDataPageRid = currentDirPage.insertRecord(tmpData);
+			unpinPage(dpinfo.pageId, true /* = DIRTY */);
 		}
+
+
+		System.out.println("Unpinning page: " + currentDirPageId.pid);
+		unpinPage(currentDirPageId, true /* = DIRTY */);
 
 		// if (!getNextDirectoryPage(currentDirPage, currentDirPageId)) {
 		// 	throw new HFException(null, "Could not get next directory page!");

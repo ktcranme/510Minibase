@@ -117,7 +117,7 @@ public class HFPage extends Page
       data = apage.getpage();
     }
   
-  public boolean batchInsert(Map[] maps, int start, int end) throws IOException {
+  public int batchInsert(Map[] maps, int start, int end) throws IOException {
     usedPtr =  Convert.getShortValue (USED_PTR, data);
     slotCnt = Convert.getShortValue (SLOT_CNT, data);
     freeSpace = Convert.getShortValue (FREE_SPACE, data);
@@ -125,7 +125,6 @@ public class HFPage extends Page
     for (int i = start; i < end && i < maps.length; i++) {
       byte[] mapData = maps[i].getMapByteArray(); 
       usedPtr -= mapData.length;
-      freeSpace -= mapData.length;
       //insert the slot info onto the data page
       setSlot(slotCnt, mapData.length, usedPtr);  
 
@@ -138,11 +137,12 @@ public class HFPage extends Page
       // insert data onto the data page
       System.arraycopy (mapData, 0, data, usedPtr, mapData.length);
     }
+    freeSpace -= (Map.map_size + SLOT_CNT) * maps.length;
     Convert.setShortValue (usedPtr, USED_PTR, data);
     Convert.setShortValue (freeSpace, FREE_SPACE, data);
     Convert.setShortValue (slotCnt, SLOT_CNT, data);
 
-    return true;
+    return slotCnt;
   }
 
   /**

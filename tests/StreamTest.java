@@ -665,6 +665,15 @@ class StreamDriver extends TestDriver implements GlobalConst
     }
 
     page = f.batchInsert(maps);
+
+    System.out.println ("*** File reports " + f.getRecCnt());
+    if ( f.getRecCnt() != 800 ) {
+      System.err.println ("*** File reports " + f.getRecCnt() + 
+          " records, not " + 800 + "\n");
+      _passAll = FAIL;
+      return false;
+    }
+
     s = f.openStream();
     MID rid = new MID();
     Map m;
@@ -675,6 +684,15 @@ class StreamDriver extends TestDriver implements GlobalConst
     while (m != null) {
       System.out.println(m.getRowLabel() + ", " + m.getColumnLabel() + ", " + Integer.toString(m.getTimeStamp()) + ", " + m.getValue());
       m = s.getNext(rid);
+    }
+
+    if (SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() ) {
+      System.out.println ("t3, Number of unpinned buffers: " 
+          + SystemDefs.JavabaseBM.getNumUnpinnedBuffers()+ "\n");
+      System.err.println ("t3, getNumbfrs: "+SystemDefs.JavabaseBM.getNumBuffers() +"\n"); 
+
+      System.err.println ("*** Updating left pages pinned\n");
+      _passAll = FAIL;
     }
 
     } catch (Exception e) {
