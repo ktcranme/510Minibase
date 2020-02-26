@@ -1,11 +1,15 @@
 package BigT;
 
 import java.io.IOException;
+import iterator.MapUtils;
+import iterator.TupleUtilsException;
+import iterator.UnknowAttrType;
 
 public class TestDriver {
 	
 	public static void runTests() {
 		runTest1();
+		runTest2();
 	}
 	
 	/*
@@ -106,6 +110,81 @@ public class TestDriver {
 		System.out.println("------------------------------------------");
 	}
 	
+	/*
+	 * Test 2 focuses on the MapUtils class ensuring that comparing two maps is functional
+	 */
+	public static void runTest2() {
+		System.out.println("---------------------------------");
+		System.out.println("Starting test 2 - MapUtils.java");
+		System.out.println("---------------------------------");
+		
+		Map m1 = new Map();
+		Map m2 = new Map();
+		
+		try {
+			m1.setRowLabel("Kevin");
+			m1.setColumnLabel("Cranmer");
+			m1.setTimeStamp(12345);
+			m1.setValue("CSE510");
+			m2.mapCopy(m1);
+		} catch (IOException e) {
+			System.out.println("Error setting values of maps");
+			e.printStackTrace();
+		}
+		
+		System.out.println("Comparing two equal Maps");
+		try {
+			boolean isEqual = MapUtils.Equal(m1, m2);
+			int rowEqual = MapUtils.CompareMapWithMap(m1, m2, 0);
+			int columnEqual = MapUtils.CompareMapWithMap(m1, m2, 1);
+			int timestampEqual = MapUtils.CompareMapWithMap(m1, m2, 2);
+			int valueEqual = MapUtils.CompareMapWithMap(m1, m2, 3);
+			
+			if(!isEqual) System.out.println("MapUtils.Equal() incorrectly return False");
+			if(rowEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for Row");
+			if(columnEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for Column");
+			if(timestampEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for TimeStamp");
+			if(valueEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for Value");
+			
+		} catch (UnknowAttrType e) {
+			e.printStackTrace();
+		} catch (TupleUtilsException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("Comparing two unequal Maps");
+		try {
+			m2.setColumnLabel("Thomas");
+			m2.setTimeStamp(12301);
+			
+			boolean isEqual = MapUtils.Equal(m1, m2);
+			int rowEqual = MapUtils.CompareMapWithMap(m1, m2, 0);
+			int columnEqual = MapUtils.CompareMapWithMap(m1, m2, 1);
+			int timestampEqual = MapUtils.CompareMapWithMap(m1, m2, 2);
+			int valueEqual = MapUtils.CompareMapWithMap(m1, m2, 3);
+			
+			if(isEqual) System.out.println("MapUtils.Equal() incorrectly return True");
+			if(rowEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for Row");
+			if(columnEqual != -1) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 1 for Column");
+			if(timestampEqual != 1) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return -1 for TimeStamp");
+			if(valueEqual != 0) System.out.println("MapUtils.CompareMapWithMap() incorrectly did not return 0 for Value");
+			
+		} catch (UnknowAttrType e) {
+			e.printStackTrace();
+		} catch (TupleUtilsException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("If no incorrect statements shown then test passes.");
+		System.out.println("------------------------------------------");
+		System.out.println("Finished Test 2");
+		System.out.println("------------------------------------------");
+		
+	}
 	
 	public static void main(String [] args) {
 		runTests();
