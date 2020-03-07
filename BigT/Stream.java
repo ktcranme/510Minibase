@@ -90,7 +90,7 @@ public class Stream implements GlobalConst {
   public Map getNext(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
     Map recptrtuple = null;
 
-    if (nextUserStatus != true) {
+    if (currentMapVersion == 0 && nextUserStatus != true) {
       nextDataPage();
     }
 

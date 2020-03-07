@@ -33,6 +33,10 @@ public class Map implements GlobalConst{
 				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE),
 				};
 	}
+
+	public int getVersionNo() {
+		return this.version;
+	}
 	
 	/*
 	* Class constructor
@@ -51,19 +55,19 @@ public class Map implements GlobalConst{
 	* Class constructor
 	* Create a new Map with length = map_size, map_offset = 0.
 	*/
-	// public Map(byte[] amap, int offset)
-	// {
-	// 	data = amap;
-	// 	map_offset = offset;
-	// 	map_length = map_size; 
-	// 	fldOffset = getFldOffsetArray();
-	// }
+	public Map(byte[] amap, int offset)
+	{
+		data = amap;
+		map_offset = offset;
+		map_length = map_size; 
+		fldOffset = getFldOffsetArray();
+	}
 
 	/*
 	* Class constructor
 	* Create a new Map with length = map_size, map_offset = 0.
 	*/
-	public Map(byte[] amap, int offset, int version, boolean hasNext)
+	protected Map(byte[] amap, int offset, int version, boolean hasNext)
 	{
 		data = amap;
 		map_offset = offset;
