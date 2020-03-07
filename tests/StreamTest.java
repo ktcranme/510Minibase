@@ -518,33 +518,36 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
-          try {
-            m.setValue(Integer.toString(10 * i));
-          } catch (Exception e) {
-            status = FAIL;
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-          Map newMap = null; 
-          try {
-            newMap = new Map (m); 
-          }
-          catch (Exception e) {
-            status = FAIL;
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-          try {
-            status = f.updateMap(rid, newMap); 
-          }
-          catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-          }
+          // Update multiple times to check versioning
+          for (int k = 0; k < 6; k++) {
+            try {
+              m.setValue(Integer.toString(10 * i + k));
+            } catch (Exception e) {
+              status = FAIL;
+              System.err.println (""+e);
+              e.printStackTrace();
+            }
+            Map newMap = null; 
+            try {
+              newMap = new Map (m.getMapByteArray(),0); 
+            }
+            catch (Exception e) {
+              status = FAIL;
+              System.err.println (""+e);
+              e.printStackTrace();
+            }
+            try {
+              status = f.updateMap(rid, newMap);
+            }
+            catch (Exception e) {
+              status = FAIL;
+              e.printStackTrace();
+            }
 
-          if ( status != OK ) {
-            System.err.println ("*** Error updating record " + i + "\n");
-            break;
+            if ( status != OK ) {
+              System.err.println ("*** Error updating record " + i + "\n");
+              break;
+            }
           }
           i += 2;     // Recall, we deleted every other record above.
         }
@@ -590,7 +593,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           m = stream.getNext(rid);
           if (m == null) {
             // Because we created two versions of the map now
-            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 2) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -623,13 +626,29 @@ class StreamDriver extends TestDriver implements GlobalConst
 
           if (m.getVersionNo() == 1) {
             try {
-              if( !m.getValue().equals(Integer.toString(i * 1)) || !m2.getValue().equals(Integer.toString(i * 1))) {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
                 System.err.println ("*** Record " + i
                     + " differs from our update\n");
                 System.err.println ("m.value: "+ m.getValue()
-                    + " should be " + Integer.toString(i * 1) + "\n");
+                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
                 System.err.println ("m2.value: "+ m2.getValue()
-                    + " should be " + Integer.toString(i * 1) + "\n");
+                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
+            }
+          } else if (m.getVersionNo() == 2) {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
                 status = FAIL;
                 break;
               }
@@ -640,13 +659,13 @@ class StreamDriver extends TestDriver implements GlobalConst
             i += 2;     // Because we deleted the odd ones...
           } else {
             try {
-              if( !m.getValue().equals(Integer.toString(i * 10)) || !m2.getValue().equals(Integer.toString(i * 10))) {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
                 System.err.println ("*** Record " + i
                     + " differs from our update\n");
                 System.err.println ("m.value: "+ m.getValue()
-                    + " should be " + Integer.toString(i * 10) + "\n");
+                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
                 System.err.println ("m2.value: "+ m2.getValue()
-                    + " should be " + Integer.toString(i * 10) + "\n");
+                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
                 status = FAIL;
                 break;
               }
