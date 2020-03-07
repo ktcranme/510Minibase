@@ -138,7 +138,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         try {
-          rid = f.insertMap(m1.getMapByteArray());
+          rid = f.insertMap(m1);
         }
         catch (Exception e) {
           status = FAIL;
@@ -525,7 +525,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           }
           Map newMap = null; 
           try {
-            newMap = new Map (m.getMapByteArray(),0); 
+            newMap = new Map (m); 
           }
           catch (Exception e) {
             status = FAIL;
@@ -698,7 +698,7 @@ public class StreamTest {
       Runtime.getRuntime().exit(1);
     }
 
-    hd.setChoice(500);
+    hd.setChoice(480);
     dbstatus = hd.runTests();
 
     if (dbstatus != true) {

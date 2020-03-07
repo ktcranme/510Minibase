@@ -13,32 +13,73 @@ import global.*;
 //I BELIEVE it means we create the header as in heap.Tuple.setHdr we know that it is String,String,Int,String for Row,Column,Timestamp,Value
 //as for other things, I'm not sure yet
 
-public class Map implements GlobalConst{
+public class PhysicalMap implements GlobalConst{
 	//public static final int max_size = MINIBASE_PAGESIZE; //Maximum size of any map		NOTE: I assume this will be the same
-	public static final int map_size = MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE;		//NOTE: this could change if the map_offset is actually not always 0
-	protected byte [] data; //a byte array to hold data
+	public static final int map_size = MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE;		//NOTE: this could change if the map_offset is actually not always 0
+	private byte [] data; //a byte array to hold data
 	private int map_offset; //start position of this tuple in data[]		NOTE: I don't understand what this is. Wouldn't the tuple be at the start of the byte array everytime???
 	private int map_length; //length of this tuple
-	private short fldCnt = 4; //Number of fields in this tuple		NOTE: I believe this will always be 4
+	private short fldCnt = 8; //Number of fields in this tuple		NOTE: I believe this will always be 4
 	private short [] fldOffset; //Array of offsets of the fields
 
-	protected int version = 0;
-	protected boolean hasNext = false;
+    public static final short[] PhysicalMapOffsets = {
+        0,
+        (short) (MAXROWLABELSIZE), 
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE + 4),
+        (short) (MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE),
+    };
 	
 	private short[] getFldOffsetArray()
 	{
-		return new short[] {(short) map_offset, (short) (map_offset + MAXROWLABELSIZE), 
-				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE),
-				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4),
-				(short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE),
-				};
+		return new short[] {
+            (short) map_offset,
+            (short) (map_offset + MAXROWLABELSIZE), 
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE + 4),
+            (short) (map_offset + MAXROWLABELSIZE + MAXCOLUMNLABELSIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE + 4 + MAXVALUESIZE),
+        };
+	}
+	
+	public String getFirstVer() throws IOException {
+	  String val;
+	  val = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
+	  return val;
+	}
+	
+	public String getSecondVer() throws IOException {
+	  String val;
+	  val = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
+	  return val;
+	}
+
+	public String getThirdVer() throws IOException {
+	  String val;
+	  val = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
+	  return val;
+	}
+	
+	public boolean updateMap(int timestamp, String value) throws IOException  {
+        System.arraycopy(data, fldOffset[2], data, fldOffset[4], (4 + MAXVALUESIZE) * 2);
+        Convert.setIntValue(timestamp, fldOffset[2], data);
+        Convert.setStrValue(value, fldOffset[3], data);
+
+        return true;
 	}
 	
 	/*
 	* Class constructor
-	* Create a new Map with length = map_size, map_offset = 0.
+	* Create a new PhysicalMap with length = map_size, map_offset = 0.
 	*/
-	public  Map()
+	public  PhysicalMap()
 	{
 		// Create a new map
 		data = new byte[map_size];
@@ -49,28 +90,14 @@ public class Map implements GlobalConst{
 	
 	/*
 	* Class constructor
-	* Create a new Map with length = map_size, map_offset = 0.
+	* Create a new PhysicalMap with length = map_size, map_offset = 0.
 	*/
-	// public Map(byte[] amap, int offset)
-	// {
-	// 	data = amap;
-	// 	map_offset = offset;
-	// 	map_length = map_size; 
-	// 	fldOffset = getFldOffsetArray();
-	// }
-
-	/*
-	* Class constructor
-	* Create a new Map with length = map_size, map_offset = 0.
-	*/
-	public Map(byte[] amap, int offset, int version, boolean hasNext)
+	public PhysicalMap(byte[] amap, int offset)
 	{
 		data = amap;
 		map_offset = offset;
 		map_length = map_size; 
 		fldOffset = getFldOffsetArray();
-		this.version = version;
-		this.hasNext = hasNext;
 	}
 	
 	/* Construct a map from another map through copy.
@@ -78,13 +105,12 @@ public class Map implements GlobalConst{
 	* you must make sure the map lengths must be equal
 	* @param fromMap the map being copied
 	*/
-	public Map(Map fromMap)
+	public PhysicalMap(PhysicalMap fromMap)
 	{
 		byte [] temparray = fromMap.getMapByteArray();
 		data = new byte[map_size];	//NOTE: was getting a NULLPointer exception without this line. but Tuple.java doesn't use it...
 		System.arraycopy(temparray, 0, data, map_offset, map_size);   
 		fldOffset = getFldOffsetArray();
-		this.version = fromMap.version;
 	}
 	
 	/*
@@ -157,7 +183,7 @@ public class Map implements GlobalConst{
 	* @param     val     the string value to set row Label to
 	* @exception   IOException I/O errors
 	*/
-	public Map setRowLabel(String val) throws IOException
+	public PhysicalMap setRowLabel(String val) throws IOException
 	{
 		Convert.setStrValue (val, fldOffset[0], data);
 		return this;
@@ -169,7 +195,7 @@ public class Map implements GlobalConst{
 	* @param     val     the string value to set column Label to
 	* @exception   IOException I/O errors
 	*/
-	public Map setColumnLabel(String val) throws IOException
+	public PhysicalMap setColumnLabel(String val) throws IOException
 	{
 		Convert.setStrValue (val, fldOffset[1], data);
 		return this;
@@ -181,7 +207,7 @@ public class Map implements GlobalConst{
 	* @param     val     the int value to set the timestamp to
 	* @exception   IOException I/O errors
 	*/
-	public Map setTimeStamp(int val) throws IOException
+	public PhysicalMap setTimeStamp(int val) throws IOException
 	{
 		Convert.setIntValue (val, fldOffset[2], data);
 		return this;
@@ -193,7 +219,7 @@ public class Map implements GlobalConst{
 	* @param     val     the string value to set value to
 	* @exception   IOException I/O errors
 	*/
-	public Map setValue(String val) throws IOException
+	public PhysicalMap setValue(String val) throws IOException
 	{
 		
 		Convert.setStrValue (val, fldOffset[3], data);
@@ -209,7 +235,28 @@ public class Map implements GlobalConst{
 		byte [] mapcopy = new byte [map_size];
 		System.arraycopy(data, map_offset, mapcopy, 0, map_size);
 		return mapcopy;
-	}
+    }
+
+	public static byte [] getMapByteArray(Map m) 
+	{
+		byte [] mapcopy = new byte [map_size];
+        System.arraycopy(m.data, 0, mapcopy, 0, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE);
+        System.arraycopy(m.data, PhysicalMapOffsets[2], mapcopy, PhysicalMapOffsets[m.version * 2 + 2], 4 + MAXVALUESIZE);
+		return mapcopy;
+    }
+
+    public static Map physicalMapToMap(byte[] record, int version) throws IOException {
+        byte[] mapcopy = new byte [Map.map_size];
+        System.arraycopy(record, 0, mapcopy, 0, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE);
+        System.arraycopy(record, PhysicalMapOffsets[version * 2 + 2], mapcopy, PhysicalMapOffsets[2], 4 + MAXVALUESIZE);
+
+        String val = "";
+        if (version < 3) {
+            int nextVer = version * 2 + 3 + 1;
+            val = Convert.getStrValue(PhysicalMapOffsets[nextVer], record, PhysicalMapOffsets[nextVer + 1] - PhysicalMapOffsets[nextVer]);
+        }
+        return new Map(mapcopy, 0, version, !val.isEmpty());
+    }
 	
 	/* Print out the map into console in the following format:
 	 * (rowLabel, columnLabel, timeStamp) -> value
@@ -274,7 +321,7 @@ public class Map implements GlobalConst{
 	*  you must make sure the map lengths must be equal
 	* @param fromMap the tuple being copied
 	*/
-	public void mapCopy(Map fromMap)
+	public void mapCopy(PhysicalMap fromMap)
 	{
 		byte [] temparray = fromMap.getMapByteArray();
 		System.arraycopy(temparray, 0, data, map_offset, map_size);

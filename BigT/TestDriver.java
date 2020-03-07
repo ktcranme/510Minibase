@@ -40,7 +40,7 @@ public class TestDriver {
 		//I believe offset should be 0
 		System.out.println("Creating a map from the map above using\n"
 				+ "bytearray and modifying the column label");
-		Map m2 = new Map(m.getMapByteArray(), 0);
+		Map m2 = new Map(m.getMapByteArray(), 0, 0, false);
 		try {
 			m2.setColumnLabel("Giraffe");
 			m2.print();

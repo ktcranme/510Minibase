@@ -60,6 +60,8 @@ public class Stream implements GlobalConst {
   /** Status of next user status */
   private boolean nextUserStatus;
 
+  private int currentMapVersion = 0;
+
   /**
    * The constructor pins the first directory page in the file and initializes its
    * private data members from the private data member from hf
@@ -99,13 +101,17 @@ public class Stream implements GlobalConst {
     rid.slotNo = userrid.slotNo;
 
     try {
-      recptrtuple = datapage.getMap(rid);
+      recptrtuple = datapage.getMap(rid, currentMapVersion);
+      currentMapVersion = recptrtuple.hasNext ? (currentMapVersion + 1) % 3 : 0;
     }
 
     catch (Exception e) {
       // System.err.println("SCAN: Error in Stream" + e);
       e.printStackTrace();
     }
+
+    if (currentMapVersion != 0)
+      return recptrtuple;
 
     userrid = datapage.nextMap(rid);
     if (userrid == null)
@@ -440,6 +446,7 @@ public class Stream implements GlobalConst {
                   if (!loadNextDirectoryPage()) {
                     return false;
                   }
+                  datapageRid = dirpage.firstRecord();
                   nextDataPageStatus = true;
                 } catch (Exception e) {
                   System.err.println(e);
