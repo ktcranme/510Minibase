@@ -253,7 +253,7 @@ public class PhysicalMap implements GlobalConst{
         System.arraycopy(record, PhysicalMapOffsets[version * 2 + 2], mapcopy, PhysicalMapOffsets[2], 4 + MAXVALUESIZE);
 
         String val = "";
-        if (version < 3) {
+        if (version < 2) {
             int nextVer = (version + 1) * 2 + 3;
             val = Convert.getStrValue(PhysicalMapOffsets[nextVer], record, PhysicalMapOffsets[nextVer + 1] - PhysicalMapOffsets[nextVer]);
         }
