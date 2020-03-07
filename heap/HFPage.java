@@ -702,7 +702,7 @@ public class HFPage extends Page
      
       
     }
-  
+
   /**
    * copies out map with MID mid into map pointer.
    * <br>
@@ -712,7 +712,48 @@ public class HFPage extends Page
    * @exception  	IOException I/O errors
    * @see 	Map
    */
-  public Map getMap ( MID mid ) 
+  public Map getMap ( MID mid, int version ) 
+    throws IOException,  
+	   InvalidSlotNumberException
+    {
+      short mapLen;
+      short offset;
+      byte []map;
+      PageId pageNo = new PageId();
+      pageNo.pid= mid.pageNo.pid;
+      curPage.pid = Convert.getIntValue (CUR_PAGE, data);
+      int slotNo = mid.slotNo;
+      
+      // length of record being returned
+      mapLen = getSlotLength (slotNo);
+      slotCnt = Convert.getShortValue (SLOT_CNT, data);
+      if (( slotNo >=0) && (slotNo < slotCnt) && (mapLen >0) 
+	  && (pageNo.pid == curPage.pid))
+	{
+	  offset = getSlotOffset (slotNo);
+    map = new byte[mapLen];
+	  System.arraycopy(data, offset, map, 0, mapLen);
+	  Map amap = PhysicalMap.physicalMapToMap(map, version);
+	  return amap;
+	}
+      
+      else {
+        throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
+      }
+     
+      
+    }
+
+  /**
+   * copies out map with MID mid into map pointer.
+   * <br>
+   * @param	mid 	the map ID
+   * @return 	a map contains the map record
+   * @exception   InvalidSlotNumberException Invalid slot number
+   * @exception  	IOException I/O errors
+   * @see 	Map
+   */
+  public PhysicalMap getMap ( MID mid ) 
     throws IOException,  
 	   InvalidSlotNumberException
     {
@@ -733,7 +774,7 @@ public class HFPage extends Page
 	  offset = getSlotOffset (slotNo);
 	  map = new byte[mapLen];
 	  System.arraycopy(data, offset, map, 0, mapLen);
-	  Map amap = new Map(map, 0);
+	  PhysicalMap amap = new PhysicalMap(map, 0);
 	  return amap;
 	}
       
@@ -795,7 +836,7 @@ public class HFPage extends Page
    * @exception   IOException I/O errors
    * @see 	Map
    */  
-  public Map returnMap ( MID mid )
+  public PhysicalMap returnMap ( MID mid )
     throws IOException, 
 	   InvalidSlotNumberException
     {
@@ -816,7 +857,7 @@ public class HFPage extends Page
 	{
 	  
 	  offset = getSlotOffset (slotNo);
-	  Map map = new Map(data, offset);
+	  PhysicalMap map = new PhysicalMap(data, offset);
 	  return map;
 	}
       
@@ -825,7 +866,6 @@ public class HFPage extends Page
 		      }
 		      
 	}
-  
   
   /**
    * returns the amount of available space on the page.
