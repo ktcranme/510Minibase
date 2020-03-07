@@ -413,6 +413,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             }
             done = true;
           } else {
+            //System.out.println(m2.getColumnLabel() + ", " + m2.getRowLabel() + ", " + m2.getTimeStamp() + ", " + m2.getValue());
             rec_cnt++;
           }
         }
@@ -507,6 +508,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             rec_cnt = 0;
             done = true;
           } else {
+            //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
             rec_cnt++;
           }
         }
@@ -587,7 +589,8 @@ class StreamDriver extends TestDriver implements GlobalConst
         try {
           m = stream.getNext(rid);
           if (m == null) {
-            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
+            // Because we created two versions of the map now
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 2) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -596,6 +599,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             done = true;
             break;
           } else {
+            //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
             rec_cnt++;
           }
         }
@@ -607,7 +611,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         if (!done && status == OK) {
           // While we're at it, test the getRecord method too.
           try {
-            m2 = f.getMap( rid );
+            m2 = f.getMap( rid, m.getVersionNo() );
           }
           catch (Exception e) {
             status = FAIL;
@@ -617,24 +621,42 @@ class StreamDriver extends TestDriver implements GlobalConst
           }
 
 
-          try {
-            if( !m.getValue().equals(Integer.toString(i * 10)) || !m2.getValue().equals(Integer.toString(i * 10))) {
-              System.err.println ("*** Record " + i
-                  + " differs from our update\n");
-              System.err.println ("m.value: "+ m.getValue()
-                  + " should be " + Integer.toString(i * 10) + "\n");
-              System.err.println ("m2.value: "+ m2.getValue()
-                  + " should be " + Integer.toString(i * 10) + "\n");
-              status = FAIL;
-              break;
+          if (m.getVersionNo() == 1) {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 1)) || !m2.getValue().equals(Integer.toString(i * 1))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 1) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 1) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
             }
-          } catch (Exception e) {
-              status = FAIL;
-              break;
+            i += 2;     // Because we deleted the odd ones...
+          } else {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 10)) || !m2.getValue().equals(Integer.toString(i * 10))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 10) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 10) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
+            }
           }
 
         }
-        i += 2;     // Because we deleted the odd ones...
       }
     }
 
