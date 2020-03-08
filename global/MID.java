@@ -16,8 +16,6 @@ public class MID{
   /** public PageId pageNo
    */
   public PageId pageNo = new PageId();
-
-  public short version;
   
   /**
    * default constructor of class
@@ -27,11 +25,10 @@ public class MID{
   /**
    *  constructor of class
    */
-  public MID (PageId pageno, int slotno, short version)
+  public MID (PageId pageno, int slotno)
     {
       pageNo = pageno;
       slotNo = slotno;
-      this.version = version;
     }
   
   /**
@@ -41,7 +38,6 @@ public class MID{
     {
       pageNo = mid.pageNo;
       slotNo = mid.slotNo;
-      this.version = mid.version;
     }
   
   /** Write the mid into a byte array at offset
@@ -54,7 +50,6 @@ public class MID{
     {
       Convert.setIntValue ( slotNo, offset, ary);
       Convert.setIntValue ( pageNo.pid, offset+4, ary);
-      Convert.setShortValue(version, offset+8, ary);
     }
   
   
@@ -66,7 +61,7 @@ public class MID{
   public boolean equals(MID mid) {
     
     if ((this.pageNo.pid==mid.pageNo.pid)
-	&&(this.slotNo==mid.slotNo) && (this.version == mid.version))
+	&&(this.slotNo==mid.slotNo))
       return true;
     else
       return false;
