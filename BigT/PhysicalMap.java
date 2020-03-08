@@ -68,9 +68,36 @@ public class PhysicalMap implements GlobalConst{
 	}
 	
 	public boolean updateMap(int timestamp, String value) throws IOException  {
-        System.arraycopy(data, fldOffset[2], data, fldOffset[4], (4 + MAXVALUESIZE) * 2);
-        Convert.setIntValue(timestamp, fldOffset[2], data);
-        Convert.setStrValue(value, fldOffset[3], data);
+		int firstTs = Convert.getIntValue(fldOffset[2], data);
+		int secondTs = Convert.getIntValue(fldOffset[4], data);
+		int thirdTs = Convert.getIntValue(fldOffset[6], data);
+
+		/*
+		String fv = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
+		String sv = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
+		String tv = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
+		System.out.println(firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv );
+		*/
+
+		// Largest timestamp must be first
+		if (timestamp >= firstTs) {
+			System.arraycopy(data, fldOffset[2], data, fldOffset[4], (4 + MAXVALUESIZE) * 2);
+			Convert.setIntValue(timestamp, fldOffset[2], data);
+			Convert.setStrValue(value, fldOffset[3], data);
+	
+			return true;
+		} else if (timestamp >= secondTs) {
+			System.arraycopy(data, fldOffset[4], data, fldOffset[6], (4 + MAXVALUESIZE));
+			Convert.setIntValue(timestamp, fldOffset[4], data);
+			Convert.setStrValue(value, fldOffset[5], data);
+
+			return true;
+		} else if (timestamp >= thirdTs) {
+			Convert.setIntValue(timestamp, fldOffset[6], data);
+			Convert.setStrValue(value, fldOffset[7], data);
+
+			return true;
+		}
 
         return true;
 	}
@@ -246,7 +273,7 @@ public class PhysicalMap implements GlobalConst{
     }
 
     public static Map physicalMapToMap(byte[] record, int version) throws IOException {
-        PhysicalMap map = new PhysicalMap(record, 0);
+        // PhysicalMap map = new PhysicalMap(record, 0);
 
         byte[] mapcopy = new byte [Map.map_size];
         System.arraycopy(record, 0, mapcopy, 0, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE);
@@ -256,7 +283,10 @@ public class PhysicalMap implements GlobalConst{
         if (version < 2) {
             int nextVer = (version + 1) * 2 + 3;
             val = Convert.getStrValue(PhysicalMapOffsets[nextVer], record, PhysicalMapOffsets[nextVer + 1] - PhysicalMapOffsets[nextVer]);
-        }
+		}
+		
+		// System.out.println("ACTUAL RECORD: " + map.getRowLabel() + ", " + map.getColumnLabel() + ", " + map.getFirstVer() + ", " + map.getSecondVer() + ", " + map.getThirdVer());
+
         return new Map(mapcopy, 0, version, !val.isEmpty());
     }
 	
