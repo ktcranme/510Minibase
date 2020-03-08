@@ -614,7 +614,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         if (!done && status == OK) {
           // While we're at it, test the getRecord method too.
           try {
-            m2 = f.getMap( rid, m.getVersionNo() );
+            m2 = f.getMap( rid );
           }
           catch (Exception e) {
             status = FAIL;

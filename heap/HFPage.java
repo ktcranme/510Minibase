@@ -712,7 +712,7 @@ public class HFPage extends Page
    * @exception  	IOException I/O errors
    * @see 	Map
    */
-  public Map getMap ( MID mid, int version ) 
+  public Map getMap ( MID mid ) 
     throws IOException,  
 	   InvalidSlotNumberException
     {
