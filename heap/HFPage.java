@@ -392,7 +392,7 @@ public class HFPage extends Page
 	System.arraycopy (map, 0, data, usedPtr, mapLen);
 	curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 	mid.pageNo.pid = curPage.pid;
-  mid.slotNo = i;
+  mid.slotNo = i * 3;
   mid.version = 0;
 	return   mid ;
       }
@@ -542,7 +542,7 @@ public class HFPage extends Page
     {
 	  RID rid = new RID();
 	  rid.pageNo = mid.pageNo;
-	  rid.slotNo = mid.slotNo;
+	  rid.slotNo = mid.slotNo / 3;
 	  deleteRecord(rid);
 	  return;
     }
@@ -724,7 +724,8 @@ public class HFPage extends Page
       PageId pageNo = new PageId();
       pageNo.pid= mid.pageNo.pid;
       curPage.pid = Convert.getIntValue (CUR_PAGE, data);
-      int slotNo = mid.slotNo;
+      int slotNo = mid.slotNo / 3;
+      System.out.println("GET: VSLOT: " + mid.slotNo + ", PSLOT: " + mid.slotNo / 3 + ", VERSION: " + mid.slotNo % 3);
       
       // length of record being returned
       mapLen = getSlotLength (slotNo);
@@ -735,7 +736,7 @@ public class HFPage extends Page
 	  offset = getSlotOffset (slotNo);
     map = new byte[mapLen];
 	  System.arraycopy(data, offset, map, 0, mapLen);
-	  Map amap = PhysicalMap.physicalMapToMap(map, mid.version);
+	  Map amap = PhysicalMap.physicalMapToMap(map, mid.slotNo % 3);
 	  return amap;
 	}
       
@@ -745,48 +746,6 @@ public class HFPage extends Page
      
       
     }
-
-  /**
-   * copies out map with MID mid into map pointer.
-   * <br>
-   * @param	mid 	the map ID
-   * @return 	a map contains the map record
-   * @exception   InvalidSlotNumberException Invalid slot number
-   * @exception  	IOException I/O errors
-   * @see 	Map
-   */
-  public PhysicalMap getMap ( MID mid ) 
-    throws IOException,  
-	   InvalidSlotNumberException
-    {
-      short mapLen;
-      short offset;
-      byte []map;
-      PageId pageNo = new PageId();
-      pageNo.pid= mid.pageNo.pid;
-      curPage.pid = Convert.getIntValue (CUR_PAGE, data);
-      int slotNo = mid.slotNo;
-      
-      // length of record being returned
-      mapLen = getSlotLength (slotNo);
-      slotCnt = Convert.getShortValue (SLOT_CNT, data);
-      if (( slotNo >=0) && (slotNo < slotCnt) && (mapLen >0) 
-	  && (pageNo.pid == curPage.pid))
-	{
-	  offset = getSlotOffset (slotNo);
-	  map = new byte[mapLen];
-	  System.arraycopy(data, offset, map, 0, mapLen);
-	  PhysicalMap amap = new PhysicalMap(map, 0);
-	  return amap;
-	}
-      
-      else {
-        throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
-      }
-     
-      
-    }
-  
   
   /**
    * returns a tuple in a byte array[pageSize] with given RID rid.
@@ -848,7 +807,7 @@ public class HFPage extends Page
       pageNo.pid = mid.pageNo.pid;
       
       curPage.pid = Convert.getIntValue (CUR_PAGE, data);
-      int slotNo = mid.slotNo;
+      int slotNo = mid.slotNo / 3;
       
       // length of record being returned
       mapLen = getSlotLength (slotNo);
