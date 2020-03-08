@@ -112,7 +112,6 @@ public class Stream implements GlobalConst {
     if (datapage == null)
       return null;
 
-    System.out.println("NEXT USERRID SLOT: " + userrid.slotNo);
     rid.pageNo.pid = userrid.pageNo.pid;
     rid.slotNo = userrid.slotNo * 3 + currentMapVersion;
 
