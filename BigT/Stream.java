@@ -4,6 +4,18 @@ package BigT;
 /**
  * Stream.java-  class Stream
  *
+ * Here is how you interact with maps:
+ * getNext() -> stream through the file, record by record, not caring about
+ *              the MIDs
+ * insertRecord() -> Insert a completely new record. If the row/column
+ *              combination is already there, I dont care. You need to take
+ *              care of it.
+ * updateRecord() -> You have to provide an MID and we will update the record
+ *              to reflect the latest timestamp and maintain 3 versions.
+ * deleteRecord() -> Deletes the entire row/column combination.
+ * getMap() -> You have to provide an MID with a version to see, or you
+ *              default to the latest version.
+ * 
  */
 
 import java.io.*;
