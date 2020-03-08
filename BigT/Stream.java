@@ -99,6 +99,7 @@ public class Stream implements GlobalConst {
 
     rid.pageNo.pid = userrid.pageNo.pid;
     rid.slotNo = userrid.slotNo;
+    rid.version = (short) currentMapVersion;
 
     try {
       recptrtuple = datapage.getMap(rid, currentMapVersion);

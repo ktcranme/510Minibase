@@ -392,7 +392,8 @@ public class HFPage extends Page
 	System.arraycopy (map, 0, data, usedPtr, mapLen);
 	curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 	mid.pageNo.pid = curPage.pid;
-	mid.slotNo = i;
+  mid.slotNo = i;
+  mid.version = 0;
 	return   mid ;
       }
     } 
@@ -599,7 +600,8 @@ public class HFPage extends Page
 	  if(rid==null)
 		  return null;
 	  mid.pageNo = rid.pageNo;
-	  mid.slotNo = rid.slotNo;
+    mid.slotNo = rid.slotNo;
+    mid.version = 0;
 	  return mid;
   }
   
@@ -733,7 +735,7 @@ public class HFPage extends Page
 	  offset = getSlotOffset (slotNo);
     map = new byte[mapLen];
 	  System.arraycopy(data, offset, map, 0, mapLen);
-	  Map amap = PhysicalMap.physicalMapToMap(map, version);
+	  Map amap = PhysicalMap.physicalMapToMap(map, mid.version);
 	  return amap;
 	}
       
