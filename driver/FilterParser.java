@@ -16,6 +16,9 @@ public class FilterParser {
     public static final String ATTRIBUTE_SEPARATOR = "##";
     public static final String CONDITION_SEPARATOR = "~";
 
+    // accepts input as row conditions##columnn conditions##value conditions, for select all use *.
+    // each condition requires input as symbol(<,>,<=,>=,=,!=) followed by value. For multiple conditions split them with "~".
+    // eg. *##<S~>=B##=abc : Select all for rows, Column<S and Column>=B, Value = abc.
     public static CondExpr[] parse(String filterString) {
         String fieldFilters[] = filterString.split(ATTRIBUTE_SEPARATOR);
         List<List<CondExpr>> allFilters = new ArrayList<>();
