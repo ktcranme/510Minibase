@@ -1,8 +1,10 @@
 package tests;
+
 import java.io.*;
 import java.util.*;
 import java.lang.*;
 import chainexception.*;
+import global.SystemDefs;
 
 //    Major Changes:
 //    1. Change the return type of test() functions from 'int' to 'boolean'
@@ -68,7 +70,7 @@ public class TestDriver {
    * @return whether the test has completely successfully 
  * @throws IOException 
    */
-  protected boolean test1 () throws IOException { return true; }
+  protected boolean test1 () { return true; }
   
   /** 
    * @return whether the test has completely successfully 
@@ -105,17 +107,11 @@ public class TestDriver {
 
   }
 
-  /**
-   * This function does the preparation/cleaning work for the
-   * running tests.
-   *
-   * @return a boolean value indicates whether ALL the tests have passed
- * @throws IOException 
-   */
-  public boolean runTests () throws IOException  {
-    
-    System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-    
+  public void setup() {
+      SystemDefs sysdef = new SystemDefs(dbpath, 100, 100, "Clock");
+  }
+
+  public void cleanUp() {
     // Kill anything that might be hanging around
     String newdbpath;
     String newlogpath;
@@ -129,26 +125,50 @@ public class TestDriver {
     remove_logcmd = remove_cmd + logpath;
     remove_dbcmd = remove_cmd + dbpath;
 
-    // Commands here is very machine dependent.  We assume
+    // Commands here is very machine dependent. We assume
     // user are on UNIX system here
-    
+    try {
+      Runtime.getRuntime().exec(remove_logcmd);
+      Runtime.getRuntime().exec(remove_dbcmd);
+    } catch (IOException e) {
+      System.err.println("IO error: " + e);
+    }
+
     remove_logcmd = remove_cmd + newlogpath;
     remove_dbcmd = remove_cmd + newdbpath;
 
-    //This step seems redundant for me.  But it's in the original
-    //C++ code.  So I am keeping it as of now, just in case I
-    //I missed something
-    
-    //Run the tests. Return type different from C++
-    boolean _pass = runAllTests();
+    try {
+      Runtime.getRuntime().exec(remove_logcmd);
+      Runtime.getRuntime().exec(remove_dbcmd);
+    } catch (IOException e) {
+      System.err.println("IO error: " + e);
+    }
+  }
 
-    //Clean up again
-    
-    System.out.println ("\n" + "..." + testName() + " tests ");
-    System.out.print (_pass==OK ? "completely successfully" : "failed");
-    System.out.println (".\n\n");
-    
-    return _pass;
+  /**
+   * This function does the preparation/cleaning work for the
+   * running tests.
+   *
+   * @return a boolean value indicates whether ALL the tests have passed
+ * @throws IOException 
+   */
+  public boolean runTests() throws IOException {
+      cleanUp();
+      setup();
+
+      System.out.println("\n" + "Running " + testName() + " tests...." + "\n");
+
+      // Run the tests. Return type different from C++
+      boolean _pass = runAllTests();
+
+      // Clean up again
+      cleanUp();
+
+      System.out.print("\n" + "..." + testName() + " tests ");
+      System.out.print(_pass == OK ? "completely successfully" : "failed");
+      System.out.print(".\n\n");
+
+      return _pass;
   }
 
   protected boolean runAllTests() throws IOException {
