@@ -115,7 +115,6 @@ public class Stream implements GlobalConst {
     System.out.println("NEXT USERRID SLOT: " + userrid.slotNo);
     rid.pageNo.pid = userrid.pageNo.pid;
     rid.slotNo = userrid.slotNo * 3 + currentMapVersion;
-    rid.version = (short) currentMapVersion;
 
     try {
       recptrtuple = datapage.getMap(rid, currentMapVersion);

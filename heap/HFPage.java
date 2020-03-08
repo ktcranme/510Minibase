@@ -393,7 +393,6 @@ public class HFPage extends Page
 	curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 	mid.pageNo.pid = curPage.pid;
   mid.slotNo = i * 3;
-  mid.version = 0;
 	return   mid ;
       }
     } 
@@ -601,7 +600,6 @@ public class HFPage extends Page
 		  return null;
 	  mid.pageNo = rid.pageNo;
     mid.slotNo = rid.slotNo;
-    mid.version = 0;
 	  return mid;
   }
   
