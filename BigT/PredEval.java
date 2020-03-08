@@ -18,17 +18,10 @@ public class PredEval {
     public static boolean Eval(CondExpr conditions[], Map map)
     throws IOException,
     UnknowAttrType,
-    InvalidTupleSizeException,
     InvalidTypeException,
     FieldNumberOutOfBoundException,
     PredEvalException {
-        CondExpr temp_ptr;
-        int i = 0;
-		Tuple tuple1 = null, tuple2 = null;
-        int fld1, fld2;
-        Tuple value = new Tuple();
-        short[] str_size = new short[1];
-        AttrType[] val_type = new AttrType[1];
+		CondExpr temp_ptr;
 
         AttrType comparison_type = new AttrType(AttrType.attrInteger);
         int comp_res;
@@ -118,15 +111,12 @@ public class PredEval {
 				switch (comparison_type.attrType) {
 					case AttrType.attrInteger:
 						comp_res = compare((Integer) a, (Integer) b);
-						System.out.println("Comparing " + (Integer) a + " and " + (Integer) b + " : " + comp_res);
 						break;
 					case AttrType.attrReal:
 						comp_res = compare((Double) a, (Double) b);
-						System.out.println("Comparing " + (Double) a + " and " + (Double) b + " : " + comp_res);
 						break;
 					case AttrType.attrString:
 						comp_res = compare((String) a, (String) b);
-						System.out.println("Comparing " + (String) a + " and " + (String) b + " : " + comp_res);
 						break;
 					default:
 						throw new InvalidTypeException();
@@ -135,31 +125,24 @@ public class PredEval {
                 switch (temp_ptr.op.attrOperator) {
                     case AttrOperator.aopEQ:
 						if (comp_res == 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopLT:
                         if (comp_res < 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopGT:
                         if (comp_res > 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopNE:
                         if (comp_res != 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopLE:
                         if (comp_res <= 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopGE:
                         if (comp_res >= 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     case AttrOperator.aopNOT:
                         if (comp_res != 0) op_res = true;
-						else System.out.println("Failed OPERATOR check!");
                         break;
                     default:
                         throw new PredEvalException("Invalid Operation!");
@@ -167,7 +150,6 @@ public class PredEval {
 
                 row_res = row_res || op_res;
                 if (row_res == true) {
-					System.out.println("OR check success!");
                     break; // OR predicates satisfied.
 				}
 				temp_ptr = temp_ptr.next;
@@ -175,11 +157,9 @@ public class PredEval {
 
 			col_res = col_res && row_res;
             if (col_res == false) {
-				System.out.println("Failed check!");
 				return false;
 			}
 
-			System.out.println("Starting next row");
             row_res = false; // Starting next row.
         }
 

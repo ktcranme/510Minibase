@@ -1,21 +1,12 @@
 package tests;
 
 import java.io.*;
-import java.util.*;
 
 import BigT.Map;
-import BigT.PredEval;
 import BigT.Stream;
 
-import java.lang.*;
 import heap.*;
-import iterator.CondExpr;
-import iterator.FldSpec;
-import iterator.RelSpec;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
-import chainexception.*;
 
 /** Note that in JAVA, methods can't be overridden to be more private.
   Therefore, the declaration of all private functions are now declared
@@ -689,63 +680,6 @@ class StreamDriver extends TestDriver implements GlobalConst
 
   }
 
-  protected boolean test4() {
-
-    CondExpr[] expr2 = new CondExpr[3];
-    expr2[0] = new CondExpr();
-
-    expr2[0].next = null;
-    expr2[0].op = new AttrOperator(AttrOperator.aopEQ);
-    expr2[0].type1 = new AttrType(AttrType.attrSymbol);
-
-    expr2[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
-    expr2[0].type2 = new AttrType(AttrType.attrString);
-
-    expr2[0].operand2.string = "row0";
-
-    expr2[1] = new CondExpr();
-    expr2[1].op = new AttrOperator(AttrOperator.aopGT);
-    expr2[1].next = null;
-    expr2[1].type1 = new AttrType(AttrType.attrSymbol);
-
-    expr2[1].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 3);
-    expr2[1].type2 = new AttrType(AttrType.attrInteger);
-    expr2[1].operand2.integer = 40;
-
-    expr2[1].next = new CondExpr();
-    expr2[1].next.op = new AttrOperator(AttrOperator.aopLT);
-    expr2[1].next.next = null;
-    expr2[1].next.type1 = new AttrType(AttrType.attrSymbol); // rating
-    expr2[1].next.operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 3);
-    expr2[1].next.type2 = new AttrType(AttrType.attrInteger);
-    expr2[1].next.operand2.integer = 70;
-
-    expr2[2] = null;
-
-    Map m = new Map();
-
-    try {
-      m.setRowLabel("row0");
-      m.setColumnLabel("col0");
-      m.setTimeStamp(39);
-      m.setValue("41 time");
-    } catch (Exception e) {
-      System.err.println("Unable to create map!");
-      return false;
-    }
-
-    boolean res = false;
-    try {
-      res = PredEval.Eval(expr2, m);
-    } catch (Exception e) {
-      System.err.println("Unable to evaluate map!: " + e.getMessage());
-      e.printStackTrace();
-      return false;
-    }
-
-    System.out.println("Evaluation Result: " + res);
-    return true;
-  }
 
   protected boolean runAllTests (){
 
@@ -754,7 +688,6 @@ class StreamDriver extends TestDriver implements GlobalConst
     if (!test1()) { _passAll = FAIL; }
     if (!test2()) { _passAll = FAIL; }
     if (!test3()) { _passAll = FAIL; }
-    if (!test4()) { _passAll = FAIL; }
     /*
      * These tests are not necessary since Map is fixed size
     if (!test4()) { _passAll = FAIL; }

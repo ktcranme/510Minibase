@@ -99,8 +99,9 @@ public class Stream implements GlobalConst {
    *
    * @param rid Record ID of the record
    * @return the Map of the retrieved record.
+   * @throws InvalidTupleSizeException
    */
-  public Map getNext(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
+  public Map getNext(MID rid) throws InvalidMapSizeException, IOException, InvalidTupleSizeException {
     Map recptrtuple = null;
 
     if (nextUserStatus != true) {
@@ -353,16 +354,13 @@ public class Stream implements GlobalConst {
              }
 
 
-  /** Move to the next data page in the file and 
-   * retrieve the next data page. 
+  /**
+   * Move to the next data page in the file and retrieve the next data page.
    *
-   * @return 		true if successful
-   *			false if unsuccessful
+   * @return true if successful false if unsuccessful
+   * @throws InvalidTupleSizeException
    */
-  private boolean nextDataPage() 
-      throws InvalidMapSizeException,
-                      InvalidTupleSizeException,
-                      IOException
+  private boolean nextDataPage() throws InvalidMapSizeException, IOException, InvalidTupleSizeException
              {
                DataPageInfo dpinfo;
 
