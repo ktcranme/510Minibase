@@ -112,8 +112,9 @@ public class Stream implements GlobalConst {
     if (datapage == null)
       return null;
 
+    System.out.println("NEXT USERRID SLOT: " + userrid.slotNo);
     rid.pageNo.pid = userrid.pageNo.pid;
-    rid.slotNo = userrid.slotNo;
+    rid.slotNo = userrid.slotNo * 3 + currentMapVersion;
     rid.version = (short) currentMapVersion;
 
     try {
@@ -129,7 +130,7 @@ public class Stream implements GlobalConst {
     if (currentMapVersion != 0)
       return recptrtuple;
 
-    userrid = datapage.nextMap(rid);
+    userrid = datapage.nextMap(userrid);
     if (userrid == null)
       nextUserStatus = false;
     else

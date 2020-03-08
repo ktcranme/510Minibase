@@ -1048,7 +1048,7 @@ public MID insertMap(Map map) throws InvalidSlotNumberException, InvalidTupleSiz
      // convert mid to rid, for proper working of _findDataPage
      RID paramRid = new RID();
      paramRid.pageNo = mid.pageNo;
-     paramRid.slotNo = mid.slotNo;
+     paramRid.slotNo = mid.slotNo / 3;
      
      status = _findDataPage(paramRid,
 			     currentDirPageId, currentDirPage, 
@@ -1262,7 +1262,7 @@ public MID insertMap(Map map) throws InvalidSlotNumberException, InvalidTupleSiz
       // convert mid to rid, for proper working of _findDatapage()
       RID paramrid = new RID();
       paramrid.pageNo = mid.pageNo;
-      paramrid.slotNo = mid.slotNo;
+      paramrid.slotNo = mid.slotNo / 3;
       
       status = _findDataPage(paramrid,
 			     currentDirPageId, dirPage, 
@@ -1391,7 +1391,7 @@ public Map getMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeEx
    // convert mid to rid, for proper working of _findDatapage()
       RID paramrid = new RID();
       paramrid.pageNo = mid.pageNo;
-      paramrid.slotNo = mid.slotNo;
+      paramrid.slotNo = mid.slotNo / 3;
       
       status = _findDataPage(paramrid,
 			     currentDirPageId, dirPage, 
