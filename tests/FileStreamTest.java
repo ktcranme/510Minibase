@@ -25,63 +25,6 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
         return "File Stream";
     }
 
-    public boolean runTests() {
-
-        System.out.println("\n" + "Running " + testName() + " tests...." + "\n");
-
-        SystemDefs sysdef = new SystemDefs(dbpath, 100, 100, "Clock");
-
-        // Kill anything that might be hanging around
-        String newdbpath;
-        String newlogpath;
-        String remove_logcmd;
-        String remove_dbcmd;
-        String remove_cmd = "/bin/rm -rf ";
-
-        newdbpath = dbpath;
-        newlogpath = logpath;
-
-        remove_logcmd = remove_cmd + logpath;
-        remove_dbcmd = remove_cmd + dbpath;
-
-        // Commands here is very machine dependent. We assume
-        // user are on UNIX system here
-        try {
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        } catch (IOException e) {
-            System.err.println("IO error: " + e);
-        }
-
-        remove_logcmd = remove_cmd + newlogpath;
-        remove_dbcmd = remove_cmd + newdbpath;
-
-        try {
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        } catch (IOException e) {
-            System.err.println("IO error: " + e);
-        }
-
-        // Run the tests. Return type different from C++
-        boolean _pass = false;
-
-        // Clean up again
-        try {
-            _pass = runAllTests();
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        } catch (IOException e) {
-            System.err.println("IO error: " + e);
-        }
-
-        System.out.print("\n" + "..." + testName() + " tests ");
-        System.out.print(_pass == OK ? "completely successfully" : "failed");
-        System.out.print(".\n\n");
-
-        return _pass;
-    }
-
     Heapfile createDummyFile(String filename) {
         Heapfile f = null;
         try {
@@ -260,6 +203,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
     }
 
     protected boolean test1() {
+        System.out.println ("\nTest 1: Filter records with timestamp > 70 && timestamp < 40\n");
 
         Heapfile f = setup(100, "file_1");
 
@@ -310,6 +254,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
+        System.out.println ("Test 1 completed successfully.\n");
         return true;
     }
 }
@@ -318,14 +263,18 @@ public class FileStreamTest {
     public static void main(String argv[]) {
         FileStreamDriver fs = new FileStreamDriver();
         boolean status = false;
-        status = fs.runTests();
+        try {
+            status = fs.runTests();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         if (status != true) {
-            System.out.println("Error ocurred during join tests");
+            System.out.println("Error ocurred during test");
             Runtime.getRuntime().exit(1);
         }
 
-        System.out.println("join tests completed successfully");
+        System.out.println("test completed successfully");
         Runtime.getRuntime().exit(0);
     }
 }
