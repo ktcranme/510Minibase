@@ -723,7 +723,6 @@ public class HFPage extends Page
       pageNo.pid= mid.pageNo.pid;
       curPage.pid = Convert.getIntValue (CUR_PAGE, data);
       int slotNo = mid.slotNo / 3;
-      System.out.println("GET: VSLOT: " + mid.slotNo + ", PSLOT: " + mid.slotNo / 3 + ", VERSION: " + mid.slotNo % 3);
       
       // length of record being returned
       mapLen = getSlotLength (slotNo);
