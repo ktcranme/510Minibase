@@ -1354,11 +1354,6 @@ public MID insertMap(Map map) throws InvalidSlotNumberException, InvalidTupleSiz
       return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
       
     }
-  
-public Map getMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
-		HFDiskMgrException, HFBufMgrException, Exception {
-	return getMap(mid, 0);
-}
 
   /** Read map from file, returning pointer and length.
    * @param mid map ID
@@ -1373,7 +1368,7 @@ public Map getMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeEx
    *
    * @return a Map. if Map==null, no more map
    */
-  public  Map getMap(MID mid, int version) 
+  public  Map getMap(MID mid) 
     throws InvalidSlotNumberException, 
 	   InvalidTupleSizeException, 
 	   HFException, 
@@ -1401,7 +1396,7 @@ public Map getMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeEx
       if(status != true) return null; // record not found 
       
       Map amap = new Map();
-      amap = dataPage.getMap(mid, version);
+      amap = dataPage.getMap(mid);
       
       /*
        * We simply have to unpin dirpage and datapage which
