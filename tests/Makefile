@@ -13,6 +13,9 @@ classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
 all: $(classfiles)
 
+$(CURDIR)/TestDriver.class: $(CURDIR)/TestDriver.java
+	$(JAVAC) $(CURDIR)/TestDriver.java
+
 $(CURDIR)/%.class: $(CURDIR)/%.java $(CURDIR)/TestDriver.java
 	$(JAVAC) $(CURDIR)/TestDriver.java $<
 

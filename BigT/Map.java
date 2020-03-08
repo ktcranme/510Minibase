@@ -24,6 +24,20 @@ public class Map implements GlobalConst{
 
 	protected int version = 0;
 	protected boolean hasNext = false;
+
+	public static final short[] fldLengths = {
+		MAXROWLABELSIZE,
+		MAXCOLUMNLABELSIZE,
+		4,
+		MAXVALUESIZE
+	};
+
+	public static final AttrType[] fldTypes = {
+		new AttrType(AttrType.attrString),
+		new AttrType(AttrType.attrString),
+		new AttrType(AttrType.attrInteger),
+		new AttrType(AttrType.attrString)
+	};
 	
 	private short[] getFldOffsetArray()
 	{
