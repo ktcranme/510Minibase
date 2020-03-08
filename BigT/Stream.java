@@ -9,10 +9,13 @@ package BigT;
  *              the MIDs
  * insertRecord() -> Insert a completely new record. If the row/column
  *              combination is already there, I dont care. You need to take
- *              care of it.
+ *              care of it. You'll get an MID (which mentions version as 0)
  * updateRecord() -> You have to provide an MID and we will update the record
- *              to reflect the latest timestamp and maintain 3 versions.
- * deleteRecord() -> Deletes the entire row/column combination.
+ *              to reflect the latest timestamp and maintain 3 versions. The
+ *              version provided in the MID will no necessarily be affected.
+ *              Depends on the timestamp used.
+ * deleteRecord() -> Deletes the entire row/column combination (all versions).
+ *               Requires MID.
  * getMap() -> You have to provide an MID with a version to see, or you
  *              default to the latest version.
  * 
