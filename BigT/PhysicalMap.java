@@ -66,6 +66,12 @@ public class PhysicalMap implements GlobalConst{
 	  val = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
 	  return val;
 	}
+
+	public String getVersion(int i) throws IOException {
+		int pos = 2 * i + 3;
+		String val = Convert.getStrValue(fldOffset[pos], data, fldOffset[pos + 1] - fldOffset[pos]);
+		return val;
+	}
 	
 	public boolean updateMap(int timestamp, String value) throws IOException  {
 		int firstTs = Convert.getIntValue(fldOffset[2], data);
@@ -272,6 +278,7 @@ public class PhysicalMap implements GlobalConst{
 		return mapcopy;
     }
 
+	// TODO: In future, might need to modify MAP in place.
     public static Map physicalMapToMap(byte[] record, int version) throws IOException {
         // PhysicalMap map = new PhysicalMap(record, 0);
 

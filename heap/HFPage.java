@@ -599,7 +599,7 @@ public class HFPage extends Page
 	  if(rid==null)
 		  return null;
 	  mid.pageNo = rid.pageNo;
-    mid.slotNo = rid.slotNo;
+    mid.slotNo = rid.slotNo * 3;
 	  return mid;
   }
   
@@ -649,15 +649,30 @@ public class HFPage extends Page
   throws IOException
   {
 	  MID mid = new MID();
-	  RID paramrid = new RID();
+    RID paramrid = new RID();
+    
+    if (curMid.slotNo % 3 < 2) {
+      try {
+        PhysicalMap m = returnMap(curMid);
+        String val = m.getVersion(curMid.slotNo % 3 + 1);
+        if (!val.isEmpty()) {
+          mid.pageNo = curMid.pageNo;
+          mid.slotNo = curMid.slotNo + 1;
+          return mid;
+        }
+      } catch (InvalidSlotNumberException e) {
+        // Go ahead and do next steps
+      }
+    }
+
 	  paramrid.pageNo = curMid.pageNo;
-	  paramrid.slotNo = curMid.slotNo;
+	  paramrid.slotNo = curMid.slotNo / 3;
 	  RID rid = new RID();
 	  rid = nextRecord(paramrid);
 	  if(rid==null)
 		  return null;
 	  mid.pageNo = rid.pageNo;
-	  mid.slotNo = rid.slotNo;
+	  mid.slotNo = rid.slotNo * 3;
 	  return mid;
   }
   
