@@ -652,8 +652,15 @@ public class Heapfile implements Filetype,  GlobalConst {
       currentDataPage.deleteRecord(rid);
       
       pdpinfo.recct--;
-      pdpinfo.flushToTuple();	//Write to the buffer pool
-      if (pdpinfo.recct >= 1) 
+	  pdpinfo.flushToTuple();	//Write to the buffer pool
+
+	  return postDeleteOp(pdpinfo, currentDataPageId, currentDataPage, currentDataPageRid, currentDirPage, currentDirPageId);
+	}
+	
+  protected boolean postDeleteOp(DataPageInfo pdpinfo, PageId currentDataPageId, HFPage currentDataPage,
+			RID currentDataPageRid, HFPage currentDirPage, PageId currentDirPageId) throws IOException,
+			HFBufMgrException, InvalidSlotNumberException {
+	if (pdpinfo.recct >= 1) 
 	{
 	  // more records remain on datapage so it still hangs around.  
 	  // we just need to modify its directory entry
@@ -747,7 +754,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 	    }
 	}
       return true;
-    }
+  } 
 
   /** Updates the specified record in the heapfile.
    * @param rid: the record which needs update

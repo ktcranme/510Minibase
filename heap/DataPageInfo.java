@@ -19,7 +19,7 @@ public class DataPageInfo implements GlobalConst{
   int    availspace; 
   
   /** for efficient implementation of getRecCnt() */
-  int    recct;    
+  public int    recct;    
   
   /** obvious: id of this particular data page (a HFPage) */
   PageId pageId = new PageId();   
