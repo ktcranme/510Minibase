@@ -14,11 +14,11 @@ public class FilterParser {
     public final static int fieldOff[] = {1, 2, 4};
     public final static int fieldTypes[] = {AttrType.attrString, AttrType.attrString, AttrType.attrString};
     public static final String ATTRIBUTE_SEPARATOR = "##";
-    public static final String CONDITION_SEPARATOR = "~";
+    //public static final String CONDITION_SEPARATOR = "~";
 
     // accepts input as row conditions##columnn conditions##value conditions, for select all use *.
     // each condition requires input as symbol(<,>,<=,>=,=,!=) followed by value. For multiple conditions split them with "~".
-    // eg. *##<S~>=B##=abc : Select all for rows, Column<S and Column>=B, Value = abc.
+    // eg. *##[ab,e]##abc : Select all for rows, Column<S and Column>=B, Value = abc.
     public static CondExpr[] parse(String filterString) {
         String fieldFilters[] = filterString.split(ATTRIBUTE_SEPARATOR);
         List<List<CondExpr>> allFilters = new ArrayList<>();
@@ -34,7 +34,40 @@ public class FilterParser {
         return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);
     }
 
-    public static List<CondExpr> fieldFilterGen(String s, int off, int type) {
+    public static List<CondExpr> fieldFilterGen(String s, int off, int type){
+        List<CondExpr> fFilters = new ArrayList<>();
+        CondExpr temp = null;
+        if(!s.contains("[")){
+            temp = new CondExpr();
+            temp.type1 = new AttrType(AttrType.attrSymbol);
+            temp.operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), off);
+            temp.op = new AttrOperator(AttrOperator.aopEQ);
+            temp.type2 = new AttrType(type);
+            temp.operand2.string = s;
+            temp.next = null;
+            fFilters.add(temp);
+        } else {
+            String vals[] = s.substring(1,s.length()-1).split(",");
+            temp = new CondExpr();
+            temp.type1 = new AttrType(AttrType.attrSymbol);
+            temp.operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), off);
+            temp.op = new AttrOperator(AttrOperator.aopGE);
+            temp.type2 = new AttrType(type);
+            temp.operand2.string = vals[0];
+            temp.next = null;
+            fFilters.add(temp);
+            temp = new CondExpr();
+            temp.type1 = new AttrType(AttrType.attrSymbol);
+            temp.operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), off);
+            temp.op = new AttrOperator(AttrOperator.aopLE);
+            temp.type2 = new AttrType(type);
+            temp.operand2.string = vals[1];
+            fFilters.add(temp);
+        }
+        return fFilters;
+    }
+
+    /*public static List<CondExpr> fieldFilterGen(String s, int off, int type) {
         String fieldCond[] = s.split(CONDITION_SEPARATOR);
         List<CondExpr> fFilters = new ArrayList<>();
         CondExpr temp = null;
@@ -78,5 +111,5 @@ public class FilterParser {
             fFilters.add(temp);
         }
         return fFilters;
-    }
+    }*/
 }
