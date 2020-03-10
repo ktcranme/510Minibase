@@ -583,26 +583,7 @@ public class HFPage extends Page
       
       return rid;
     }
-  
-  /**
-   * wraps around the function firstRecord()
-   * @return MID of first map on page, null if page contains no maps.  
-   * @exception  IOException I/O errors
-   * 
-   */ 
-  public MID firstMap()
-  throws IOException
-  {
-	  MID mid = new MID();
-	  RID rid = new RID();
-	  rid = firstRecord();
-	  if(rid==null)
-		  return null;
-	  mid.pageNo = rid.pageNo;
-    mid.slotNo = rid.slotNo * 3;
-	  return mid;
-  }
-  
+
   /**
    * @return RID of next record on the page, null if no more 
    * records exist on the page
@@ -638,44 +619,7 @@ public class HFPage extends Page
       
       return rid;
     }  
-  
-  /**
-   * @return MID of next map on the page, null if no more 
-   * maps exist on the page
-   * @param 	curMid	current map ID
-   * @exception  IOException I/O errors
-   */
-  public MID nextMap(MID curMid)
-  throws IOException
-  {
-	  MID mid = new MID();
-    RID paramrid = new RID();
-    
-    if (curMid.slotNo % 3 < 2) {
-      try {
-        PhysicalMap m = returnMap(curMid);
-        String val = m.getVersion(curMid.slotNo % 3 + 1);
-        if (!val.isEmpty()) {
-          mid.pageNo = curMid.pageNo;
-          mid.slotNo = curMid.slotNo + 1;
-          return mid;
-        }
-      } catch (InvalidSlotNumberException e) {
-        // Go ahead and do next steps
-      }
-    }
 
-	  paramrid.pageNo = curMid.pageNo;
-	  paramrid.slotNo = curMid.slotNo / 3;
-	  RID rid = new RID();
-	  rid = nextRecord(paramrid);
-	  if(rid==null)
-		  return null;
-	  mid.pageNo = rid.pageNo;
-	  mid.slotNo = rid.slotNo * 3;
-	  return mid;
-  }
-  
   /**
    * copies out record with RID rid into record pointer.
    * <br>
