@@ -4,6 +4,9 @@ package heap;
 
 import java.io.*;
 import java.lang.*;
+
+import BigT.Map;
+import BigT.PhysicalMap;
 import global.*;
 
 
@@ -534,5 +537,17 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    {
       return 0;
    }
+
+  public Map toMap() {
+    return new Map(data, tuple_offset);
+  }
+
+  public Map toMap(int version) throws IOException {
+    return PhysicalMap.physicalMapToMap(data, version);
+  }
+
+  public PhysicalMap toPhysicalMap() {
+    return new PhysicalMap(data, tuple_offset);
+  }
 }
 
