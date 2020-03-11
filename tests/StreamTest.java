@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import BigT.Map;
+import BigT.Mapfile;
 import BigT.Stream;
 
 import java.lang.*;
@@ -100,12 +101,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
     MID rid = new MID();
-    Heapfile f = null;
+    Mapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Create a heap file\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -300,12 +301,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    Heapfile f = null;
+    Mapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as test 1\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -349,6 +350,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         catch (Exception e) {
           status = FAIL;
           e.printStackTrace();
+          return false;
         }
 
         if (!done && status == OK) {
@@ -465,12 +467,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    Heapfile f = null; 
+    Mapfile f = null; 
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as tests 1 and 2\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -515,6 +517,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         catch (Exception e) {
           status = FAIL;
           e.printStackTrace();
+          return false;
         }
 
         if (!done && status == OK) {

@@ -25,10 +25,9 @@ import java.io.*;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
-import heap.Heapfile;
 import heap.InvalidSlotNumberException;
 import heap.InvalidTupleSizeException;
-import heap.HFPage;
+import heap.Dirpage;
 import heap.HFBufMgrException;
 import heap.DataPageInfo;
 import heap.Tuple;
@@ -49,13 +48,13 @@ public class Stream implements GlobalConst {
    */
 
   /** The heapfile we are using. */
-  private Heapfile _hf;
+  private Mapfile _hf;
 
-  /** PageId of current directory page (which is itself an HFPage) */
+  /** PageId of current directory page (which is itself an Dirpage) */
   private PageId dirpageId = new PageId();
 
   /** pointer to in-core data of dirpageId (page is pinned) */
-  private HFPage dirpage = new HFPage();
+  private Dirpage dirpage = new Dirpage();
 
   /**
    * record ID of the DataPageInfo struct (in the directory page) which describes
@@ -67,7 +66,7 @@ public class Stream implements GlobalConst {
   private PageId datapageId = new PageId();
 
   /** in-core copy (pinned) of the same */
-  private HFPage datapage = new HFPage();
+  private MapPage datapage = new MapPage();
 
   /** record ID of the current record (from the current data page) */
   private MID userrid = new MID();
@@ -86,7 +85,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  public Stream(Heapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
+  public Stream(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
       InvalidSlotNumberException {
     init(hf);
   }
@@ -99,8 +98,10 @@ public class Stream implements GlobalConst {
    *
    * @param rid Record ID of the record
    * @return the Map of the retrieved record.
+   * @throws InvalidSlotNumberException
    */
-  public Map getNext(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
+  public Map getNext(MID rid)
+      throws InvalidMapSizeException, InvalidTupleSizeException, IOException, InvalidSlotNumberException {
     Map recptrtuple = null;
 
     if (nextUserStatus != true) {
@@ -201,7 +202,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  private void init(Heapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+  private void init(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
       HFBufMgrException, InvalidSlotNumberException {
     _hf = hf;
 
@@ -262,7 +263,7 @@ public class Stream implements GlobalConst {
       // - nextDirPageId has correct id of the page which is to get
       /** get directory page and pin it */
       dirpageId.pid = nextDirPageId.pid;
-      dirpage = new HFPage();
+      dirpage = new Dirpage();
       pinPage(dirpageId, (Page) dirpage, false);
     }
 
@@ -298,8 +299,8 @@ public class Stream implements GlobalConst {
                   * the heapfile is empty:
                   */
                 !loadNextDirectoryPage()) {
-                // Heapfile is empty
-                System.err.println("Heapfile is empty!");
+                // MapPage is empty
+                System.err.println("MapPage is empty!");
                 return false;
               }
               
@@ -318,12 +319,11 @@ public class Stream implements GlobalConst {
                 return false;
               }
 
-              rectuple = dirpage.getRecord(datapageRid);
+              dpinfo = dirpage.getDatapageInfo(datapageRid);
               
-              if (rectuple.getLength() != DataPageInfo.size)
+              if (dpinfo.getLength() != DataPageInfo.size)
                 return false;
 
-              dpinfo = new DataPageInfo(rectuple);
               datapageId.pid = dpinfo.getPageId().pid;
 
                datapage = null;
@@ -405,7 +405,7 @@ public class Stream implements GlobalConst {
 
                    // pin first data page
                    try {
-                     datapage  = new HFPage();
+                     datapage  = new MapPage();
                      pinPage(datapageId, (Page) datapage, false);
                    }
                    catch (Exception e){
@@ -470,24 +470,16 @@ public class Stream implements GlobalConst {
 
                // data page is not yet loaded: read its record from the directory page
                try {
-                 rectuple = dirpage.getRecord(datapageRid);
-               }
+                 dpinfo = dirpage.getDatapageInfo(datapageRid);
 
-               catch (Exception e) {
-                 System.err.println("HeapFile: Error in Stream" + e);
-               }
+                 if (dpinfo.getLength() != DataPageInfo.size)
+                   return false;
 
-               if (rectuple.getLength() != DataPageInfo.size)
-                 return false;
+                 datapageId.pid = dpinfo.getPageId().pid;
 
-               dpinfo = new DataPageInfo(rectuple);
-               datapageId.pid = dpinfo.getPageId().pid;
-
-               try {
-                 datapage = new HFPage();
+                 datapage = new MapPage();
                  pinPage(dpinfo.getPageId(), (Page) datapage, false);
                }
-
                catch (Exception e) {
                  System.err.println("HeapFile: Error in Stream" + e);
                }
@@ -519,13 +511,14 @@ public class Stream implements GlobalConst {
   }
 
 
-  /** Move to the next record in a sequential scan.
-   * Also returns the RID of the (new) current record.
+  /**
+   * Move to the next record in a sequential scan. Also returns the RID of the
+   * (new) current record.
+   * 
+   * @throws InvalidSlotNumberException
    */
-  private boolean mvNext(MID rid) 
-      throws InvalidMapSizeException,
-             InvalidTupleSizeException,
-                      IOException
+  private boolean mvNext(MID rid)
+      throws InvalidMapSizeException, InvalidTupleSizeException, IOException, InvalidSlotNumberException
              {
                MID nextrid;
                boolean status;
