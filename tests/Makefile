@@ -27,12 +27,16 @@ run: all
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.StreamTest
 	$(JAVA) tests.bigtTest
+	$(JAVA) tests.VStreamTest
 
 runstream: $(CURDIR)/StreamTest.class
 	$(JAVA) tests.StreamTest
 
 runbigt: $(CURDIR)/bigtTest.class
 	$(JAVA) tests.bigtTest
+
+runvstream: $(CURDIR)/VStreamTest.class
+	$(JAVA) tests.VStreamTest
 
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
