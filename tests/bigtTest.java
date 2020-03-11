@@ -1,21 +1,13 @@
 package tests;
 
 import java.io.*;
-import java.util.*;
 
+import BigT.IndexScan;
 import BigT.bigT;
 import BigT.Map;
-import BigT.Stream;
 import java.lang.*;
 
-import btree.BTFileScan;
-import btree.KeyDataEntry;
-import heap.*;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
-import chainexception.*;
-import index.IndexScan;
 
 import static BigT.bigT.INDEXFILENAMEPREFIX;
 
@@ -249,6 +241,15 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big5 row count:" + rowCnt);
             colCnt = big5.getColumnCnt();
             System.out.println("Big5 column count:" + colCnt);
+            System.out.println("Test for index scan of maps!");
+            IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),null,false);
+            System.out.println("Index File created");
+            Map tmpm;
+            while((tmpm=is.get_next())!=null){
+                System.out.println(tmpm.getRowLabel());
+            }
+            is.close();
+
             big5.deleteBigt();
             System.out.println("Deleting Big Table with indexing as 5");
         } catch(Exception e){
