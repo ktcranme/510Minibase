@@ -48,7 +48,7 @@ public class Stream implements GlobalConst {
    */
 
   /** The heapfile we are using. */
-  private Mapfile _hf;
+  private VMapfile _hf;
 
   /** PageId of current directory page (which is itself an Dirpage) */
   private PageId dirpageId = new PageId();
@@ -66,7 +66,7 @@ public class Stream implements GlobalConst {
   private PageId datapageId = new PageId();
 
   /** in-core copy (pinned) of the same */
-  private MapPage datapage = new MapPage();
+  private VMapPage datapage = new VMapPage();
 
   /** record ID of the current record (from the current data page) */
   private MID userrid = new MID();
@@ -85,7 +85,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  public Stream(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
+  public Stream(VMapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
       InvalidSlotNumberException {
     init(hf);
   }
@@ -202,7 +202,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  private void init(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+  private void init(VMapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
       HFBufMgrException, InvalidSlotNumberException {
     _hf = hf;
 
@@ -299,8 +299,8 @@ public class Stream implements GlobalConst {
                   * the heapfile is empty:
                   */
                 !loadNextDirectoryPage()) {
-                // MapPage is empty
-                System.err.println("MapPage is empty!");
+                // VMapPage is empty
+                System.err.println("VMapPage is empty!");
                 return false;
               }
               
@@ -405,7 +405,7 @@ public class Stream implements GlobalConst {
 
                    // pin first data page
                    try {
-                     datapage  = new MapPage();
+                     datapage  = new VMapPage();
                      pinPage(datapageId, (Page) datapage, false);
                    }
                    catch (Exception e){
@@ -477,7 +477,7 @@ public class Stream implements GlobalConst {
 
                  datapageId.pid = dpinfo.getPageId().pid;
 
-                 datapage = new MapPage();
+                 datapage = new VMapPage();
                  pinPage(dpinfo.getPageId(), (Page) datapage, false);
                }
                catch (Exception e) {

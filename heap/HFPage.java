@@ -536,6 +536,7 @@ public class HFPage extends Page implements ConstSlot {
 
       offset = getSlotOffset(slotNo);
       if (recLen != newrecord.length) {
+        System.err.println("Expected " + recLen + ", Got: " + newrecord.length);
         throw new IOException();
       }
       System.arraycopy(newrecord, 0, data, offset, recLen);

@@ -81,8 +81,8 @@ public class Mapfile extends Heapfile {
         return new MID(rid.pageNo, rid.slotNo * 3);
     }
 
-    public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
-            InvalidSlotNumberException, IOException {
-        return new Stream(this);
-    }
+    // public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
+    //         InvalidSlotNumberException, IOException {
+    //     return new Stream(this);
+    // }
 }
