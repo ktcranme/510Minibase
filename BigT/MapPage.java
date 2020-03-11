@@ -13,7 +13,7 @@ import diskmgr.*;
 
 import BigT.Map;
 
-public class MapPage extends HFPage {
+public class MapPage extends HFPage implements Mapview {
     public MapPage(Page page) {
         super(page);
     }

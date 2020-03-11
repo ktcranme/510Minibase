@@ -15,21 +15,21 @@ import heap.InvalidTupleSizeException;
 import heap.InvalidUpdateException;
 import heap.SpaceNotAvailableException;
 
-public class Mapfile extends Heapfile {
+public class Mapfile extends Heapfile implements Bigtablefile {
 
     public Mapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
     }
 
-    protected MapPage getNewDataPage() {
+    public MapPage getNewDataPage() {
         return new MapPage();
     }
 
-    protected MapPage getNewDataPage(Page page) {
+    public MapPage getNewDataPage(Page page) {
         return new MapPage(page);
     }
 
-    protected MapPage getNewDataPage(Page page, PageId pid) throws IOException {
+    public MapPage getNewDataPage(Page page, PageId pid) throws IOException {
         MapPage hfp = new MapPage();
         hfp.init(pid, page);
         return hfp;
@@ -81,8 +81,8 @@ public class Mapfile extends Heapfile {
         return new MID(rid.pageNo, rid.slotNo * 3);
     }
 
-    // public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
-    //         InvalidSlotNumberException, IOException {
-    //     return new Stream(this);
-    // }
+    public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
+            InvalidSlotNumberException, IOException {
+        return new Stream(this);
+    }
 }

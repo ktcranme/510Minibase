@@ -32,6 +32,35 @@ import heap.HFBufMgrException;
 import heap.DataPageInfo;
 import heap.Tuple;
 
+
+interface PageView {
+  public Mapview getInstance();
+}
+
+
+public class Stream {
+  private _Stream s;
+
+  public Stream(VMapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
+      InvalidSlotNumberException, IOException {
+    s = new _Stream(f, () -> { return new VMapPage(); });
+  }
+
+  public Stream(Mapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
+      InvalidSlotNumberException, IOException {
+    s = new _Stream(f, () -> { return new MapPage(); });
+  }
+
+  public Map getNext(MID rid)
+      throws InvalidMapSizeException, InvalidTupleSizeException, InvalidSlotNumberException, IOException {
+    return s.getNext(rid);
+  }
+
+  public void closestream() {
+    s.closestream();
+  }
+}
+
 /**
  * A Stream object is created ONLY through the function openStream of a
  * HeapFile. It supports the getNext interface which will simply retrieve the
@@ -40,7 +69,7 @@ import heap.Tuple;
  * An object of type scan will always have pinned one directory page of the
  * heapfile.
  */
-public class Stream implements GlobalConst {
+class _Stream implements GlobalConst {
 
   /**
    * Note that one record in our way-cool HeapFile implementation is specified by
@@ -48,7 +77,7 @@ public class Stream implements GlobalConst {
    */
 
   /** The heapfile we are using. */
-  private VMapfile _hf;
+  private Bigtablefile _hf;
 
   /** PageId of current directory page (which is itself an Dirpage) */
   private PageId dirpageId = new PageId();
@@ -66,13 +95,15 @@ public class Stream implements GlobalConst {
   private PageId datapageId = new PageId();
 
   /** in-core copy (pinned) of the same */
-  private VMapPage datapage = new VMapPage();
+  private Mapview datapage;
 
   /** record ID of the current record (from the current data page) */
   private MID userrid = new MID();
 
   /** Status of next user status */
   private boolean nextUserStatus;
+
+  private PageView pageView;
 
   /**
    * The constructor pins the first directory page in the file and initializes its
@@ -85,8 +116,10 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  public Stream(VMapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
+  public _Stream(Bigtablefile hf, PageView pageView) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
       InvalidSlotNumberException {
+    this.pageView = pageView;
+    datapage = this.pageView.getInstance();
     init(hf);
   }
 
@@ -202,7 +235,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  private void init(VMapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+  private void init(Bigtablefile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
       HFBufMgrException, InvalidSlotNumberException {
     _hf = hf;
 
@@ -299,8 +332,8 @@ public class Stream implements GlobalConst {
                   * the heapfile is empty:
                   */
                 !loadNextDirectoryPage()) {
-                // VMapPage is empty
-                System.err.println("VMapPage is empty!");
+                // Mapview is empty
+                System.err.println("Mapview is empty!");
                 return false;
               }
               
@@ -405,7 +438,7 @@ public class Stream implements GlobalConst {
 
                    // pin first data page
                    try {
-                     datapage  = new VMapPage();
+                     datapage  = pageView.getInstance();
                      pinPage(datapageId, (Page) datapage, false);
                    }
                    catch (Exception e){
@@ -477,7 +510,7 @@ public class Stream implements GlobalConst {
 
                  datapageId.pid = dpinfo.getPageId().pid;
 
-                 datapage = new VMapPage();
+                 datapage = pageView.getInstance();
                  pinPage(dpinfo.getPageId(), (Page) datapage, false);
                }
                catch (Exception e) {

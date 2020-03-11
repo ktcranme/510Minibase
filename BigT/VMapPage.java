@@ -9,7 +9,7 @@ import heap.HFPage;
 import heap.InvalidSlotNumberException;
 import diskmgr.*;
 
-public class VMapPage extends HFPage {
+public class VMapPage extends HFPage implements Mapview  {
     public VMapPage(Page page) {
         super(page);
     }

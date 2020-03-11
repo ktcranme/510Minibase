@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import BigT.Map;
-import BigT.VMapfile;
+import BigT.Mapfile;
 import BigT.Stream;
 
 import java.lang.*;
@@ -101,12 +101,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
     MID rid = new MID();
-    VMapfile f = null;
+    Mapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Create a heap file\n");
     try {
-      f = new VMapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -301,12 +301,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    VMapfile f = null;
+    Mapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as test 1\n");
     try {
-      f = new VMapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -467,12 +467,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    VMapfile f = null; 
+    Mapfile f = null; 
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as tests 1 and 2\n");
     try {
-      f = new VMapfile("file_1");
+      f = new Mapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -596,7 +596,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           m = stream.getNext(rid);
           if (m == null) {
             // Because we created two versions of the map now
-            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -676,7 +676,7 @@ class StreamDriver extends TestDriver implements GlobalConst
                 status = FAIL;
                 break;
             }
-            i += 2;     // Because we deleted the odd ones...
+            // i += 2;     // Because we deleted the odd ones...
           }
 
         }

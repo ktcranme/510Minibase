@@ -15,21 +15,21 @@ import heap.InvalidTupleSizeException;
 import heap.InvalidUpdateException;
 import heap.SpaceNotAvailableException;
 
-public class VMapfile extends Heapfile {
+public class VMapfile extends Heapfile implements Bigtablefile {
 
     public VMapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
     }
 
-    protected VMapPage getNewDataPage() {
+    public VMapPage getNewDataPage() {
         return new VMapPage();
     }
 
-    protected VMapPage getNewDataPage(Page page) {
+    public VMapPage getNewDataPage(Page page) {
         return new VMapPage(page);
     }
 
-    protected VMapPage getNewDataPage(Page page, PageId pid) throws IOException {
+    public VMapPage getNewDataPage(Page page, PageId pid) throws IOException {
         VMapPage hfp = new VMapPage();
         hfp.init(pid, page);
         return hfp;
