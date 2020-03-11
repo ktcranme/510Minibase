@@ -1,17 +1,12 @@
 package tests;
 
 import java.io.*;
-import java.util.*;
 
 import BigT.Map;
 import BigT.Stream;
 
-import java.lang.*;
 import heap.*;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
-import chainexception.*;
 
 /** Note that in JAVA, methods can't be overridden to be more private.
   Therefore, the declaration of all private functions are now declared
@@ -33,66 +28,6 @@ class StreamDriver extends TestDriver implements GlobalConst
   
   public void setChoice(int c) {
     choice = c;
-  }
-
-
-  public boolean runTests () {
-
-    System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-
-    SystemDefs sysdef = new SystemDefs(dbpath,100,100,"Clock");
-
-    // Kill anything that might be hanging around
-    String newdbpath;
-    String newlogpath;
-    String remove_logcmd;
-    String remove_dbcmd;
-    String remove_cmd = "/bin/rm -rf ";
-
-    newdbpath = dbpath;
-    newlogpath = logpath;
-
-    remove_logcmd = remove_cmd + logpath;
-    remove_dbcmd = remove_cmd + dbpath;
-
-    // Commands here is very machine dependent.  We assume
-    // user are on UNIX system here
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
-
-    remove_logcmd = remove_cmd + newlogpath;
-    remove_dbcmd = remove_cmd + newdbpath;
-
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
-
-    //Run the tests. Return type different from C++
-    boolean _pass = runAllTests();
-
-    //Clean up again
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    }
-    catch (IOException e) {
-      System.err.println ("IO error: "+e);
-    }
-
-    System.out.print ("\n" + "..." + testName() + " tests ");
-    System.out.print (_pass==OK ? "completely successfully" : "failed");
-    System.out.print (".\n\n");
-
-    return _pass;
   }
 
   protected boolean test1 ()  {
@@ -138,7 +73,7 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         try {
-          rid = f.insertMap(m1.getMapByteArray());
+          rid = f.insertMap(m1);
         }
         catch (Exception e) {
           status = FAIL;
@@ -413,6 +348,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             }
             done = true;
           } else {
+            //System.out.println(m2.getColumnLabel() + ", " + m2.getRowLabel() + ", " + m2.getTimeStamp() + ", " + m2.getValue());
             rec_cnt++;
           }
         }
@@ -507,6 +443,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             rec_cnt = 0;
             done = true;
           } else {
+            //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
             rec_cnt++;
           }
         }
@@ -516,33 +453,36 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
-          try {
-            m.setValue(Integer.toString(10 * i));
-          } catch (Exception e) {
-            status = FAIL;
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-          Map newMap = null; 
-          try {
-            newMap = new Map (m.getMapByteArray(),0); 
-          }
-          catch (Exception e) {
-            status = FAIL;
-            System.err.println (""+e);
-            e.printStackTrace();
-          }
-          try {
-            status = f.updateMap(rid, newMap); 
-          }
-          catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-          }
+          // Update multiple times to check versioning
+          for (int k = 0; k < 6; k++) {
+            try {
+              m.setValue(Integer.toString(10 * i + k));
+            } catch (Exception e) {
+              status = FAIL;
+              System.err.println (""+e);
+              e.printStackTrace();
+            }
+            Map newMap = null; 
+            try {
+              newMap = new Map (m.getMapByteArray(),0); 
+            }
+            catch (Exception e) {
+              status = FAIL;
+              System.err.println (""+e);
+              e.printStackTrace();
+            }
+            try {
+              status = f.updateMap(rid, newMap);
+            }
+            catch (Exception e) {
+              status = FAIL;
+              e.printStackTrace();
+            }
 
-          if ( status != OK ) {
-            System.err.println ("*** Error updating record " + i + "\n");
-            break;
+            if ( status != OK ) {
+              System.err.println ("*** Error updating record " + i + "\n");
+              break;
+            }
           }
           i += 2;     // Recall, we deleted every other record above.
         }
@@ -587,7 +527,8 @@ class StreamDriver extends TestDriver implements GlobalConst
         try {
           m = stream.getNext(rid);
           if (m == null) {
-            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
+            // Because we created two versions of the map now
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -596,6 +537,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             done = true;
             break;
           } else {
+            //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
             rec_cnt++;
           }
         }
@@ -617,24 +559,58 @@ class StreamDriver extends TestDriver implements GlobalConst
           }
 
 
-          try {
-            if( !m.getValue().equals(Integer.toString(i * 10)) || !m2.getValue().equals(Integer.toString(i * 10))) {
-              System.err.println ("*** Record " + i
-                  + " differs from our update\n");
-              System.err.println ("m.value: "+ m.getValue()
-                  + " should be " + Integer.toString(i * 10) + "\n");
-              System.err.println ("m2.value: "+ m2.getValue()
-                  + " should be " + Integer.toString(i * 10) + "\n");
-              status = FAIL;
-              break;
+          if (m.getVersionNo() == 1) {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
             }
-          } catch (Exception e) {
-              status = FAIL;
-              break;
+          } else if (m.getVersionNo() == 2) {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
+            }
+            i += 2;     // Because we deleted the odd ones...
+          } else {
+            try {
+              if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
+                System.err.println ("*** Record " + i
+                    + " differs from our update\n");
+                System.err.println ("m.value: "+ m.getValue()
+                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
+                System.err.println ("m2.value: "+ m2.getValue()
+                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
+                status = FAIL;
+                break;
+              }
+            } catch (Exception e) {
+                status = FAIL;
+                break;
+            }
           }
 
         }
-        i += 2;     // Because we deleted the odd ones...
       }
     }
 
@@ -644,25 +620,7 @@ class StreamDriver extends TestDriver implements GlobalConst
 
   }
 
-
-  protected boolean runAllTests (){
-
-    boolean _passAll = OK;
-
-    if (!test1()) { _passAll = FAIL; }
-    if (!test2()) { _passAll = FAIL; }
-    if (!test3()) { _passAll = FAIL; }
-    /*
-     * These tests are not necessary since Map is fixed size
-    if (!test4()) { _passAll = FAIL; }
-    if (!test5()) { _passAll = FAIL; }
-    if (!test6()) { _passAll = FAIL; }
-    */
-    return _passAll;
-  }
-
   protected String testName () {
-
     return "Heap File";
   }
 }
@@ -672,62 +630,21 @@ public class StreamTest {
   public static void main (String argv[]) {
 
     StreamDriver hd = new StreamDriver();
-    boolean dbstatus;
+    boolean dbstatus = false;
 
-    hd.setChoice(0);
-    dbstatus = hd.runTests();
+    int[] sizes = {0, 50, 100, 480, 179, 366, 29};
 
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(50);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(100);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(500);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(179);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(366);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
-    }
-
-    hd.setChoice(29);
-    dbstatus = hd.runTests();
-
-    if (dbstatus != true) {
-      System.err.println ("Error encountered during buffer manager tests:\n");
-      Runtime.getRuntime().exit(1);
+    for (int size : sizes) {
+      hd.setChoice(size);
+      try {
+        dbstatus = hd.runTests();
+        if (!dbstatus) {
+          System.err.println ("Error encountered during buffer manager tests:\n");
+          Runtime.getRuntime().exit(1);
+        }
+      } catch (Exception e) {
+        break;
+      }
     }
 
     Runtime.getRuntime().exit(0);

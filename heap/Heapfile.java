@@ -6,10 +6,6 @@ import diskmgr.*;
 import bufmgr.*;
 import global.*;
 
-import BigT.Stream;
-import BigT.Map;
-import BigT.InvalidMapSizeException;
-
 /**  This heapfile implementation is directory-based. We maintain a
  *  directory of info about the data pages (which are of type HFPage
  *  when loaded into memory).  The directory itself is also composed
@@ -620,7 +616,12 @@ public class Heapfile implements Filetype,  GlobalConst {
       return rid;
       
     }
-  
+
+public MID insertMap(Map map) throws InvalidSlotNumberException, InvalidTupleSizeException, SpaceNotAvailableException,
+		HFException, HFBufMgrException, HFDiskMgrException, IOException {
+	return insertMap(PhysicalMap.getMapByteArray(map));
+}
+
   /** Insert map into file, return its Mid.
   *
   * @param mapPtr pointer of the map
@@ -1047,7 +1048,7 @@ public class Heapfile implements Filetype,  GlobalConst {
      // convert mid to rid, for proper working of _findDataPage
      RID paramRid = new RID();
      paramRid.pageNo = mid.pageNo;
-     paramRid.slotNo = mid.slotNo;
+     paramRid.slotNo = mid.slotNo / 3;
      
      status = _findDataPage(paramRid,
 			     currentDirPageId, currentDirPage, 
@@ -1261,7 +1262,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       // convert mid to rid, for proper working of _findDatapage()
       RID paramrid = new RID();
       paramrid.pageNo = mid.pageNo;
-      paramrid.slotNo = mid.slotNo;
+      paramrid.slotNo = mid.slotNo / 3;
       
       status = _findDataPage(paramrid,
 			     currentDirPageId, dirPage, 
@@ -1270,23 +1271,29 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       if(status != true) return status;	// record not found
       
-      Map amap = new Map();
+      PhysicalMap amap = new PhysicalMap();
       amap = dataPage.returnMap(mid);
       
       // Assume update a record with a record whose length is equal to
       // the original record
       
-      if(newmap.getLength() != amap.getLength())
-	{
-	  unpinPage(currentDataPageId, false /*undirty*/);
-	  unpinPage(currentDirPageId, false /*undirty*/);
+    //   if(newmap.getLength() != amap.getLength())
+	// {
+	//   unpinPage(currentDataPageId, false /*undirty*/);
+	//   unpinPage(currentDirPageId, false /*undirty*/);
 	  
-	  throw new InvalidUpdateException(null, "invalid record update");
+	//   throw new InvalidUpdateException(null, "invalid record update");
 	  
-	}
+	// }
 
+	try {
+		amap.updateMap(newmap.getTimeStamp(), newmap.getValue());
+	} catch (IOException e) {
+		System.err.println("Map update failed!");
+		throw e;
+	}
       // new copy of this record fits in old space;
-      amap.mapCopy(newmap);
+      // amap.mapCopy(newmap);
       unpinPage(currentDataPageId, true /* = DIRTY */);
       
       unpinPage(currentDirPageId, false /*undirty*/);
@@ -1347,7 +1354,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
       
     }
-  
+
   /** Read map from file, returning pointer and length.
    * @param mid map ID
    *
@@ -1379,7 +1386,7 @@ public class Heapfile implements Filetype,  GlobalConst {
    // convert mid to rid, for proper working of _findDatapage()
       RID paramrid = new RID();
       paramrid.pageNo = mid.pageNo;
-      paramrid.slotNo = mid.slotNo;
+      paramrid.slotNo = mid.slotNo / 3;
       
       status = _findDataPage(paramrid,
 			     currentDirPageId, dirPage, 

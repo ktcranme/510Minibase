@@ -43,14 +43,17 @@ db:
 doc:
 	$(JAVADOC) $(DOCFILES)
 
-testall: db
+test: db
 	cd tests; make run
 
-teststream: db
+stream: db
 	cd tests; make runstream
 
 testbigt: db
 	cd tests; make runbigt
+
+filestream: db
+	cd tests; make filestream
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE

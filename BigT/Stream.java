@@ -4,6 +4,21 @@ package BigT;
 /**
  * Stream.java-  class Stream
  *
+ * Here is how you interact with maps:
+ * getNext() -> stream through the file, record by record, not caring about
+ *              the MIDs
+ * insertRecord() -> Insert a completely new record. If the row/column
+ *              combination is already there, I dont care. You need to take
+ *              care of it. You'll get an MID (which mentions version as 0)
+ * updateRecord() -> You have to provide an MID and we will update the record
+ *              to reflect the latest timestamp and maintain 3 versions. The
+ *              version provided in the MID will no necessarily be affected.
+ *              Depends on the timestamp used.
+ * deleteRecord() -> Deletes the entire row/column combination (all versions).
+ *               Requires MID.
+ * getMap() -> You have to provide an MID with a version to see, or you
+ *              default to the latest version.
+ * 
  */
 
 import java.io.*;
@@ -84,8 +99,9 @@ public class Stream implements GlobalConst {
    *
    * @param rid Record ID of the record
    * @return the Map of the retrieved record.
+   * @throws InvalidTupleSizeException
    */
-  public Map getNext(MID rid) throws InvalidMapSizeException, InvalidTupleSizeException, IOException {
+  public Map getNext(MID rid) throws InvalidMapSizeException, IOException, InvalidTupleSizeException {
     Map recptrtuple = null;
 
     if (nextUserStatus != true) {
@@ -100,14 +116,12 @@ public class Stream implements GlobalConst {
 
     try {
       recptrtuple = datapage.getMap(rid);
-    }
-
-    catch (Exception e) {
+    } catch (Exception e) {
       // System.err.println("SCAN: Error in Stream" + e);
       e.printStackTrace();
     }
 
-    userrid = datapage.nextMap(rid);
+    userrid = datapage.nextMap(userrid);
     if (userrid == null)
       nextUserStatus = false;
     else
@@ -340,16 +354,13 @@ public class Stream implements GlobalConst {
              }
 
 
-  /** Move to the next data page in the file and 
-   * retrieve the next data page. 
+  /**
+   * Move to the next data page in the file and retrieve the next data page.
    *
-   * @return 		true if successful
-   *			false if unsuccessful
+   * @return true if successful false if unsuccessful
+   * @throws InvalidTupleSizeException
    */
-  private boolean nextDataPage() 
-      throws InvalidMapSizeException,
-                      InvalidTupleSizeException,
-                      IOException
+  private boolean nextDataPage() throws InvalidMapSizeException, IOException, InvalidTupleSizeException
              {
                DataPageInfo dpinfo;
 
@@ -440,6 +451,7 @@ public class Stream implements GlobalConst {
                   if (!loadNextDirectoryPage()) {
                     return false;
                   }
+                  datapageRid = dirpage.firstRecord();
                   nextDataPageStatus = true;
                 } catch (Exception e) {
                   System.err.println(e);

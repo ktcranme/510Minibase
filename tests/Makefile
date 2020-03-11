@@ -13,7 +13,10 @@ classfiles = $(patsubst %.java, %.class, $(sourcefiles))
 
 all: $(classfiles)
 
-$(CURDIR)/%.class: $(CURDIR)/%.java $(CURDIR)/TestDriver.java
+$(CURDIR)/TestDriver.class: $(CURDIR)/TestDriver.java
+	$(JAVAC) $(CURDIR)/TestDriver.java
+
+$(CURDIR)/%.class: $(CURDIR)/%.java $(CURDIR)/TestDriver.class
 	$(JAVAC) $(CURDIR)/TestDriver.java $<
 
 run: all
@@ -27,12 +30,16 @@ run: all
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.StreamTest
 	$(JAVA) tests.bigtTest
+	$(JAVA) tests.FileStreamTest
 
 runstream: $(CURDIR)/StreamTest.class
 	$(JAVA) tests.StreamTest
 
 runbigt: $(CURDIR)/bigtTest.class
 	$(JAVA) tests.bigtTest
+
+filestream: $(CURDIR)/FileStreamTest.class
+	$(JAVA) tests.FileStreamTest
 
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
