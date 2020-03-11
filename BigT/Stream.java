@@ -25,7 +25,6 @@ import java.io.*;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
-import heap.Heapfile;
 import heap.InvalidSlotNumberException;
 import heap.InvalidTupleSizeException;
 import heap.HFPage;
@@ -49,7 +48,7 @@ public class Stream implements GlobalConst {
    */
 
   /** The heapfile we are using. */
-  private Heapfile _hf;
+  private Mapfile _hf;
 
   /** PageId of current directory page (which is itself an HFPage) */
   private PageId dirpageId = new PageId();
@@ -86,7 +85,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  public Stream(Heapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
+  public Stream(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException, HFBufMgrException,
       InvalidSlotNumberException {
     init(hf);
   }
@@ -201,7 +200,7 @@ public class Stream implements GlobalConst {
    * @throws InvalidSlotNumberException
    * @throws HFBufMgrException
    */
-  private void init(Heapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+  private void init(Mapfile hf) throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
       HFBufMgrException, InvalidSlotNumberException {
     _hf = hf;
 
@@ -298,8 +297,8 @@ public class Stream implements GlobalConst {
                   * the heapfile is empty:
                   */
                 !loadNextDirectoryPage()) {
-                // Heapfile is empty
-                System.err.println("Heapfile is empty!");
+                // Mapfile is empty
+                System.err.println("Mapfile is empty!");
                 return false;
               }
               

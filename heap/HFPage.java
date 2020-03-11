@@ -83,10 +83,21 @@ public class HFPage extends Page
    */
   protected    PageId    curPage = new PageId();   
   
-  /**
-   * Default constructor
-   */
-  
+
+  public static HFPage newInstance() {
+    return new HFPage();
+  }
+
+  public static HFPage newInstance(Page page) {
+    return new HFPage(page);
+  }
+
+  public static HFPage newInstance(Page page, PageId pid) throws IOException {
+    HFPage hfp = new HFPage();
+    hfp.init(pid, page);
+    return hfp;
+  }
+
   public HFPage ()   {  }
   
   /**

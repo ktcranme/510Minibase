@@ -51,6 +51,20 @@ public class Heapfile implements Filetype,  GlobalConst {
   private static int tempfilecount = 0;
 
 
+protected HFPage getNewPage() {
+	return new HFPage();
+}
+
+protected HFPage getNewPage(Page page) {
+	return new HFPage(page);
+}
+
+protected HFPage getNewPage(Page page, PageId pid) throws IOException {
+	HFPage hfp = new HFPage();
+	hfp.init(pid, page);
+	return hfp;
+}
+
   public PageId getFirstDirPageId() {
     return _firstDirPageId;
   }
@@ -73,7 +87,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       // initialize internal values of the new page:
       
-      HFPage hfpage = new HFPage();
+      HFPage hfpage = getNewPage();
       hfpage.init(pageId, apage);
       
       dpinfop.pageId.pid = pageId.pid;
@@ -103,7 +117,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
       
       HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = new HFPage();
+      HFPage currentDataPage = getNewPage();
       RID currentDataPageRid = new RID();
       PageId nextDirPageId = new PageId();
       // datapageId is stored in dpinfo.pageId 
@@ -383,7 +397,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       RID currentDataPageRid = new RID();
       Page pageinbuffer = new Page();
       HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = new HFPage();
+      HFPage currentDataPage = getNewPage();
       
       HFPage nextDirPage = new HFPage(); 
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
@@ -627,7 +641,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       boolean status;
       HFPage currentDirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage currentDataPage = new HFPage();
+      HFPage currentDataPage = getNewPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -781,7 +795,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       boolean status;
       HFPage dirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = new HFPage();
+      HFPage dataPage = getNewPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -840,7 +854,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       boolean status;
       HFPage dirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = new HFPage();
+      HFPage dataPage = getNewPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -868,15 +882,6 @@ public class Heapfile implements Filetype,  GlobalConst {
       return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
       
     }
-
-  public Stream openStream()
-      throws InvalidMapSizeException,
-                      InvalidTupleSizeException,
-                      IOException, HFBufMgrException, InvalidSlotNumberException
-             {
-               Stream newscan = new Stream(this);
-               return newscan;
-             }
 
   /** Initiate a sequential scan.
    * @exception InvalidTupleSizeException Invalid tuple size

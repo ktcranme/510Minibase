@@ -2,6 +2,7 @@ package BigT;
 
 import java.io.IOException;
 
+import diskmgr.Page;
 import global.MID;
 import global.PageId;
 import global.RID;
@@ -21,6 +22,24 @@ import heap.Tuple;
  */
 public class Mapfile extends Heapfile {
     public static final int VERSIONS = 3;
+
+    @Override
+    protected MapPage getNewPage() {
+        return new MapPage();
+    }
+    
+    @Override
+    protected MapPage getNewPage(Page page) {
+        return new MapPage(page);
+    }
+    
+    @Override
+    protected MapPage getNewPage(Page page, PageId pid) throws IOException {
+        MapPage hfp = new MapPage();
+        hfp.init(pid, page);
+        return hfp;
+    }
+    
 
     public Mapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
@@ -65,7 +84,7 @@ public class Mapfile extends Heapfile {
         DataPageInfo pdpinfo = new DataPageInfo(atuple);
 
         // delete the record on the datapage
-        int versions = currentDataPage.deleteMap(new RID(mid.pageNo, mid.slotNo / VERSIONS));
+        int versions = currentDataPage.deleteMap(mid);
 
         pdpinfo.recct -= versions;
         pdpinfo.flushToTuple();	//Write to the buffer pool
