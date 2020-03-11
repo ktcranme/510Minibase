@@ -21,6 +21,11 @@ public class MID{
    * default constructor of class
    */
   public MID () { }
+
+  public MID (RID rid) {
+    pageNo = rid.pageNo;
+    slotNo = rid.slotNo;
+  }
   
   /**
    *  constructor of class

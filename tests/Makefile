@@ -26,9 +26,13 @@ run: all
 	$(JAVA) tests.DBTest
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.StreamTest
+	$(JAVA) tests.bigtTest
 
 runstream: $(CURDIR)/StreamTest.class
 	$(JAVA) tests.StreamTest
+
+runbigt: $(CURDIR)/bigtTest.class
+	$(JAVA) tests.bigtTest
 
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
