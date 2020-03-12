@@ -15,10 +15,9 @@ import heap.InvalidTupleSizeException;
 import heap.SpaceNotAvailableException;
 
 /**
- * Navigates a Page of Physical Maps and returns Virtual Maps
+ * Navigates a Heap Page of Physical Maps and returns Virtual Maps
  */
 public class Mapfile extends Heapfile {
-    public static final int VERSIONS = 3;
 
     public Mapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
@@ -33,12 +32,12 @@ public class Mapfile extends Heapfile {
     public MID insertMap(Map m) throws InvalidSlotNumberException, InvalidTupleSizeException,
             SpaceNotAvailableException, HFException, HFBufMgrException, HFDiskMgrException, IOException {
         RID rid = insertRecord(PhysicalMap.getMapByteArray(m));
-        return new MID(rid.pageNo, rid.slotNo * VERSIONS);
+        return new MID(rid.pageNo, rid.slotNo * 3);
     }
 
     public boolean deleteMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {
-        return deleteRecord(new RID(mid.pageNo, mid.slotNo / VERSIONS));
+        return deleteRecord(new RID(mid.pageNo, mid.slotNo / 3));
     }
 
     public boolean updateMap(MID mid, Map newmap)
@@ -53,14 +52,14 @@ public class Mapfile extends Heapfile {
         // convert mid to rid, for proper working of _findDatapage()
         RID paramrid = new RID();
         paramrid.pageNo = mid.pageNo;
-        paramrid.slotNo = mid.slotNo / VERSIONS;
+        paramrid.slotNo = mid.slotNo / 3;
 
         status = _findDataPage(paramrid, currentDirPageId, dirPage, currentDataPageId, dataPage, currentDataPageRid);
 
         if (status != true)
             return status; // record not found
 
-        PhysicalMap amap = dataPage.returnRecord(new RID(mid.pageNo, mid.slotNo / VERSIONS)).toPhysicalMap();
+        PhysicalMap amap = dataPage.returnRecord(new RID(mid.pageNo, mid.slotNo / 3)).toPhysicalMap();
 
         try {
             amap.updateMap(newmap.getTimeStamp(), newmap.getValue());
@@ -77,7 +76,7 @@ public class Mapfile extends Heapfile {
 
     public Map getMap(MID mid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {
-        return getRecord(new RID(mid.pageNo, mid.slotNo / VERSIONS)).toMap(mid.slotNo % VERSIONS);
+        return getRecord(new RID(mid.pageNo, mid.slotNo / 3)).toMap(mid.slotNo % 3);
     }
 
     public int getMapCnt() throws InvalidSlotNumberException, InvalidTupleSizeException, HFDiskMgrException,
