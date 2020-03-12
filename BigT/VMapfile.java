@@ -22,6 +22,12 @@ public class VMapfile extends Heapfile {
         super(name);
     }
 
+    public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, IOException,
+            HFBufMgrException, InvalidSlotNumberException {
+        Stream newscan = new Stream(this);
+        return newscan;
+    }
+
     public MID insertMap(Map m) throws InvalidSlotNumberException, InvalidTupleSizeException,
             SpaceNotAvailableException, HFException, HFBufMgrException, HFDiskMgrException, IOException {
         RID rid = insertRecord(PhysicalMap.getMapByteArray(m));

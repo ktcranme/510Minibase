@@ -2,22 +2,13 @@ package BigT;
 
 import java.io.IOException;
 
-import diskmgr.Page;
 import global.Convert;
 import global.MID;
-import global.PageId;
 import global.RID;
 import heap.HFPage;
 import heap.InvalidSlotNumberException;
 
 public class MapPage extends HFPage {
-    public MapPage(Page page) {
-        super(page);
-    }
-
-    public MapPage() {
-    }
-
     /**
      * wraps around the function firstRecord()
      * 
@@ -34,11 +25,6 @@ public class MapPage extends HFPage {
         mid.pageNo = rid.pageNo;
         mid.slotNo = rid.slotNo * Mapfile.VERSIONS;
         return mid;
-    }
-
-    public MID insertMap(Map m) throws IOException {
-        RID rid = insertRecord(PhysicalMap.getMapByteArray(m));
-        return new MID(rid.pageNo, rid.slotNo * Mapfile.VERSIONS);
     }
 
     /**
@@ -80,8 +66,8 @@ public class MapPage extends HFPage {
         return map.toMap(mid.slotNo % Mapfile.VERSIONS);
     }
 
-    public int deleteMap(MID rid) throws IOException, InvalidSlotNumberException {
-        int slotNo = rid.slotNo / Mapfile.VERSIONS;
+    public int deleteMap(RID rid) throws IOException, InvalidSlotNumberException {
+        int slotNo = rid.slotNo;
         short recLen = getSlotLength(slotNo);
         slotCnt = Convert.getShortValue(SLOT_CNT, data);
         int versions = 1;

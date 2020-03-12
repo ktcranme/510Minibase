@@ -51,20 +51,6 @@ public class Heapfile implements Filetype,  GlobalConst {
   private static int tempfilecount = 0;
 
 
-protected HFPage getNewPage() {
-	return new HFPage();
-}
-
-protected HFPage getNewPage(Page page) {
-	return new HFPage(page);
-}
-
-protected HFPage getNewPage(Page page, PageId pid) throws IOException {
-	HFPage hfp = new HFPage();
-	hfp.init(pid, page);
-	return hfp;
-}
-
   public PageId getFirstDirPageId() {
     return _firstDirPageId;
   }
@@ -87,7 +73,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       
       // initialize internal values of the new page:
       
-      HFPage hfpage = getNewPage();
+      HFPage hfpage = new HFPage();
       hfpage.init(pageId, apage);
       
       dpinfop.pageId.pid = pageId.pid;
@@ -117,7 +103,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
       
       HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = getNewPage();
+      HFPage currentDataPage = new HFPage();
       RID currentDataPageRid = new RID();
       PageId nextDirPageId = new PageId();
       // datapageId is stored in dpinfo.pageId 
@@ -397,7 +383,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       RID currentDataPageRid = new RID();
       Page pageinbuffer = new Page();
       HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = getNewPage();
+      HFPage currentDataPage = new HFPage();
       
       HFPage nextDirPage = new HFPage(); 
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
@@ -641,7 +627,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       boolean status;
       HFPage currentDirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage currentDataPage = getNewPage();
+      HFPage currentDataPage = new HFPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -795,7 +781,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       boolean status;
       HFPage dirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = getNewPage();
+      HFPage dataPage = new HFPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -854,7 +840,7 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       boolean status;
       HFPage dirPage = new HFPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = getNewPage();
+      HFPage dataPage = new HFPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -882,6 +868,15 @@ protected HFPage getNewPage(Page page, PageId pid) throws IOException {
       return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
       
     }
+
+  public Stream openStream()
+      throws InvalidMapSizeException,
+                      InvalidTupleSizeException,
+                      IOException, HFBufMgrException, InvalidSlotNumberException
+             {
+               Stream newscan = new Stream(this);
+               return newscan;
+             }
 
   /** Initiate a sequential scan.
    * @exception InvalidTupleSizeException Invalid tuple size
