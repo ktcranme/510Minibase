@@ -72,21 +72,7 @@ public class PhysicalMap implements GlobalConst{
 		String val = Convert.getStrValue(fldOffset[pos], data, fldOffset[pos + 1] - fldOffset[pos]);
 		return val;
 	}
-
-	public int versionCount() {
-		for (int i = fldOffset[8] - 1; i >= fldOffset[4]; i--) {
-			if (data[i] == 0) {
-				continue;
-			}
-			if (i >= fldOffset[7]) {
-				return 3;
-			} else if (i >= fldOffset[4]) {
-				return 2;
-			}
-		}
-		return 1;
-	}
-
+	
 	public boolean updateMap(int timestamp, String value) throws IOException  {
 		int firstTs = Convert.getIntValue(fldOffset[2], data);
 		int secondTs = Convert.getIntValue(fldOffset[4], data);
@@ -119,7 +105,7 @@ public class PhysicalMap implements GlobalConst{
 			return true;
 		}
 
-        return false;
+        return true;
 	}
 	
 	/*
@@ -304,24 +290,6 @@ public class PhysicalMap implements GlobalConst{
         if (version < 2) {
             int nextVer = (version + 1) * 2 + 3;
             val = Convert.getStrValue(PhysicalMapOffsets[nextVer], record, PhysicalMapOffsets[nextVer + 1] - PhysicalMapOffsets[nextVer]);
-		}
-		
-		// System.out.println("ACTUAL RECORD: " + map.getRowLabel() + ", " + map.getColumnLabel() + ", " + map.getFirstVer() + ", " + map.getSecondVer() + ", " + map.getThirdVer());
-
-        return new Map(mapcopy, 0, version, !val.isEmpty());
-	}
-
-	public Map toMap(int version) throws IOException {
-        // PhysicalMap map = new PhysicalMap(record, 0);
-
-        byte[] mapcopy = new byte [Map.map_size];
-        System.arraycopy(data, map_offset, mapcopy, 0, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE);
-        System.arraycopy(data, fldOffset[version * 2 + 2], mapcopy, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE, 4 + MAXVALUESIZE);
-
-        String val = "";
-        if (version < 2) {
-            int nextVer = (version + 1) * 2 + 3;
-            val = Convert.getStrValue(fldOffset[nextVer], data, fldOffset[nextVer + 1] - fldOffset[nextVer]);
 		}
 		
 		// System.out.println("ACTUAL RECORD: " + map.getRowLabel() + ", " + map.getColumnLabel() + ", " + map.getFirstVer() + ", " + map.getSecondVer() + ", " + map.getThirdVer());
