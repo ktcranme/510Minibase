@@ -833,7 +833,7 @@ public class Heapfile implements Filetype, GlobalConst {
 	 * 
 	 * @see bufmgr.pinPage
 	 */
-	private void pinPage(PageId pageno, Page page, boolean emptyPage) throws HFBufMgrException {
+	protected void pinPage(PageId pageno, Page page, boolean emptyPage) throws HFBufMgrException {
 
 		try {
 			SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
@@ -858,7 +858,7 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	} // end of unpinPage
 
-	private void freePage(PageId pageno) throws HFBufMgrException {
+	protected void freePage(PageId pageno) throws HFBufMgrException {
 
 		try {
 			SystemDefs.JavabaseBM.freePage(pageno);

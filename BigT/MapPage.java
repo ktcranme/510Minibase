@@ -46,9 +46,10 @@ public class MapPage extends HFPage implements Mapview {
             offset = getSlotOffset(slotNo);
 
             PhysicalMap pmap = new PhysicalMap(data, offset);
+            int versions = pmap.getVersionCount();
             pmap.updateMap(map.getTimeStamp(), map.getValue());
 
-            return true;
+            return versions < 3 ? true: false;
         }
 
         else {
@@ -100,5 +101,61 @@ public class MapPage extends HFPage implements Mapview {
         mid.slotNo = rid.slotNo * 3;
         return mid;
     }
+
+	public int deleteMap(MID rid) throws IOException, InvalidSlotNumberException {
+        int versions = 1;
+        int slotNo = rid.slotNo / 3;
+        short recLen = getSlotLength(slotNo);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+    
+        // first check if the record being deleted is actually valid
+        if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0)) {
+          // The records always need to be compacted, as they are
+          // not necessarily stored on the page in the order that
+          // they are listed in the slot index.
+    
+          // offset of record being deleted
+          int offset = getSlotOffset(slotNo);
+
+          PhysicalMap pmap = new PhysicalMap(data, offset);
+          versions = pmap.getVersionCount();
+
+          short usedPtr = Convert.getShortValue(USED_PTR, data);
+          int newSpot = usedPtr + recLen;
+          int size = offset - usedPtr;
+    
+          // shift bytes to the right
+          System.arraycopy(data, usedPtr, data, newSpot, size);
+    
+          // now need to adjust offsets of all valid slots that refer
+          // to the left of the record being removed. (by the size of the hole)
+    
+          int i, n, chkoffset;
+          for (i = 0, n = DPFIXED; i < slotCnt; n += SIZE_OF_SLOT, i++) {
+            if ((getSlotLength(i) >= 0)) {
+              chkoffset = getSlotOffset(i);
+              if (chkoffset < offset) {
+                chkoffset += recLen;
+                Convert.setShortValue((short) chkoffset, n + 2, data);
+              }
+            }
+          }
+    
+          // move used Ptr forwar
+          usedPtr += recLen;
+          Convert.setShortValue(usedPtr, USED_PTR, data);
+    
+          // increase freespace by size of hole
+          short freeSpace = Convert.getShortValue(FREE_SPACE, data);
+          freeSpace += recLen;
+          Convert.setShortValue(freeSpace, FREE_SPACE, data);
+    
+          setSlot(slotNo, EMPTY_SLOT, 0); // mark slot free
+        } else {
+          throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
+        }
+
+        return versions;
+	}
 
 }

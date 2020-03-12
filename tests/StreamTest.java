@@ -575,6 +575,11 @@ class StreamDriver extends TestDriver implements GlobalConst
       System.out.println ("  - Check that the updates are really there\n");
       try {
         stream = f.openStream();
+        if (f.getMapCnt() != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
+          status = FAIL;
+          System.err.println ("*** File reports " + f.getMapCnt() + " records, expected " + (int) java.lang.Math.ceil(choice/(float)2) * 3);
+          return false;
+        }
       }
       catch (Exception e) {
         status = FAIL;

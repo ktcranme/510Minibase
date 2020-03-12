@@ -67,6 +67,15 @@ public class PhysicalMap implements GlobalConst{
 	  return val;
 	}
 
+	public int getVersionCount() {
+		for (int i = fldOffset[8] - 1; i >= fldOffset[4]; i--) {
+			if (data[i] == 0) continue;
+			else if (i > fldOffset[6]) return 3;
+			else if (i > fldOffset[4]) return 2;
+		}
+		return 1;
+	}
+
 	public String getVersion(int i) throws IOException {
 		int pos = 2 * i + 3;
 		String val = Convert.getStrValue(fldOffset[pos], data, fldOffset[pos + 1] - fldOffset[pos]);
