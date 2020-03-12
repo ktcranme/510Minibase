@@ -168,7 +168,7 @@ class SORTDriver extends TestDriver implements GlobalConst {
     // Sort "test1.in"
     Sort sort = null;
     try {
-      sort = new Sort(attrType, (short) 4, attrSize, fstream, 0, order[0], MAXROWLABELSIZE, SORTPGNUM);
+      sort = new Sort(attrType, (short) 4, attrSize, fstream, new int[]{0}, order[0], MAXROWLABELSIZE, SORTPGNUM);
     } catch (Exception e) {
       status = FAIL;
       e.printStackTrace();

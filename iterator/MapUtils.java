@@ -69,27 +69,87 @@ public class MapUtils {
 		return true;
 	}
 
-	public static void SetValue(Map value, Map map, int fld_no) throws IOException, UnknowAttrType, TupleUtilsException {
-
-		switch (fld_no) {
-			case 0:
-				value.setRowLabel(map.getRowLabel());
-				break;
-			case 1:
-				value.setColumnLabel(map.getColumnLabel());
-				break;
-			case 2:
-				value.setTimeStamp(map.getTimeStamp());
-				break;
-			case 3:
-				value.setValue(map.getValue());
-				break;
-			default:
-				throw new UnknowAttrType(null, "Don't know how to handle attrSymbol, attrNull");
-
+	public static void SetValue(Map value, Map map, int[] fld_nos) throws IOException, UnknowAttrType, TupleUtilsException {
+		for(int i = 0; i < fld_nos.length; i++)
+		{
+			switch (fld_nos[i]) {
+				case 0:
+					value.setRowLabel(map.getRowLabel());
+					break;
+				case 1:
+					value.setColumnLabel(map.getColumnLabel());
+					break;
+				case 2:
+					value.setTimeStamp(map.getTimeStamp());
+					break;
+				case 3:
+					value.setValue(map.getValue());
+					break;
+				default:
+					throw new UnknowAttrType(null, "Don't know how to handle attrSymbol, attrNull");
+	
+			}
 		}
 
 		return;
 
+	}
+
+	/*
+	 * This function compares two maps in specified fields in the order they come
+	 * note: to only use a single field the array can just have one element
+	 */
+	public static int CompareMapWithMapForSorting(Map m1, Map m2, int[] fld_nos)
+	{
+		String val1, val2;
+
+		for(int i = 0; i < fld_nos.length; i++)
+		{
+			try{
+				switch (fld_nos[i]) {
+					case 0:
+						val1 = m1.getRowLabel();
+						val2 = m2.getRowLabel();
+
+						if(val1.compareTo(val2) > 0)
+							return 1;
+						else if(val1.compareTo(val2) < 0)
+							return -1;
+						break;
+					case 1:
+						val1 = m1.getColumnLabel();
+						val2 = m2.getColumnLabel();
+
+						if(val1.compareTo(val2) > 0)
+							return 1;
+						else if(val1.compareTo(val2) < 0)
+							return -1;
+						break;
+					case 2:
+						int ival1 = m1.getTimeStamp();
+						int ival2 = m2.getTimeStamp();
+
+						if(ival1 > ival2)
+							return 1;
+						else if(ival1 < ival2)
+							return -1;
+						break;
+					case 3:
+						val1 = m1.getValue();
+						val2 = m2.getValue();
+
+						if(val1.compareTo(val2) > 0)
+							return 1;
+						else if(val1.compareTo(val2) < 0)
+							return -1;
+						break;
+					default:
+						throw new UnknowAttrType(null, "Can only handle fld values 0-3");
+				} 
+			} catch (IOException | UnknowAttrType e) {
+				e.printStackTrace();
+			}
+		}
+		return 0;
 	}
 }

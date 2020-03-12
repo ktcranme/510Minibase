@@ -21,10 +21,7 @@ public abstract class pnodePQ
   protected int                   count;
 
   /** the field number of the sorting field */
-  protected int                   fld_no;
-
-  /** the attribute type of the sorting field */
-  protected AttrType              fld_type;
+  protected int[]                   fld_nos;
 
   /** the sorting order (Ascending or Descending) */
   protected TupleOrder            sort_order;
@@ -80,7 +77,7 @@ public abstract class pnodePQ
    */
   public int pnodeCMP(pnode a, pnode b) 
          throws IOException, UnknowAttrType, TupleUtilsException {
-    int ans = MapUtils.CompareMapWithMap(a.map, b.map, fld_no);
+    int ans = MapUtils.CompareMapWithMapForSorting(a.map, b.map, fld_nos);
     return ans;
   }
 

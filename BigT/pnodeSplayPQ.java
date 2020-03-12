@@ -31,8 +31,7 @@ public class pnodeSplayPQ extends pnodePQ
   {
     root = null;
     count = 0;
-    fld_no = 0;
-    fld_type = new AttrType(AttrType.attrInteger);
+    fld_nos = new int[]{0};
     sort_order = new TupleOrder(TupleOrder.Ascending);
   }
 
@@ -42,12 +41,11 @@ public class pnodeSplayPQ extends pnodePQ
    * @param fldType the type of the field for sorting
    * @param order   the order of sorting (Ascending or Descending)
    */  
-  public pnodeSplayPQ(int fldNo, AttrType fldType, TupleOrder order)
+  public pnodeSplayPQ(int[] fldNos, TupleOrder order)
   {
     root = null;
     count = 0;
-    fld_no   = fldNo;
-    fld_type = fldType;
+    fld_nos   = fldNos;
     sort_order = order;
   }
 
