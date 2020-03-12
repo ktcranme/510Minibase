@@ -23,6 +23,9 @@ public class Tuplefile extends Heapfile {
 
     public boolean updateTuple(RID rid, Tuple newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
+        if (newtuple.getLength() != newtuple.data.length) {
+            throw new InvalidUpdateException();
+        }
         return updateRecord(rid, newtuple.getTupleByteArray());
     }
 

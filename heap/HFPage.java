@@ -519,7 +519,8 @@ public class HFPage extends Page implements ConstSlot {
 
   }
 
-  public boolean updateRecord(RID rid, byte[] newrecord) throws IOException, InvalidSlotNumberException {
+  public boolean updateRecord(RID rid, byte[] newrecord) throws IOException, InvalidSlotNumberException,
+      InvalidUpdateException {
     short recLen;
     short offset;
     PageId pageNo = new PageId();
@@ -537,7 +538,7 @@ public class HFPage extends Page implements ConstSlot {
       offset = getSlotOffset(slotNo);
       if (recLen != newrecord.length) {
         System.err.println("Expected " + recLen + ", Got: " + newrecord.length);
-        throw new IOException();
+        throw new InvalidUpdateException();
       }
       System.arraycopy(newrecord, 0, data, offset, recLen);
       return true;

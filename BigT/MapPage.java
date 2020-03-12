@@ -9,6 +9,7 @@ import BigT.*;
 import global.*;
 import heap.HFPage;
 import heap.InvalidSlotNumberException;
+import heap.InvalidUpdateException;
 import diskmgr.*;
 
 import BigT.Map;
@@ -27,7 +28,7 @@ public class MapPage extends HFPage implements Mapview {
         return PhysicalMap.physicalMapToMap(rec, mid.slotNo % 3);
     }
 
-    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException {
+    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
         short recLen;
         short offset;
         PageId pageNo = new PageId();

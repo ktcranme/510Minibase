@@ -7,9 +7,10 @@ import java.io.*;
 import global.*;
 import heap.HFPage;
 import heap.InvalidSlotNumberException;
+import heap.InvalidUpdateException;
 import diskmgr.*;
 
-public class VMapPage extends HFPage implements Mapview  {
+public class VMapPage extends HFPage implements Mapview {
     public VMapPage(Page page) {
         super(page);
     }
@@ -23,7 +24,7 @@ public class VMapPage extends HFPage implements Mapview  {
         return new Map(rec, 0);
     }
 
-    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException {
+    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
         return updateRecord(new RID(mid.pageNo, mid.slotNo), map.getMapByteArray());
     }
 
