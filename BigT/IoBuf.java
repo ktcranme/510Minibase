@@ -22,9 +22,9 @@ public class IoBuf implements GlobalConst{
    *@param bufs[][] the I/O buffer
    *@param n_pages the numbers of page of this buffer
    *@param mSize the page size
-   *@param temp_fd the reference to a Heapfile
+   *@param temp_fd the reference to a VMapfile
    */ 
-  public void init(byte bufs[][], int n_pages, int mSize, Heapfile temp_fd)
+  public void init(byte bufs[][], int n_pages, int mSize, VMapfile temp_fd)
     {
       _bufs    = bufs;
       _n_pages = n_pages;
@@ -155,7 +155,8 @@ public class IoBuf implements GlobalConst{
 		{
 		  System.arraycopy(_bufs[count],m_size*i,tempbuf,0,m_size);
 		  try {
-		    mid =  _temp_fd.insertMap(tempbuf);
+        RID temp =  _temp_fd.insertRecord(tempbuf);
+        mid = new MID(temp.pageNo, temp.slotNo);
 		  }
 		  catch (Exception e){
 		    throw e;
@@ -207,7 +208,7 @@ public class IoBuf implements GlobalConst{
   private  int  m_size;               // Size of a map
   private  long m_written;           // # of maps written so far
   private  int  _TEST_temp_fd;       // fd of a temporary file
-  private  Heapfile _temp_fd;
+  private  VMapfile _temp_fd;
   private  boolean  flushed;        // TRUE => buffer has been flushed.
   private  int  mode;
   private  int  m_rd_from_pg;      // # of maps read from current page

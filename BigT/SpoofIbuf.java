@@ -32,7 +32,7 @@ public class SpoofIbuf implements GlobalConst {
    * @exception IOException some I/O fault
    * @exception Exception   other exceptions
    */
-  public void init(Heapfile fd, byte bufs[][], int n_pages, int mSize, int Nmaps) throws IOException, Exception {
+  public void init(VMapfile fd, byte bufs[][], int n_pages, int mSize, int Nmaps) throws IOException, Exception {
     _fd = fd;
     _bufs = bufs;
     _n_pages = n_pages;
@@ -153,7 +153,7 @@ public class SpoofIbuf implements GlobalConst {
 
   private int TEST_fd;
 
-  private Heapfile _fd;
+  private VMapfile _fd;
   private Stream hf_stream;
   private int _n_pages;
   private int m_size;

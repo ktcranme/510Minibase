@@ -32,7 +32,7 @@ public class OBuf implements GlobalConst {
    * @param buffer  true => it is used as a buffer => if it is flushed, print a
    *                nasty message. it is false by default.
    */
-  public void init(byte[][] bufs, int n_pages, int mSize, Heapfile temp_fd, boolean buffer) {
+  public void init(byte[][] bufs, int n_pages, int mSize, VMapfile temp_fd, boolean buffer) {
     _bufs = bufs;
     _n_pages = n_pages;
     m_size = mSize;
@@ -139,6 +139,6 @@ public class OBuf implements GlobalConst {
   private int m_size; // Size of a map
   private long m_written; // # of map written so far.
   private int TEST_temp_fd; // fd of a temporary file
-  private Heapfile _temp_fd;
+  private VMapfile _temp_fd;
   private boolean buffer_only;
 }

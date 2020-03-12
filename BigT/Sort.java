@@ -41,7 +41,7 @@ public class Sort extends Iterator implements GlobalConst {
   private int map_size;
 
   private pnodeSplayPQ Q;
-  private Heapfile[] temp_files;
+  private VMapfile[] temp_files;
   private int n_tempfiles;
   private Map output_map;
   private int[] n_maps;
@@ -225,7 +225,7 @@ public class Sort extends Iterator implements GlobalConst {
 
         // check to see whether need to expand the array
         if (run_num == n_tempfiles) {
-          Heapfile[] temp1 = new Heapfile[2 * n_tempfiles];
+          VMapfile[] temp1 = new VMapfile[2 * n_tempfiles];
           for (int i = 0; i < n_tempfiles; i++) {
             temp1[i] = temp_files[i];
           }
@@ -241,9 +241,9 @@ public class Sort extends Iterator implements GlobalConst {
         }
 
         try {
-          temp_files[run_num] = new Heapfile(null);
+          temp_files[run_num] = new VMapfile(null);
         } catch (Exception e) {
-          throw new SortException(e, "Sort.java: create Heapfile failed");
+          throw new SortException(e, "Sort.java: create VMapfile failed");
         }
 
         // need io_bufs.java
@@ -316,7 +316,7 @@ public class Sort extends Iterator implements GlobalConst {
 
           // check to see whether need to expand the array
           if (run_num == n_tempfiles) {
-            Heapfile[] temp1 = new Heapfile[2 * n_tempfiles];
+            VMapfile[] temp1 = new VMapfile[2 * n_tempfiles];
             for (int i = 0; i < n_tempfiles; i++) {
               temp1[i] = temp_files[i];
             }
@@ -332,9 +332,9 @@ public class Sort extends Iterator implements GlobalConst {
           }
 
           try {
-            temp_files[run_num] = new Heapfile(null);
+            temp_files[run_num] = new VMapfile(null);
           } catch (Exception e) {
-            throw new SortException(e, "Sort.java: create Heapfile failed");
+            throw new SortException(e, "Sort.java: create VMapfile failed");
           }
 
           // need io_bufs.java
@@ -538,15 +538,15 @@ public class Sort extends Iterator implements GlobalConst {
 
     // as a heuristic, we set the number of runs to an arbitrary value
     // of ARBIT_RUNS
-    temp_files = new Heapfile[ARBIT_RUNS];
+    temp_files = new VMapfile[ARBIT_RUNS];
     n_tempfiles = ARBIT_RUNS;
     n_maps = new int[ARBIT_RUNS];
     n_runs = ARBIT_RUNS;
 
     try {
-      temp_files[0] = new Heapfile(null);
+      temp_files[0] = new VMapfile(null);
     } catch (Exception e) {
-      throw new SortException(e, "Sort.java: Heapfile error");
+      throw new SortException(e, "Sort.java: VMapfile error");
     }
 
     o_buf = new OBuf();
@@ -635,7 +635,7 @@ public class Sort extends Iterator implements GlobalConst {
           try {
             temp_files[i].deleteFile();
           } catch (Exception e) {
-            throw new SortException(e, "Sort.java: Heapfile error");
+            throw new SortException(e, "Sort.java: VMapfile error");
           }
           temp_files[i] = null;
         }

@@ -127,9 +127,9 @@ class SORTDriver extends TestDriver implements GlobalConst {
 
     // Create unsorted data file "test1.in"
     MID mid;
-    Heapfile f = null;
+    Mapfile f = null;
     try {
-      f = new Heapfile("test1.in");
+      f = new Mapfile("test1.in");
     } catch (Exception e) {
       status = FAIL;
       e.printStackTrace();
@@ -149,7 +149,7 @@ class SORTDriver extends TestDriver implements GlobalConst {
       }
 
       try {
-        mid = f.insertMap(m.getMapByteArray());
+        mid = f.insertMap(m);
       } catch (Exception e) {
         status = FAIL;
         e.printStackTrace();
@@ -159,7 +159,7 @@ class SORTDriver extends TestDriver implements GlobalConst {
     FileStream fstream = null;
 
     try {
-      fstream = new FileStream("test1.in", null);
+      fstream = new FileStream(f, null);
     } catch (Exception e) {
       status = FAIL;
       e.printStackTrace();
