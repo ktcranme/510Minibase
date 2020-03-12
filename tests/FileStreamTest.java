@@ -5,12 +5,12 @@ import java.io.IOException;
 import BigT.FileStream;
 import BigT.Map;
 import BigT.Stream;
+import BigT.Mapfile;
 import global.AttrOperator;
 import global.AttrType;
 import global.GlobalConst;
 import global.MID;
 import global.SystemDefs;
-import heap.Heapfile;
 import iterator.CondExpr;
 import iterator.FldSpec;
 import iterator.RelSpec;
@@ -25,10 +25,10 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
         return "File Stream";
     }
 
-    Heapfile createDummyFile(String filename) {
-        Heapfile f = null;
+    Mapfile createDummyFile(String filename) {
+        Mapfile f = null;
         try {
-            f = new Heapfile(filename);
+            f = new Mapfile(filename);
         } catch (Exception e) {
             System.err.println("*** Could not create heap file\n");
             e.printStackTrace();
@@ -36,7 +36,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
         return f;
     }
 
-    boolean inputDummyDataToFile(Heapfile f, int numRecords) {
+    boolean inputDummyDataToFile(Mapfile f, int numRecords) {
         System.out.println("  - Add " + numRecords + " records to the file\n");
         MID rid = null;
         for (int i = 0; i < numRecords; i++) {
@@ -119,10 +119,10 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
         return true;
     }
 
-    protected Heapfile setup(int choice, String filename) {
+    protected Mapfile setup(int choice, String filename) {
         System.out.println("\n  Insert and verify fixed-size records.\n");
         MID rid = new MID();
-        Heapfile f = null;
+        Mapfile f = null;
         int rec_cnt = 0;
 
         System.out.println("  - Create a heap file\n");
@@ -205,7 +205,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
     protected boolean test1() {
         System.out.println ("\nTest 1: Filter records with timestamp > 70 && timestamp < 40\n");
 
-        Heapfile f = setup(100, "file_1");
+        Mapfile f = setup(100, "file_1");
 
         // ROW LABEL == "row0" AND (VALUE > 70 OR VALUE < 40)
         CondExpr[] expr2 = new CondExpr[1];
@@ -231,7 +231,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
 
         FileStream fs;
         try {
-            fs = new FileStream("file_1", expr2);
+            fs = new FileStream(f, expr2);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Could not create filestream!");
