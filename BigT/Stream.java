@@ -67,7 +67,7 @@ public class Stream implements GlobalConst {
   private PageId datapageId = new PageId();
 
   /** in-core copy (pinned) of the same */
-  private MapPage datapage = new MapPage();
+  private HFPage datapage = new HFPage();
 
   /** record ID of the current record (from the current data page) */
   private MID userrid = new MID();
@@ -405,7 +405,7 @@ public class Stream implements GlobalConst {
 
                    // pin first data page
                    try {
-                     datapage  = new MapPage();
+                     datapage  = new HFPage();
                      pinPage(datapageId, (Page) datapage, false);
                    }
                    catch (Exception e){
@@ -484,7 +484,7 @@ public class Stream implements GlobalConst {
                datapageId.pid = dpinfo.getPageId().pid;
 
                try {
-                 datapage = new MapPage();
+                 datapage = new HFPage();
                  pinPage(dpinfo.getPageId(), (Page) datapage, false);
                }
 
