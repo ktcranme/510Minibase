@@ -192,10 +192,10 @@ public class Sort extends Iterator implements GlobalConst {
       if (cur_node == null)
         break;
       p_elems_curr_Q--;
-      System.out.print(cur_node.map.getRowLabel() + " vs " + lastElem.getRowLabel());
+      //System.out.print(cur_node.map.getRowLabel() + " vs " + lastElem.getRowLabel());
       comp_res = MapUtils.CompareMapWithMapForSorting(cur_node.map, lastElem, _sort_flds); // need
                                                                                 // MapUtils.java
-      System.out.println(" gives result: " + comp_res);
+      //System.out.println(" gives result: " + comp_res);
       if ((comp_res < 0 && order.tupleOrder == TupleOrder.Ascending)
           || (comp_res > 0 && order.tupleOrder == TupleOrder.Descending)) {
         // doesn't fit in current run, put into the other queue
@@ -205,7 +205,7 @@ public class Sort extends Iterator implements GlobalConst {
           throw new SortException(e, "Sort.java: UnknowAttrType caught from Q.enq()");
         }
         p_elems_other_Q++;
-        System.out.println("Adding " + cur_node.map.getRowLabel() + " to other Q");
+        //System.out.println("Adding " + cur_node.map.getRowLabel() + " to other Q");
       } else {
         // set lastElem to have the value of the current map,
         // need map_utils.java
@@ -213,7 +213,7 @@ public class Sort extends Iterator implements GlobalConst {
         // write map to output file, need io_bufs.java, type cast???
         // System.out.println("Putting map into run " + (run_num + 1));
         // cur_node.map.print();
-        System.out.println("Putting " + cur_node.map.getRowLabel() + " to OBuf");
+        //.out.println("Putting " + cur_node.map.getRowLabel() + " to OBuf");
         o_buf.Put(cur_node.map);
       }
 
