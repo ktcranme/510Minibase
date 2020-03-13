@@ -70,7 +70,7 @@ public class IndexScan extends Iterator {
         index_only = indexOnly;  // added by bingjie miao
 
         try {
-            f = new Heapfile(relName);
+            f = new Mapfile(relName);
         } catch (Exception e) {
             throw new IndexException(e, "IndexScan.java: Heapfile not created");
         }
@@ -148,7 +148,7 @@ public class IndexScan extends Iterator {
     private IndexFile indFile;
     private IndexFileScan indScan;
     private CondExpr[] _selects;
-    private Heapfile f;
+    private Mapfile f;
     private Map map1;
     private boolean index_only;
 
