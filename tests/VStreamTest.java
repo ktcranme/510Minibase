@@ -5,6 +5,7 @@ import java.util.*;
 
 import BigT.Map;
 import BigT.Mapfile;
+import BigT.VMapfile;
 import BigT.Stream;
 
 import java.lang.*;
@@ -19,7 +20,7 @@ import chainexception.*;
   protected as opposed to the private type in C++.
   */
 
-class StreamDriver extends TestDriver implements GlobalConst
+class VStreamDriver extends TestDriver implements GlobalConst
 {
 
   private final static boolean OK = true;
@@ -28,7 +29,7 @@ class StreamDriver extends TestDriver implements GlobalConst
   private int choice = 100;
   private final static int reclen = 32;
 
-  public StreamDriver () {
+  public VStreamDriver () {
     super("streamtest");
   }
   
@@ -101,12 +102,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
     MID rid = new MID();
-    Mapfile f = null;
+    VMapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Create a heap file\n");
     try {
-      f = new Mapfile("file_1");
+      f = new VMapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -301,12 +302,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    Mapfile f = null;
+    VMapfile f = null;
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as test 1\n");
     try {
-      f = new Mapfile("file_1");
+      f = new VMapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -467,12 +468,12 @@ class StreamDriver extends TestDriver implements GlobalConst
     boolean status = OK;
     Stream stream = null;
     MID rid = new MID();
-    Mapfile f = null; 
+    VMapfile f = null; 
     int rec_cnt = 0;
 
     System.out.println ("  - Open the same heap file as tests 1 and 2\n");
     try {
-      f = new Mapfile("file_1");
+      f = new VMapfile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -575,11 +576,6 @@ class StreamDriver extends TestDriver implements GlobalConst
       System.out.println ("  - Check that the updates are really there\n");
       try {
         stream = f.openStream();
-        if (f.getMapCnt() != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
-          status = FAIL;
-          System.err.println ("*** File reports " + f.getMapCnt() + " records, expected " + (int) java.lang.Math.ceil(choice/(float)2) * 3);
-          return false;
-        }
       }
       catch (Exception e) {
         status = FAIL;
@@ -601,7 +597,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           m = stream.getNext(rid);
           if (m == null) {
             // Because we created two versions of the map now
-            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2) * 3) {
+            if (rec_cnt != (int) java.lang.Math.ceil(choice/(float)2)) {
               status = FAIL;
               System.err.println ("*** Record count does not match inserted count!!! Found " + rec_cnt + " records!");
               break;
@@ -631,58 +627,28 @@ class StreamDriver extends TestDriver implements GlobalConst
             break;
           }
 
-
-          if (m.getVersionNo() == 1) {
-            try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
-                System.err.println ("*** Record " + i
-                    + " differs from our update\n");
-                System.err.println ("m.value: "+ m.getValue()
-                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
-                System.err.println ("m2.value: "+ m2.getValue()
-                    + " should be " + Integer.toString(i * 10 + 4) + "\n");
-                status = FAIL;
-                break;
-              }
-            } catch (Exception e) {
-                status = FAIL;
-                break;
-            }
-          } else if (m.getVersionNo() == 2) {
-            try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
-                System.err.println ("*** Record " + i
-                    + " differs from our update\n");
-                System.err.println ("m.value: "+ m.getValue()
-                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
-                System.err.println ("m2.value: "+ m2.getValue()
-                    + " should be " + Integer.toString(i * 10 + 3) + "\n");
-                status = FAIL;
-                break;
-              }
-            } catch (Exception e) {
-                status = FAIL;
-                break;
-            }
-            i += 2;     // Because we deleted the odd ones...
-          } else {
-            try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
-                System.err.println ("*** Record " + i
-                    + " differs from our update\n");
-                System.err.println ("m.value: "+ m.getValue()
-                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
-                System.err.println ("m2.value: "+ m2.getValue()
-                    + " should be " + Integer.toString(i * 10 + 5) + "\n");
-                status = FAIL;
-                break;
-              }
-            } catch (Exception e) {
-                status = FAIL;
-                break;
-            }
-            // i += 2;     // Because we deleted the odd ones...
+          if (m.getVersionNo() != 0 || m2.getVersionNo() != 0) {
+            System.err.println("This is supposed to be a virtual map.");
+            return false;
           }
+
+          try {
+            if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
+              System.err.println ("*** Record " + i
+                  + " differs from our update\n");
+              System.err.println ("m.value: "+ m.getValue()
+                  + " should be " + Integer.toString(i * 10 + 5) + "\n");
+              System.err.println ("m2.value: "+ m2.getValue()
+                  + " should be " + Integer.toString(i * 10 + 5) + "\n");
+              status = FAIL;
+              break;
+            }
+          } catch (Exception e) {
+              status = FAIL;
+              break;
+          }
+          
+          i += 2;     // Because we deleted the odd ones...
 
         }
       }
@@ -702,12 +668,8 @@ class StreamDriver extends TestDriver implements GlobalConst
     if (!test1()) { _passAll = FAIL; }
     if (!test2()) { _passAll = FAIL; }
     if (!test3()) { _passAll = FAIL; }
-    /*
-     * These tests are not necessary since Map is fixed size
-    if (!test4()) { _passAll = FAIL; }
-    if (!test5()) { _passAll = FAIL; }
-    if (!test6()) { _passAll = FAIL; }
-    */
+
+
     return _passAll;
   }
 
@@ -717,11 +679,11 @@ class StreamDriver extends TestDriver implements GlobalConst
   }
 }
 
-public class StreamTest {
+public class VStreamTest {
 
   public static void main (String argv[]) {
 
-    StreamDriver hd = new StreamDriver();
+    VStreamDriver hd = new VStreamDriver();
     boolean dbstatus;
 
     hd.setChoice(0);

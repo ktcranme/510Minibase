@@ -98,7 +98,8 @@ public class Scan implements GlobalConst{
     rid.slotNo = userrid.slotNo;
          
     try {
-      recptrtuple = datapage.getRecord(rid);
+      byte[] rec = datapage.getRecord(rid);
+      recptrtuple = new Tuple(rec, 0, rec.length);
     }
     
     catch (Exception e) {
@@ -275,7 +276,8 @@ public class Scan implements GlobalConst{
     /** there is a datapage record on the first directory page: */
 	
 	try {
-          rectuple = dirpage.getRecord(datapageRid);
+    byte[] rec = dirpage.getRecord(datapageRid);
+          rectuple = new Tuple(rec, 0, rec.length);
 	}  
 				
 	catch (Exception e) {
@@ -336,8 +338,8 @@ public class Scan implements GlobalConst{
 	if(datapageRid != null) {
           
 	  try {
-	  
-	    rectuple = dirpage.getRecord(datapageRid);
+	  byte[] rec = dirpage.getRecord(datapageRid);
+	    rectuple = new Tuple(rec, 0, rec.length);
 	  }
 	  
 	  catch (Exception e) {
@@ -538,7 +540,8 @@ public class Scan implements GlobalConst{
   
     // data page is not yet loaded: read its record from the directory page
    	try {
-	  rectuple = dirpage.getRecord(datapageRid);
+       byte[] rec = dirpage.getRecord(datapageRid);
+	  rectuple = new Tuple(rec, 0, rec.length);
 	}
 	
 	catch (Exception e) {

@@ -16,10 +16,10 @@ public class DataPageInfo implements GlobalConst{
 
 
   /** HFPage returns int for avail space, so we use int here */
-  int    availspace; 
+  public int    availspace; 
   
   /** for efficient implementation of getRecCnt() */
-  int    recct;    
+  public int    recct;    
   
   /** obvious: id of this particular data page (a HFPage) */
   PageId pageId = new PageId();   
@@ -56,13 +56,45 @@ public class DataPageInfo implements GlobalConst{
     offset = 0;
   }
   
-  /** Constructor 
-   * @param array  a byte array
+  /**
+   * Constructor
+   * 
+   * @param array a byte array
+   * @throws InvalidTupleSizeException
+   * @throws IOException
    */
-  public DataPageInfo(byte[] array)
+  public DataPageInfo(byte[] array) throws InvalidTupleSizeException, IOException
+  {
+      // need check _atuple size == this.size ?otherwise, throw new exception
+      if (array.length!=12){
+        throw new InvalidTupleSizeException(null, "HEAPFILE: TUPLE SIZE ERROR");
+      }
+  
+      else{
+        data = array;
+        this.offset = 0;
+        
+        availspace = Convert.getIntValue(offset, data);
+        recct = Convert.getIntValue(offset+4, data);
+        pageId = new PageId();
+        pageId.pid = Convert.getIntValue(offset+8, data);
+        
+      }
+  }
+
+  public DataPageInfo(byte[] array, int offset) throws IOException
   {
     data = array;
-    offset = 0;
+    this.offset = offset;
+    
+    availspace = Convert.getIntValue(offset, data);
+    recct = Convert.getIntValue(offset+4, data);
+    pageId = new PageId();
+    pageId.pid = Convert.getIntValue(offset+8, data);
+  }
+
+  public int getLength() {
+    return data.length;
   }
 
       

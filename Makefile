@@ -52,6 +52,9 @@ teststream: db
 testbigt: db
 	cd tests; make runbigt
 
+testvstream: db
+	cd tests; make runvstream
+
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
 
