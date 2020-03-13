@@ -42,6 +42,9 @@ runbigt: $(CURDIR)/bigtTest.class
 runvstream: $(CURDIR)/VStreamTest.class
 	$(JAVA) tests.VStreamTest
 
+runsorttest: $(CURDIR)/SortTest.class
+	$(JAVA) tests.SortTest
+
 filestream: $(CURDIR)/FileStreamTest.class
 	$(JAVA) tests.FileStreamTest
 

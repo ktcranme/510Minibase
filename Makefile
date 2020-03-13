@@ -54,7 +54,10 @@ testbigt: db
 
 testvstream: db
 	cd tests; make runvstream
-
+	
+testsort: db
+	cd tests; make runsorttest
+	
 filestream: db
 	cd tests; make filestream
 
