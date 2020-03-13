@@ -22,6 +22,8 @@ public class bigT implements GlobalConst {
     private Mapfile hf;
     private BTreeFile btf;
     private BTreeFile btfTS;
+    AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
+    short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
 
     public Mapfile getHf() {
         return hf;
@@ -146,29 +148,26 @@ public class bigT implements GlobalConst {
                 bts.DestroyBTreeFileScan();
                 break;
             default:
-                Set<String> colNames =new HashSet<>();
-                Stream scan = new Stream(hf);
-                Map temp;
-                MID rid = new MID();
-                temp = scan.getNext(rid);
-                while (temp != null) {
-                    temp.mapCopy(temp);
-                    colNames.add(temp.getColumnLabel());
-                    temp = scan.getNext(rid);
+                FileStream fs = new FileStream(hf, null);
+                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, GlobalConst.NUMBUF);
+                Map m = st.get_next();
+                if (m != null) {
+                    c = 1;
+                    s = m.getColumnLabel();
+                    while ((m = st.get_next()) != null) {
+                        if (!s.equalsIgnoreCase(m.getColumnLabel()))
+                            c++;
+                        s = m.getColumnLabel();
+                    }
                 }
-                c=colNames.size();
+                st.close();
+                fs.close();
                 break;
         }
         return c;
     }
 
-    public int getRowCnt() throws IOException,
-            KeyNotMatchException,
-            IteratorException,
-            ConstructPageException,
-            PinPageException,
-            UnpinPageException,
-            ScanIteratorException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException, HFBufMgrException, InvalidMapSizeException, InvalidSlotNumberException, InvalidTupleSizeException {
+    public int getRowCnt() throws Exception {
         BTFileScan bts;
         KeyDataEntry ky;
         String s = "";
@@ -203,17 +202,20 @@ public class bigT implements GlobalConst {
                 bts.DestroyBTreeFileScan();
                 break;
             default:
-                Set<String> rowNames =new HashSet<>();
-                Stream scan = new Stream(hf);
-                Map temp;
-                MID rid = new MID();
-                temp = scan.getNext(rid);
-                while (temp != null) {
-                    temp.mapCopy(temp);
-                    rowNames.add(temp.getRowLabel());
-                    temp = scan.getNext(rid);
+                FileStream fs = new FileStream(hf, null);
+                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                Map m = st.get_next();
+                if (m != null) {
+                    c = 1;
+                    s = m.getRowLabel();
+                    while ((m = st.get_next()) != null) {
+                        if (!s.equalsIgnoreCase(m.getRowLabel()))
+                            c++;
+                        s = m.getRowLabel();
+                    }
                 }
-                c=rowNames.size();
+                st.close();
+                fs.close();
                 break;
         }
         return c;
