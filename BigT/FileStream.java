@@ -18,7 +18,7 @@ import java.io.*;
  * call get_next to get all tuples
  */
 public class FileStream extends Iterator {
-    private Heapfile f;
+    private Bigtablefile f;
     private Stream stream;
     private CondExpr[] OutputFilter;
     public FldSpec[] perm_mat;
@@ -33,15 +33,11 @@ public class FileStream extends Iterator {
      * @exception FileScanException   exception from this class
      * @exception InvalidRelation     invalid relation
      */
-    public FileStream(String file_name, CondExpr[] outFilter)
+    public FileStream(Bigtablefile f, CondExpr[] outFilter)
             throws IOException, FileScanException, InvalidRelation {
         OutputFilter = outFilter;
 
-        try {
-            f = new Heapfile(file_name);
-        } catch (Exception e) {
-            throw new FileScanException(e, "Create new heapfile failed");
-        }
+        this.f = f;
 
         try {
             stream = f.openStream();
@@ -54,10 +50,11 @@ public class FileStream extends Iterator {
      * @return the result tuple
      * @throws InvalidMapSizeException
      * @throws InvalidTupleSizeException
+     * @throws InvalidSlotNumberException
      */
-    public Map get_next()
-            throws IOException, InvalidTypeException, PageNotReadException, PredEvalException, UnknowAttrType,
-            FieldNumberOutOfBoundException, WrongPermat, InvalidMapSizeException, InvalidTupleSizeException {
+    public Map get_next() throws IOException, InvalidTypeException, PageNotReadException, PredEvalException,
+            UnknowAttrType, FieldNumberOutOfBoundException, WrongPermat, InvalidMapSizeException,
+            InvalidTupleSizeException, InvalidSlotNumberException {
         MID rid = new MID();
 
         while (true) {

@@ -19,15 +19,15 @@ public class bigT implements GlobalConst {
     public static final String DELIMITER = "_";
     private int type;
     private String name;
-    private Heapfile hf;
+    private Mapfile hf;
     private BTreeFile btf;
     private BTreeFile btfTS;
 
-    public Heapfile getHf() {
+    public Mapfile getHf() {
         return hf;
     }
 
-    public void setHf(Heapfile hf) {
+    public void setHf(Mapfile hf) {
         this.hf = hf;
     }
 
@@ -72,7 +72,7 @@ public class bigT implements GlobalConst {
             AddFileEntryException {
         this.name = name;
         this.type = type;
-        this.hf = new Heapfile(name);
+        this.hf = new Mapfile(name);
         switch (type) {
             case 1:
                 this.btf = null;// no index
@@ -240,10 +240,10 @@ public class bigT implements GlobalConst {
             ConstructPageException,
             IteratorException,
             InsertException {
-        MID mid = hf.insertMap(mapPtr);
-        RID rid = new RID(mid);
         //need to handle versioning to remove 4th version
         Map tempMap = new Map(mapPtr, 0);
+        MID mid = hf.insertMap(tempMap);
+        RID rid = new RID(mid);
         switch (type) {
             case 1: // no index update required
                 break;

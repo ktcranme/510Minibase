@@ -74,11 +74,11 @@ public boolean runTests () {
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
     RID rid = new RID();
-    Heapfile f = null;
+    Tuplefile f = null;
 
     System.out.println ("  - Create a heap file\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Tuplefile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -103,7 +103,7 @@ public boolean runTests () {
 	rec.name = "record" + i;
 
 	try {
-	  rid = f.insertRecord(rec.toByteArray());
+	  rid = f.insertTuple(rec.toTuple());
 	}
 	catch (Exception e) {
 	  status = FAIL;
@@ -251,11 +251,11 @@ public boolean runTests () {
     boolean status = OK;
     Scan scan = null;
     RID rid = new RID();
-    Heapfile f = null;
+    Tuplefile f = null;
 
     System.out.println ("  - Open the same heap file as test 1\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Tuplefile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -393,11 +393,11 @@ public boolean runTests () {
     boolean status = OK;
     Scan scan = null;
     RID rid = new RID();
-    Heapfile f = null; 
+    Tuplefile f = null; 
 
     System.out.println ("  - Open the same heap file as tests 1 and 2\n");
     try {
-      f = new Heapfile("file_1");
+      f = new Tuplefile("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -457,7 +457,7 @@ public boolean runTests () {
 	    e.printStackTrace();
 	  }
 	  try {
-	    status = f.updateRecord(rid, newTuple); 
+	    status = f.updateTuple(rid, newTuple); 
 	  }
 	  catch (Exception e) {
 	    status = FAIL;
@@ -530,9 +530,9 @@ public boolean runTests () {
 	    System.err.println (""+e);
 	  }
 
-	  // While we're at it, test the getRecord method too.
+	  // While we're at it, test the getTuple method too.
 	  try {
-	    tuple2 = f.getRecord( rid ); 
+	    tuple2 = f.getTuple( rid ); 
 	  }
 	  catch (Exception e) {
 	    status = FAIL;
@@ -586,10 +586,10 @@ public boolean runTests () {
     boolean status = OK;
     Scan scan = null;
     RID rid = new RID();
-    Heapfile f = null; 
+    Tuplefile f = null; 
     
     try {
-      f = new Heapfile ("file_1");
+      f = new Tuplefile ("file_1");
     }
     catch (Exception e) {
       status = FAIL;
@@ -649,7 +649,7 @@ public boolean runTests () {
 	  e.printStackTrace();
 	}
 	try {
-	  status = f.updateRecord( rid, newTuple );
+	  status = f.updateTuple( rid, newTuple );
 	}
 	catch (ChainException e) { 
 	  status = checkException (e, "heap.InvalidUpdateException");
@@ -690,7 +690,7 @@ public boolean runTests () {
 	  e.printStackTrace();
 	}
 	try {
-	  status = f.updateRecord( rid, newTuple );
+	  status = f.updateTuple( rid, newTuple );
 	}
 	catch (ChainException e) {
 	  status = checkException(e, "heap.InvalidUpdateException");
@@ -719,7 +719,7 @@ public boolean runTests () {
       System.out.println ("  - Try to insert a record that's too long\n");
       byte [] record = new byte [MINIBASE_PAGESIZE+4];
       try {
-	rid = f.insertRecord( record );
+	rid = f.insertTuple( new Tuple(record, 0, MINIBASE_PAGESIZE+4) );
       }
       catch (ChainException e) {
 	status = checkException (e, "heap.SpaceNotAvailableException");
@@ -821,6 +821,15 @@ class DummyRecord  {
     setFloRec (data);
     setStrRec (data);
 
+  }
+
+  public Tuple toTuple() throws IOException {
+    Convert.setIntValue (ival, 0, data);
+    Convert.setFloValue (fval, 4, data);
+    Convert.setStrValue (name, 8, data);
+    byte[] newdata = new byte[reclen];
+    System.arraycopy(data, 0, newdata, 0, reclen);
+    return new Tuple(newdata, 0, reclen);
   }
 
   /** convert this class objcet to a byte array

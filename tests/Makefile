@@ -30,6 +30,7 @@ run: all
 	$(JAVA) tests.BMTest
 	$(JAVA) tests.StreamTest
 	$(JAVA) tests.bigtTest
+	$(JAVA) tests.VStreamTest
 	$(JAVA) tests.FileStreamTest
 
 runstream: $(CURDIR)/StreamTest.class
@@ -37,6 +38,9 @@ runstream: $(CURDIR)/StreamTest.class
 
 runbigt: $(CURDIR)/bigtTest.class
 	$(JAVA) tests.bigtTest
+
+runvstream: $(CURDIR)/VStreamTest.class
+	$(JAVA) tests.VStreamTest
 
 filestream: $(CURDIR)/FileStreamTest.class
 	$(JAVA) tests.FileStreamTest

@@ -52,6 +52,9 @@ stream: db
 testbigt: db
 	cd tests; make runbigt
 
+testvstream: db
+	cd tests; make runvstream
+
 filestream: db
 	cd tests; make filestream
 
