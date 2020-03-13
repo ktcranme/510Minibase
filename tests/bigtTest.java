@@ -1,21 +1,16 @@
 package tests;
 
 import java.io.*;
-import java.util.*;
 
+import BigT.IndexScan;
 import BigT.bigT;
 import BigT.Map;
-import BigT.Stream;
 import java.lang.*;
 
-import btree.BTFileScan;
-import btree.KeyDataEntry;
-import heap.*;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
-import chainexception.*;
-import index.IndexScan;
+import iterator.CondExpr;
+import iterator.FldSpec;
+import iterator.RelSpec;
 
 import static BigT.bigT.INDEXFILENAMEPREFIX;
 
@@ -192,6 +187,33 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big2 row count:" + rowCnt);
             colCnt = big2.getColumnCnt();
             System.out.println("Big2 column count:" + colCnt);
+
+            CondExpr[] expr1 = new CondExpr[2];
+            expr1[0] = new CondExpr();
+            expr1[0].op = new AttrOperator(AttrOperator.aopEQ);
+            expr1[0].next = null;
+            expr1[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr1[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 4);
+            expr1[0].type2 = new AttrType(AttrType.attrString);
+            expr1[0].operand2.string = "1";
+
+            CondExpr[] expr2 = new CondExpr[2];
+            expr2[0] = new CondExpr();
+            expr2[0].op = new AttrOperator(AttrOperator.aopGT);
+            expr2[0].next = null;
+            expr2[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr2[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+            expr2[0].type2 = new AttrType(AttrType.attrString);
+            expr2[0].operand2.string = "D";
+            expr2[1]=null;
+            IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),expr2,expr1,false);
+            System.out.println("Index File created");
+            Map tmpm;
+            while((tmpm=is.get_next())!=null){
+                tmpm.print();
+            }
+            is.close();
+
             big2.deleteBigt();
             System.out.println("Deleting Big Table  with indexing as 2");
 
@@ -249,6 +271,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big5 row count:" + rowCnt);
             colCnt = big5.getColumnCnt();
             System.out.println("Big5 column count:" + colCnt);
+            System.out.println("Test for index scan of maps!");
             big5.deleteBigt();
             System.out.println("Deleting Big Table with indexing as 5");
         } catch(Exception e){
