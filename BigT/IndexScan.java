@@ -114,7 +114,7 @@ public class IndexScan extends Iterator {
      * @throws IOException             from the lower layer
      */
     public Map get_next()
-            throws IndexException {
+            throws Exception {
         RID rid;
         KeyDataEntry nextentry = null;
 
@@ -131,9 +131,9 @@ public class IndexScan extends Iterator {
             } catch (Exception e) {
                 throw new IndexException(e, "IndexScan.java: getRecord failed");
             }
-
-            if (!index_only)
+            if (PredEval.Eval(_selects, map1)) {
                 return map1;
+            }
             try {
                 nextentry = indScan.get_next();
             } catch (Exception e) {

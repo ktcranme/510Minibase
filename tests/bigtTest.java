@@ -8,6 +8,9 @@ import BigT.Map;
 import java.lang.*;
 
 import global.*;
+import iterator.CondExpr;
+import iterator.FldSpec;
+import iterator.RelSpec;
 
 import static BigT.bigT.INDEXFILENAMEPREFIX;
 
@@ -184,6 +187,24 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big2 row count:" + rowCnt);
             colCnt = big2.getColumnCnt();
             System.out.println("Big2 column count:" + colCnt);
+
+            CondExpr[] expr2 = new CondExpr[2];
+            expr2[0] = new CondExpr();
+            expr2[0].op = new AttrOperator(AttrOperator.aopGT);
+            expr2[0].next = null;
+            expr2[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr2[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+            expr2[0].type2 = new AttrType(AttrType.attrString);
+            expr2[0].operand2.string = "D";
+            expr2[1]=null;
+            IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),expr2,false);
+            System.out.println("Index File created");
+            Map tmpm;
+            while((tmpm=is.get_next())!=null){
+                System.out.println(tmpm.getRowLabel());
+            }
+            is.close();
+
             big2.deleteBigt();
             System.out.println("Deleting Big Table  with indexing as 2");
 
@@ -242,14 +263,6 @@ class bigTDriver extends TestDriver implements GlobalConst{
             colCnt = big5.getColumnCnt();
             System.out.println("Big5 column count:" + colCnt);
             System.out.println("Test for index scan of maps!");
-            IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),null,false);
-            System.out.println("Index File created");
-            Map tmpm;
-            while((tmpm=is.get_next())!=null){
-                System.out.println(tmpm.getRowLabel());
-            }
-            is.close();
-
             big5.deleteBigt();
             System.out.println("Deleting Big Table with indexing as 5");
         } catch(Exception e){
