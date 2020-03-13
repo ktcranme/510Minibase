@@ -59,12 +59,14 @@ public class IndexScan extends Iterator {
             IndexType index,
             final String relName,
             final String indName,
+            CondExpr selects_index[],
             CondExpr selects[],
             final boolean indexOnly
     )
             throws IndexException,
             UnknownIndexTypeException {
         _selects = selects;
+        _selects_index = selects_index;
         map1 = new Map();
 
         index_only = indexOnly;  // added by bingjie miao
@@ -88,7 +90,7 @@ public class IndexScan extends Iterator {
                 }
 
                 try {
-                    indScan = (BTFileScan) IndexUtils.BTree_scan(selects, indFile);
+                    indScan = (BTFileScan) IndexUtils.BTree_scan(_selects_index, indFile);
                 } catch (Exception e) {
                     throw new IndexException(e, "IndexScan.java: BTreeFile exceptions caught from IndexUtils.BTree_scan().");
                 }
@@ -148,6 +150,7 @@ public class IndexScan extends Iterator {
     private IndexFile indFile;
     private IndexFileScan indScan;
     private CondExpr[] _selects;
+    private CondExpr[] _selects_index;
     private Mapfile f;
     private Map map1;
     private boolean index_only;
