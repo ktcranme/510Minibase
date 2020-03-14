@@ -19,7 +19,7 @@ public class FilterParser {
     // accepts input as row conditions##columnn conditions##value conditions, for select all use *.
     // each condition requires input as symbol(<,>,<=,>=,=,!=) followed by value. For multiple conditions split them with "~".
     // eg. *##[ab,e]##abc : Select all for rows, Column<S and Column>=B, Value = abc.
-    public static CondExpr[] parse(String filterString) {
+    public static CondExpr[] parseCombine(String filterString) {
         String fieldFilters[] = filterString.split(ATTRIBUTE_SEPARATOR);
         List<List<CondExpr>> allFilters = new ArrayList<>();
         for (int i = 0; i < fieldFilters.length; i++) {
@@ -31,6 +31,11 @@ public class FilterParser {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
+        return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);
+    }
+
+    public static CondExpr[] parseSingle(String filterString, int field_off, int type) {
+        List<CondExpr> flatAllFilters = fieldFilterGen(filterString, field_off, type);
         return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);
     }
 

@@ -2,12 +2,17 @@ package tests;
 
 import java.io.*;
 
-import BigT.IndexScan;
-import BigT.bigT;
-import BigT.Map;
-import java.lang.*;
+import BigT.*;
 
+import java.lang.*;
+import java.net.URL;
+
+import btree.*;
+import driver.FilterParser;
 import global.*;
+import heap.*;
+import index.IndexException;
+import index.UnknownIndexTypeException;
 import iterator.CondExpr;
 import iterator.FldSpec;
 import iterator.RelSpec;
@@ -24,10 +29,10 @@ class bigTDriver extends TestDriver implements GlobalConst{
     public bigTDriver () {
         super("bigttest");
     }
-    public boolean runTests() {
+    public boolean runTests(){
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
 
-        SystemDefs sysdef = new SystemDefs(dbpath,100,100,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,1000,100,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -65,6 +70,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
 
         //Run the tests. Return type different from C++
         boolean _pass = runTest1();
+        boolean _pass2 = runTest3();
 
         //Clean up again
         try {
@@ -76,7 +82,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
         }
 
         System.out.print ("\n" + "..." + testName() + " tests ");
-        System.out.print (_pass==OK ? "completely successfully" : "failed");
+        System.out.print (_pass==OK && _pass2==OK ? "completely successfully" : "failed");
         System.out.print (".\n\n");
 
         return _pass;
@@ -109,7 +115,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             m8.setRowLabel("Brazil");
             m8.setColumnLabel("Kookaburra");
             m8.setTimeStamp(46021);
-            m8.setValue("322");
+            m8.setValue("1");
         } catch (IOException e) {
             System.out.println("IOException while creating a map");
             e.printStackTrace();
@@ -187,25 +193,8 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big2 row count:" + rowCnt);
             colCnt = big2.getColumnCnt();
             System.out.println("Big2 column count:" + colCnt);
-
-            CondExpr[] expr1 = new CondExpr[2];
-            expr1[0] = new CondExpr();
-            expr1[0].op = new AttrOperator(AttrOperator.aopEQ);
-            expr1[0].next = null;
-            expr1[0].type1 = new AttrType(AttrType.attrSymbol);
-            expr1[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 4);
-            expr1[0].type2 = new AttrType(AttrType.attrString);
-            expr1[0].operand2.string = "1";
-
-            CondExpr[] expr2 = new CondExpr[2];
-            expr2[0] = new CondExpr();
-            expr2[0].op = new AttrOperator(AttrOperator.aopGT);
-            expr2[0].next = null;
-            expr2[0].type1 = new AttrType(AttrType.attrSymbol);
-            expr2[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
-            expr2[0].type2 = new AttrType(AttrType.attrString);
-            expr2[0].operand2.string = "D";
-            expr2[1]=null;
+            CondExpr[] expr1 = FilterParser.parseSingle("1",4,AttrType.attrString);
+            CondExpr[] expr2 = FilterParser.parseSingle("[A,Z]",1,AttrType.attrString);
             IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),expr2,expr1,false);
             System.out.println("Index File created");
             Map tmpm;
@@ -271,7 +260,22 @@ class bigTDriver extends TestDriver implements GlobalConst{
             System.out.println("Big5 row count:" + rowCnt);
             colCnt = big5.getColumnCnt();
             System.out.println("Big5 column count:" + colCnt);
-            System.out.println("Test for index scan of maps!");
+
+            System.out.println("Testing openStream for orderType 1 and index type 5");
+            Iterator it = big5.openStream(1,"[A,E]","*","1");
+            Map tt;
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+
+
+            System.out.println("Testing openStream for orderType 5 and index type 5");
+            it = big5.openStream(5,"[A,E]","*","1");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
             big5.deleteBigt();
             System.out.println("Deleting Big Table with indexing as 5");
         } catch(Exception e){
@@ -284,10 +288,125 @@ class bigTDriver extends TestDriver implements GlobalConst{
         System.out.println("------------------------------------------");
         return true;
     }
+
+    public static boolean runTest3(){
+        System.out.println("---------------------------------");
+        System.out.println("Starting test 2 - bigT.java");
+        System.out.println("---------------------------------");
+        try {
+            bigT big = new bigT("Testing1", 1);
+            Map temp;
+            URL url = bigTDriver.class.getResource("/data/project2_testdata.csv");
+            File csvFile = new File(url.getPath());
+
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+            String line;
+            String[] rec;
+            int c = 0;
+            while ((line = br.readLine()) != null) {
+                rec = line.split(",");
+                if(rec[0].length()>16 && rec[1].length()>16 && rec[3].length()>16)
+                    continue;
+                temp = new Map();
+                if(c==0)
+                    temp.setRowLabel(rec[0].substring(1));
+                else
+                    temp.setRowLabel(rec[0]);
+                temp.setColumnLabel(rec[1]);
+                temp.setTimeStamp(Integer.parseInt(rec[2]));
+                temp.setValue(rec[3]);
+                big.insertMap(temp.getMapByteArray());
+                c++;
+                if (c == 100)
+                    break;
+            }
+
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 1 and index type 1");
+            System.out.println("---------------------------------");
+            Iterator it = big.openStream(1,"*","*","[1,8]");
+            Map tt;
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 2 and index type 1");
+            System.out.println("---------------------------------");
+            it = big.openStream(2,"[A,E]","*","*");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 3 and index type 1");
+            System.out.println("---------------------------------");
+            it = big.openStream(3,"[A,E]","*","*");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 4 and index type 1");
+            System.out.println("---------------------------------");
+            it = big.openStream(4,"[A,E]","*","*");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 5 and index type 1");
+            System.out.println("---------------------------------");
+            it = big.openStream(5,"[A,E]","*","*");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+
+            big.deleteBigt();
+
+            big = new bigT("Testing1", 5);
+
+            br = new BufferedReader(new FileReader(csvFile));
+            c = 0;
+            while ((line = br.readLine()) != null) {
+                rec = line.split(",");
+                if(rec[0].length()>16 && rec[1].length()>16 && rec[3].length()>16)
+                    continue;
+                temp = new Map();
+                if(c==0)
+                    temp.setRowLabel(rec[0].substring(1));
+                else
+                    temp.setRowLabel(rec[0]);
+                temp.setColumnLabel(rec[1]);
+                temp.setTimeStamp(Integer.parseInt(rec[2]));
+                temp.setValue(rec[3]);
+                big.insertMap(temp.getMapByteArray());
+                c++;
+                if (c == 1000)
+                    break;
+            }
+            System.out.println("---------------------------------");
+            System.out.println("Testing openStream for orderType 5 and index type 5");
+            System.out.println("---------------------------------");
+            it = big.openStream(5,"*","*","*");
+            while ((tt = it.get_next())!=null)
+                tt.print();
+            it.close();
+        } catch (Exception e){
+            System.out.println(e);
+        }
+
+        System.out.println("\n------------------------------------------");
+        System.out.println("Finished Testing for openStream Scan.");
+        System.out.println("------------------------------------------");
+        return true;
+    }
 }
 
+
+
 public class bigtTest{
-    public static void main(String [] args) {
+    public static void main(String [] args) throws Exception {
         new bigTDriver().runTests();
     }
 }

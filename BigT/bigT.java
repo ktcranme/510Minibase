@@ -1,17 +1,20 @@
 package BigT;
 
-import java.io.*;
-import java.util.HashSet;
-import java.util.Set;
-
 import btree.*;
-import bufmgr.HashEntryNotFoundException;
-import bufmgr.InvalidFrameNumberException;
-import bufmgr.PageUnpinnedException;
-import bufmgr.ReplacerException;
+import driver.FilterParser;
 import global.*;
 import heap.*;
-import iterator.*;
+import index.IndexException;
+import index.UnknownIndexTypeException;
+import iterator.CondExpr;
+import iterator.FileScanException;
+import iterator.InvalidRelation;
+import iterator.SortException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class bigT implements GlobalConst {
     public static final String INDEXFILENAMEPREFIX = "bigTInd";
@@ -242,7 +245,6 @@ public class bigT implements GlobalConst {
             ConstructPageException,
             IteratorException,
             InsertException {
-        //need to handle versioning to remove 4th version
         Map tempMap = new Map(mapPtr, 0);
         MID mid = hf.insertMap(tempMap);
         RID rid = new RID(mid);
@@ -267,22 +269,50 @@ public class bigT implements GlobalConst {
         return rid;
     }
 
-    Stream openStream(int orderType, String rowFilter, String columnFilter, String value) throws InvalidMapSizeException,
-            InvalidTupleSizeException,
-            HFBufMgrException,
-            IOException,
-            InvalidSlotNumberException {
-        Stream s;
-        switch (orderType) {
+    public Iterator openStream(int orderType, String rowFilter, String columnFilter, String valueFilter) throws Exception {
+        SortTypeMap.init();
+        Iterator it = null;
+        Iterator tmp = null;
+        switch (type) {
             case 1:
             case 2:
             case 3:
+                tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                break;
             case 4:
+                if (orderType == 5) {
+                    it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
+                } else {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                }
+                break;
             case 5:
-            default:
-                s = new Stream(hf);
+                if (orderType == 5) {
+                    it = filterVal("i5o5", rowFilter, columnFilter, valueFilter);
+                } else {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                }
                 break;
         }
-        return s;
+        return it;
+    }
+
+    Iterator filterVal(String filterSec, String rowFilter, String columnFilter, String valueFilter) throws FileScanException, IOException, InvalidRelation, IndexException, UnknownIndexTypeException {
+        Iterator it = null;
+        CondExpr[] filter;
+        switch (filterSec) {
+            case "i4o5":
+            case "i5o5":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
+                break;
+            case "scan":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                it = new FileStream(hf, filter);
+        }
+        return it;
     }
 }
