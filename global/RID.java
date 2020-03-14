@@ -21,7 +21,12 @@ public class RID{
    * default constructor of class
    */
   public RID () { }
-  
+
+  public RID(MID mid){
+    pageNo = mid.pageNo;
+    slotNo = mid.slotNo;
+  }
+
   /**
    *  constructor of class
    */

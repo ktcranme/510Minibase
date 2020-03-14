@@ -18,7 +18,7 @@ public class Tuple implements GlobalConst{
  /** 
    * a byte array to hold data
    */
-  private byte [] data;
+  protected byte [] data;
 
   /**
    * start position of this tuple in data[]
