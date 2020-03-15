@@ -22,6 +22,35 @@ public class Dirpage extends HFPage {
         return new DataPageInfo(getRecord(rid));
     }
 
+    public void getDatapageInfo(RID rid, DataPageInfo dpinfo) throws InvalidSlotNumberException, IOException,
+            InvalidTupleSizeException {
+        dpinfo.copyFromTuple(getRecord(rid));
+    }
+
+
+    public void returnDatapageInfo(RID rid, DataPageInfo dpinfo) throws IOException, InvalidSlotNumberException,
+            InvalidTupleSizeException {
+        short recLen;
+        short offset;
+        PageId pageNo = new PageId();
+        pageNo.pid = rid.pageNo.pid;
+
+        curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+        int slotNo = rid.slotNo;
+
+        // length of record being returned
+        recLen = getSlotLength(slotNo);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+        if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0) && (pageNo.pid == curPage.pid)) {
+
+            offset = getSlotOffset(slotNo);
+            dpinfo.copyFromTuple(data, offset);
+            return;
+        }
+        throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
+    }
+
     public DataPageInfo returnDatapageInfo(RID rid) throws IOException, InvalidSlotNumberException,
             InvalidTupleSizeException {
         short recLen;

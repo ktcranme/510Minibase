@@ -127,6 +127,52 @@ public class DataPageInfo implements GlobalConst{
       
     }
   }
+
+  public void copyFromTuple(byte[] array) throws IOException, InvalidTupleSizeException {
+      // need check _atuple size == this.size ?otherwise, throw new exception
+      if (array.length!=12){
+        throw new InvalidTupleSizeException(null, "HEAPFILE: TUPLE SIZE ERROR");
+      }
+  
+      else{
+        data = array;
+        this.offset = 0;
+        
+        availspace = Convert.getIntValue(offset, data);
+        recct = Convert.getIntValue(offset+4, data);
+        pageId = new PageId();
+        pageId.pid = Convert.getIntValue(offset+8, data);
+        
+      }
+  }
+
+  public void copyFromTuple(byte[] array, int offset) throws IOException, InvalidTupleSizeException {
+    // need check _atuple size == this.size ?otherwise, throw new exception
+    if (array.length!=12){
+      throw new InvalidTupleSizeException(null, "HEAPFILE: TUPLE SIZE ERROR");
+    }
+
+    else{
+      data = array;
+      this.offset = offset;
+      
+      availspace = Convert.getIntValue(offset, data);
+      recct = Convert.getIntValue(offset+4, data);
+      pageId = new PageId();
+      pageId.pid = Convert.getIntValue(offset+8, data);
+      
+    }
+}
+
+  public void copyFrom(DataPageInfo newdpinfo) {
+    data = newdpinfo.data;
+    offset = newdpinfo.offset;
+    
+    availspace = newdpinfo.availspace;
+    recct = newdpinfo.recct;
+    pageId = new PageId();
+    pageId.pid = newdpinfo.pageId.pid;
+  }
   
   
   /** convert this class objcet to a tuple(like cast a DataPageInfo to Tuple)

@@ -61,6 +61,9 @@ testsort: db
 filestream: db
 	cd tests; make filestream
 
+hfpage: db
+	cd tests; make hfpage
+
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
 

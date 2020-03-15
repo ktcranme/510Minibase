@@ -48,6 +48,9 @@ runsorttest: $(CURDIR)/SortTest.class
 filestream: $(CURDIR)/FileStreamTest.class
 	$(JAVA) tests.FileStreamTest
 
+hfpage: $(CURDIR)/HFPageTest.class
+	$(JAVA) -ea tests.HFPageTest
+
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
 
