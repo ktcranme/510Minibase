@@ -1,6 +1,10 @@
 package heap;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+
 import BigT.*;
 import diskmgr.*;
 import bufmgr.*;
@@ -94,6 +98,22 @@ public class Heapfile implements Filetype, GlobalConst {
 		dpinfop.recct = 0;
 		dpinfop.availspace = hfpage.available_space();
 
+		return hfpage;
+
+	} // end of _newDatapage
+
+	private HFPage _newDatapages(int count)
+			throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+		Page apage = new Page();
+		PageId pageId = new PageId();
+		pageId = newPage(apage, count);
+
+		if (pageId == null)
+			throw new HFException(null, "can't new pae");
+
+		HFPage hfpage = getNewDataPage();
+		hfpage.init(pageId, apage);
+	
 		return hfpage;
 
 	} // end of _newDatapage
@@ -383,6 +403,31 @@ public class Heapfile implements Filetype, GlobalConst {
 		return currentDataPage;
 	}
 
+	protected PageId addNewPagesToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid, int count)
+			throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+		HFPage startPage = _newDatapages(count);
+		PageId currentDirPageId = currentDirPage.curPage;
+		RID currentDataPageRid = null;
+		DataPageInfo dpinfop = new DataPageInfo();
+
+		for (int i = 0; i < count; i++) {
+			dpinfop.pageId.pid = startPage.curPage.pid;
+			dpinfop.recct = 0;
+			dpinfop.availspace = startPage.available_space();
+
+			if (currentDirPage.available_space() < DataPageInfo.size) {
+				currentDirPageId = loadNextDirPage(currentDirPage);
+			}
+
+			Tuple atuple = dpinfop.convertToTuple();
+
+			byte[] tmpData = atuple.getTupleByteArray();
+			currentDataPageRid = currentDirPage.insertRecord(tmpData);
+		}
+
+		return null;
+	}
+
 	protected PageId loadNextDirPage(Dirpage currentDirPage) throws IOException, HFBufMgrException, HFException {
 		Page pageinbuffer = new Page();
 		Dirpage nextDirPage = new Dirpage();
@@ -574,6 +619,78 @@ public class Heapfile implements Filetype, GlobalConst {
 		unpinPage(currentDirPage.curPage, true /* = DIRTY */);
 
 		return rid;
+	}
+
+	public RID[] batch_insert(Map[] maps) throws HFBufMgrException, HFException, HFDiskMgrException,
+			InvalidSlotNumberException, InvalidTupleSizeException, SpaceNotAvailableException, IOException {
+		int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
+
+		MapIter iter = new MapIter(maps);
+		Sort sort = new Sort()
+
+		DataPageInfo dpinfo = new DataPageInfo();
+		Dirpage currentDirPage = new Dirpage();
+		HFPage dataPage = loadNextDataPageWithSpace(Map.map_size, currentDirPage, dpinfo);
+		dataPage.batch_insert(bytes);
+
+		int pagesNeeded = bytes.size() / 
+
+
+
+
+
+
+
+
+
+
+
+
+		int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
+		int pages_batch = NUMBUF / 2;
+
+		DataPageInfo dpinfo = new DataPageInfo();
+		Dirpage currentDirPage = new Dirpage();
+		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+
+		pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+
+		HFPage dataPage = loadNextDataPageWithSpace(mapsInPage * Map.map_size, currentDirPage, dpinfo);
+		Stack<byte[]> bytes = new Stack<byte[]>();
+
+		for (int i = 0; i < maps.length; i++) {
+			bytes.push(maps[i].getMapByteArray());
+		}
+
+		dataPage.batch_insert(bytes);
+
+		int pagesNeeded = (int) java.lang.Math.floor(bytes.size() / (double) mapsInPage);
+		int batches = pagesNeeded / pages_batch;
+
+		for (int i = 0; i < batches; i++) {
+			
+		}
+
+		int done = 0;
+		for (int i = 0; i < first_set; i++) {
+			bytes.add(maps[done].getMapByteArray());
+			done++;
+		}
+
+		dataPage.batch_insert((byte[][]) bytes.toArray());
+		bytes.clear();
+
+		byte[][] bytes = new byte[mapsInPage][];
+		for (int i = 0; i < pagesNeeded; i++) {
+			for (int j = 0; j < mapsInPage; j++) {
+				bytes[j] = maps[done].getMapByteArray();
+				done++;
+			}
+
+			dataPage.batch_insert(bytes);
+		}
+
+		return null;
 	}
 
 	/**

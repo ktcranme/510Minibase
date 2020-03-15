@@ -4,6 +4,9 @@ package heap;
 
 import java.io.*;
 import java.lang.*;
+import java.util.List;
+import java.util.Stack;
+
 import BigT.*;
 
 import global.*;
@@ -100,6 +103,31 @@ public class HFPage extends Page implements ConstSlot {
       setSlot(slotCnt, bytelen, usedPtr);
       slotCnt++;
       System.arraycopy(bytes[i], 0, data, usedPtr, bytelen);
+      freeSpace -= bytelen + SIZE_OF_SLOT;
+    }
+
+    Convert.setShortValue (usedPtr, USED_PTR, data);
+    Convert.setShortValue (freeSpace, FREE_SPACE, data);
+    Convert.setShortValue (slotCnt, SLOT_CNT, data);
+
+		return slotCnt;
+	}
+
+	public short batch_insert(Stack<byte[]> bytes) throws IOException {
+    usedPtr =  Convert.getShortValue (USED_PTR, data);
+    slotCnt = Convert.getShortValue (SLOT_CNT, data);
+    freeSpace = Convert.getShortValue (FREE_SPACE, data);
+
+    // expecting equal sized byte arrays
+    // there's got to be atleast one
+    int bytelen = bytes.get(0).length;
+    int numMaps = (int) java.lang.Math.ceil(freeSpace / (double) bytelen);
+
+    for (int i = 0; i < numMaps && i < bytes.size(); i++) {
+      usedPtr -= bytelen;
+      setSlot(slotCnt, bytelen, usedPtr);
+      slotCnt++;
+      System.arraycopy(bytes.pop(), 0, data, usedPtr, bytelen);
       freeSpace -= bytelen + SIZE_OF_SLOT;
     }
 
