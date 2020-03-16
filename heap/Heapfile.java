@@ -52,6 +52,9 @@ public class Heapfile implements Filetype, GlobalConst {
 	private String _fileName;
 	private static int tempfilecount = 0;
 
+	AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
+    short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
+
 	protected HFPage getNewDataPage() {
 		return new HFPage();
 	}
@@ -68,11 +71,6 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	public PageId getFirstDirPageId() {
 		return _firstDirPageId;
-	}
-
-	public RID[] batch_insert(byte[][] bytes) {
-
-		return null;
 	}
 
 	/*
@@ -621,21 +619,19 @@ public class Heapfile implements Filetype, GlobalConst {
 		return rid;
 	}
 
-	public RID[] batch_insert(Map[] maps) throws HFBufMgrException, HFException, HFDiskMgrException,
-			InvalidSlotNumberException, InvalidTupleSizeException, SpaceNotAvailableException, IOException {
-		int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
+	// public RID[] batch_insert(Map[] maps) throws HFBufMgrException, HFException, HFDiskMgrException,
+	// 		InvalidSlotNumberException, InvalidTupleSizeException, SpaceNotAvailableException, IOException {
+	// 	int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
 
-		MapIter iter = new MapIter(maps);
-		Sort sort = new Sort()
+	// 	MapIter iter = new MapIter(maps);
+	// 	Sort st = new Sort(attrType, (short) 4, attrSize, iter, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF / 8);
 
-		DataPageInfo dpinfo = new DataPageInfo();
-		Dirpage currentDirPage = new Dirpage();
-		HFPage dataPage = loadNextDataPageWithSpace(Map.map_size, currentDirPage, dpinfo);
-		dataPage.batch_insert(bytes);
+	// 	DataPageInfo dpinfo = new DataPageInfo();
+	// 	Dirpage currentDirPage = new Dirpage();
+	// 	HFPage dataPage = loadNextDataPageWithSpace(Map.map_size, currentDirPage, dpinfo);
+	// 	dataPage.batch_insert(bytes);
 
-		int pagesNeeded = bytes.size() / 
-
-
+	// 	int pagesNeeded = bytes.size() / 
 
 
 
@@ -646,52 +642,54 @@ public class Heapfile implements Filetype, GlobalConst {
 
 
 
-		int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
-		int pages_batch = NUMBUF / 2;
 
-		DataPageInfo dpinfo = new DataPageInfo();
-		Dirpage currentDirPage = new Dirpage();
-		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 
-		pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+	// 	int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
+	// 	int pages_batch = NUMBUF / 2;
 
-		HFPage dataPage = loadNextDataPageWithSpace(mapsInPage * Map.map_size, currentDirPage, dpinfo);
-		Stack<byte[]> bytes = new Stack<byte[]>();
+	// 	DataPageInfo dpinfo = new DataPageInfo();
+	// 	Dirpage currentDirPage = new Dirpage();
+	// 	PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 
-		for (int i = 0; i < maps.length; i++) {
-			bytes.push(maps[i].getMapByteArray());
-		}
+	// 	pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
 
-		dataPage.batch_insert(bytes);
+	// 	HFPage dataPage = loadNextDataPageWithSpace(mapsInPage * Map.map_size, currentDirPage, dpinfo);
+	// 	Stack<byte[]> bytes = new Stack<byte[]>();
 
-		int pagesNeeded = (int) java.lang.Math.floor(bytes.size() / (double) mapsInPage);
-		int batches = pagesNeeded / pages_batch;
+	// 	for (int i = 0; i < maps.length; i++) {
+	// 		bytes.push(maps[i].getMapByteArray());
+	// 	}
 
-		for (int i = 0; i < batches; i++) {
+	// 	dataPage.batch_insert(bytes);
+
+	// 	int pagesNeeded = (int) java.lang.Math.floor(bytes.size() / (double) mapsInPage);
+	// 	int batches = pagesNeeded / pages_batch;
+
+	// 	for (int i = 0; i < batches; i++) {
 			
-		}
+	// 	}
 
-		int done = 0;
-		for (int i = 0; i < first_set; i++) {
-			bytes.add(maps[done].getMapByteArray());
-			done++;
-		}
+	// 	int done = 0;
+	// 	for (int i = 0; i < first_set; i++) {
+	// 		bytes.add(maps[done].getMapByteArray());
+	// 		done++;
+	// 	}
 
-		dataPage.batch_insert((byte[][]) bytes.toArray());
-		bytes.clear();
+	// 	dataPage.batch_insert((byte[][]) bytes.toArray());
+	// 	bytes.clear();
 
-		byte[][] bytes = new byte[mapsInPage][];
-		for (int i = 0; i < pagesNeeded; i++) {
-			for (int j = 0; j < mapsInPage; j++) {
-				bytes[j] = maps[done].getMapByteArray();
-				done++;
-			}
+	// 	byte[][] bytes = new byte[mapsInPage][];
+	// 	for (int i = 0; i < pagesNeeded; i++) {
+	// 		for (int j = 0; j < mapsInPage; j++) {
+	// 			bytes[j] = maps[done].getMapByteArray();
+	// 			done++;
+	// 		}
 
-			dataPage.batch_insert(bytes);
-		}
+	// 		dataPage.batch_insert(bytes);
+	// 	}
 
-		return null;
-	}
+	// 	return null;
+	// }
 
 	/**
 	 * Delete record from file with given rid.

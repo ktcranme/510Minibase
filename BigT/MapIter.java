@@ -1,3 +1,5 @@
+package BigT;
+
 import java.io.IOException;
 
 import bufmgr.PageNotReadException;
@@ -24,7 +26,7 @@ public class MapIter extends Iterator {
     public Map get_next() throws IOException, IndexException, InvalidTypeException, PageNotReadException,
             PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 
-        if (!this.closeFlag || curr_pos >= this.map_ref.length)
+        if (this.closeFlag || curr_pos >= this.map_ref.length)
             return null;
 
         return this.map_ref[curr_pos];
