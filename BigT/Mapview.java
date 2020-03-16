@@ -9,7 +9,7 @@ import heap.InvalidUpdateException;
 public interface Mapview {
     public abstract Map getMap(MID mid) throws InvalidSlotNumberException, IOException;
 
-    public abstract boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException;
+    public abstract MID updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException;
 
     public abstract MID firstMap() throws IOException;
 

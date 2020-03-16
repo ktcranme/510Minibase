@@ -24,8 +24,10 @@ public class VMapPage extends HFPage implements Mapview {
         return new Map(rec, 0);
     }
 
-    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
-        return updateRecord(new RID(mid.pageNo, mid.slotNo), map.getMapByteArray());
+    public MID updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
+        if (updateRecord(new RID(mid.pageNo, mid.slotNo), map.getMapByteArray()))
+            return mid;
+        return null;
     }
 
     public MID firstMap() throws IOException {

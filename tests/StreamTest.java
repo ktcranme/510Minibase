@@ -477,7 +477,8 @@ class StreamDriver extends TestDriver implements GlobalConst
               e.printStackTrace();
             }
             try {
-              status = f.updateMap(rid, newMap);
+              MID tempMid = f.updateMap(rid, newMap);
+            // System.out.println(tempMid.pageNo.pid + ":" + tempMid.slotNo + " <- f.updateMap(" + rid.pageNo.pid + ":" + rid.slotNo + ")");
             }
             catch (Exception e) {
               status = FAIL;
