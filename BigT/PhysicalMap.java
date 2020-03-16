@@ -82,39 +82,61 @@ public class PhysicalMap implements GlobalConst{
 		return val;
 	}
 	
-	public boolean updateMap(int timestamp, String value) throws IOException  {
+	public int updateMap(int timestamp, String value) throws IOException  {
+		// System.out.println("New ts: " + timestamp + ", New value:" + value);
 		int firstTs = Convert.getIntValue(fldOffset[2], data);
 		int secondTs = Convert.getIntValue(fldOffset[4], data);
 		int thirdTs = Convert.getIntValue(fldOffset[6], data);
 
-		/*
-		String fv = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
+		// String fv = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
 		String sv = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
 		String tv = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
-		System.out.println(firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv );
-		*/
 
-		// Largest timestamp must be first
-		if (timestamp >= firstTs) {
-			System.arraycopy(data, fldOffset[2], data, fldOffset[4], (4 + MAXVALUESIZE) * 2);
-			Convert.setIntValue(timestamp, fldOffset[2], data);
-			Convert.setStrValue(value, fldOffset[3], data);
-	
-			return true;
-		} else if (timestamp >= secondTs) {
-			System.arraycopy(data, fldOffset[4], data, fldOffset[6], (4 + MAXVALUESIZE));
+		// System.out.println("CURRENTLY: " + firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
+		if (sv.isEmpty()) {
 			Convert.setIntValue(timestamp, fldOffset[4], data);
 			Convert.setStrValue(value, fldOffset[5], data);
-
-			return true;
-		} else if (timestamp >= thirdTs) {
+			// secondTs = Convert.getIntValue(fldOffset[4], data);
+			// sv = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
+			// System.out.println("SECOND POS WAS EMPTY: " + firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
+			return 1;
+		} else if (tv.isEmpty()) {
 			Convert.setIntValue(timestamp, fldOffset[6], data);
 			Convert.setStrValue(value, fldOffset[7], data);
+			// // thirdTs = Convert.getIntValue(fldOffset[6], data);
+			// // tv = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
+			// System.out.println("THIRD POS WAS EMPTY: " + firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
+			return 2;
+		} else {
+			// We have to replace the oldest timestamp
+			int pos = -1;
+			if (firstTs <= secondTs && firstTs <= thirdTs && timestamp >= firstTs) {
+				pos = 2;
+			} else if (secondTs <= firstTs && secondTs <= thirdTs  && timestamp >= secondTs) {
+				pos = 4;
+			} else if (thirdTs <= firstTs && thirdTs <= secondTs && timestamp >= thirdTs) {
+				pos = 6;
+			} else {
+				// This is not inserted at all
+				// System.out.println("NO CHANGE: " + firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
+				return pos;
+			}
 
-			return true;
+			Convert.setIntValue(timestamp, fldOffset[pos], data);
+			Convert.setStrValue(value, fldOffset[pos + 1], data);
+
+			// firstTs = Convert.getIntValue(fldOffset[2], data);
+			// secondTs = Convert.getIntValue(fldOffset[4], data);
+			// thirdTs = Convert.getIntValue(fldOffset[6], data);
+	
+			// fv = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
+			// sv = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
+			// tv = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
+
+			// System.out.println("POS " + ((pos / 2) - 1) + " WAS REPLACED: " + firstTs + ": " + fv + ", " + secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
+
+			return (pos / 2) - 1;
 		}
-
-        return true;
 	}
 	
 	/*

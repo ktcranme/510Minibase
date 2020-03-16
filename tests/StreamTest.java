@@ -460,6 +460,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           // Update multiple times to check versioning
           for (int k = 0; k < 6; k++) {
             try {
+              m.setTimeStamp(10 * i + k);
               m.setValue(Integer.toString(10 * i + k));
             } catch (Exception e) {
               status = FAIL;
@@ -547,6 +548,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             break;
           } else {
             //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
+            // m.print();
             rec_cnt++;
           }
         }
@@ -567,8 +569,8 @@ class StreamDriver extends TestDriver implements GlobalConst
             break;
           }
 
-
-          if (m.getVersionNo() == 1) {
+          // i += 2;
+          if (m.getVersionNo() == 2) {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
                 System.err.println ("*** Record " + i
@@ -584,7 +586,8 @@ class StreamDriver extends TestDriver implements GlobalConst
                 status = FAIL;
                 break;
             }
-          } else if (m.getVersionNo() == 2) {
+            i += 2;     // Because we deleted the odd ones...
+          } else if (m.getVersionNo() == 1) {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
                 System.err.println ("*** Record " + i
@@ -600,7 +603,6 @@ class StreamDriver extends TestDriver implements GlobalConst
                 status = FAIL;
                 break;
             }
-            i += 2;     // Because we deleted the odd ones...
           } else {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
