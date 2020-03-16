@@ -34,7 +34,7 @@ run: all
 	$(JAVA) tests.FileStreamTest
 
 runstream: $(CURDIR)/StreamTest.class
-	$(JAVA) tests.StreamTest
+	$(JAVA) -ea tests.StreamTest
 
 runbigt: $(CURDIR)/bigtTest.class
 	$(JAVA) tests.bigtTest

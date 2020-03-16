@@ -28,7 +28,7 @@ public class MapPage extends HFPage implements Mapview {
         return PhysicalMap.physicalMapToMap(rec, mid.slotNo % 3);
     }
 
-    public boolean updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
+    public MID updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
         short recLen;
         short offset;
         PageId pageNo = new PageId();
@@ -47,14 +47,18 @@ public class MapPage extends HFPage implements Mapview {
 
             PhysicalMap pmap = new PhysicalMap(data, offset);
             int versions = pmap.getVersionCount();
-            pmap.updateMap(map.getTimeStamp(), map.getValue());
+            int versionUpdated = pmap.updateMap(map.getTimeStamp(), map.getValue());
 
-            return versions < 3 ? true: false;
+            if (versionUpdated != -1) {
+                MID retMid = new MID(mid.pageNo, mid.slotNo - (mid.slotNo % 3) + versionUpdated);
+                retMid.isReused = versions == 3;
+                return retMid;
+            }
+
+            return null;
         }
 
-        else {
-            throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
-        }
+        throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
     }
 
     public MID firstMap() throws IOException {
