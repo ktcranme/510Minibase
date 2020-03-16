@@ -15,12 +15,8 @@ import diskmgr.*;
 import BigT.Map;
 
 public class MapPage extends HFPage implements Mapview {
-    // Concurrency can go to hell :D
-    public boolean newRecord;
-
     public MapPage(Page page) {
         super(page);
-        newRecord = false;
     }
 
     public MapPage() {
@@ -53,9 +49,13 @@ public class MapPage extends HFPage implements Mapview {
             int versions = pmap.getVersionCount();
             int versionUpdated = pmap.updateMap(map.getTimeStamp(), map.getValue());
 
-            newRecord = versions < 3;
+            if (versionUpdated != -1) {
+                MID retMid = new MID(mid.pageNo, mid.slotNo - (mid.slotNo % 3) + versionUpdated);
+                retMid.isReused = versions == 3;
+                return retMid;
+            }
 
-            return versionUpdated == -1 ? null : new MID(mid.pageNo, mid.slotNo - (mid.slotNo % 3) + versionUpdated);
+            return null;
         }
 
         throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");

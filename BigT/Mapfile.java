@@ -64,14 +64,14 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 
         MID updatedRecord = dataPage.updateMap(rid, newtuple);
         
-        if (dataPage.newRecord) {
+        if (!updatedRecord.isReused) {
             DataPageInfo dpinfo_ondirpage = dirPage.returnDatapageInfo(currentDataPageRid);
             dpinfo_ondirpage.recct++;
             dpinfo_ondirpage.flushToTuple();
         }
 
         unpinPage(currentDataPageId, true /* = DIRTY */);
-        unpinPage(currentDirPageId, dataPage.newRecord /* undirty ? */);
+        unpinPage(currentDirPageId, !updatedRecord.isReused /* undirty ? */);
 
         return updatedRecord;
     }
