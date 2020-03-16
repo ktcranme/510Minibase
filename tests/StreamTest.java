@@ -1,6 +1,7 @@
 package tests;
 
 import java.io.*;
+import java.util.HashMap;
 
 import BigT.Map;
 import BigT.Mapfile;
@@ -457,19 +458,21 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
+
+          /**
+           * The idea here is that the MAP pointed to by rid must not change
+           * ... Unless it is very old and has to be removed because of the update.
+           */
+          HashMap<Integer, Map> h = new HashMap<Integer, Map>();
+          h.put(rid.slotNo, new Map(m));
+
           // Update multiple times to check versioning
           for (int k = 0; k < 6; k++) {
-            try {
-              m.setTimeStamp(10 * i + k);
-              m.setValue(Integer.toString(10 * i + k));
-            } catch (Exception e) {
-              status = FAIL;
-              System.err.println (""+e);
-              e.printStackTrace();
-            }
             Map newMap = null; 
             try {
               newMap = new Map (m.getMapByteArray(),0); 
+              newMap.setTimeStamp(10 * i + k);
+              newMap.setValue(Integer.toString(10 * i + k));
             }
             catch (Exception e) {
               status = FAIL;
@@ -478,7 +481,18 @@ class StreamDriver extends TestDriver implements GlobalConst
             }
             try {
               MID tempMid = f.updateMap(rid, newMap);
-            // System.out.println(tempMid.pageNo.pid + ":" + tempMid.slotNo + " <- f.updateMap(" + rid.pageNo.pid + ":" + rid.slotNo + ")");
+              // System.out.println(tempMid.pageNo.pid + ":" + tempMid.slotNo + " <- f.updateMap(" + rid.pageNo.pid + ":" + rid.slotNo + ")");
+
+              h.put(tempMid.slotNo, new Map(newMap));
+
+              Map tempMap = f.getMap(rid);
+              // h.get(rid.slotNo).print();
+              // tempMap.print();
+              assert tempMap.getRowLabel().equals(h.get(rid.slotNo).getRowLabel()) : "MID must be constant! Row mismatch!";
+              assert tempMap.getColumnLabel().equals(h.get(rid.slotNo).getColumnLabel()) : "MID must be constant! Column mismatch!";
+              assert tempMap.getValue().equals(h.get(rid.slotNo).getValue()) : "MID must be constant! Value mismatch!";
+              assert tempMap.getTimeStamp() == h.get(rid.slotNo).getTimeStamp() : "MID must be constant! Timestamp mismatch!";
+
             }
             catch (Exception e) {
               status = FAIL;
