@@ -30,23 +30,31 @@ class HFPageDriver extends TestDriver implements GlobalConst {
   }
 
   protected boolean test1() {
-    Map[] maps = new Map[6];
-    byte[][] bytes = new byte[6][];
-    Random x = new Random((long) 1000);
+    Map[] maps = new Map[12];
+    byte[][] bytes = new byte[12][];
+    Random x = new Random((int) 10);
 
-    String[] rows = new String[maps.length];
+    String[] rows = new String[maps.length / 4];
 
     try {
-      for (int i = 0; i < maps.length; i++) {
-        maps[i] = new Map();
-        rows[i] = "row" + x.nextInt();
-        maps[i].setRowLabel(rows[i]);
-        maps[i].setColumnLabel("Col" + i);
-        maps[i].setTimeStamp(i);
-        maps[i].setValue(Integer.toString(i));
-
-        bytes[i] = maps[i].getMapByteArray();
+      for (int i = 0; i < maps.length / 4; i++) {
+        rows[i] = "row" + i;
+        for (int j = 0; j < 4; j++) {
+          maps[i * 4 + j] = new Map();
+          maps[i * 4 + j].setRowLabel(rows[i]);
+          maps[i * 4 + j].setColumnLabel("Col" + x.nextInt(100));
+          maps[i * 4 + j].setTimeStamp(i * 4 + j);
+          maps[i * 4 + j].setValue(Integer.toString(i * 4 + j));
+  
+          bytes[i * 4 + j] = maps[i * 4 + j].getMapByteArray();
+        }
       }
+
+      for (int i = 0; i < maps.length; i++) {
+        maps[i].print();
+      }
+      System.out.println("");
+      
     } catch (Exception e) {
       e.printStackTrace();
       return false;
@@ -80,26 +88,43 @@ class HFPageDriver extends TestDriver implements GlobalConst {
     //   return false;
     // }
 
-    AttrType[] attrType = { new AttrType(AttrType.attrString), new AttrType(AttrType.attrString),
-        new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString) };
-    short[] attrSize = { MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE };
-    MapIter iter = new MapIter(maps);
+    // AttrType[] attrType = { new AttrType(AttrType.attrString), new AttrType(AttrType.attrString),
+    //     new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString) };
+    // short[] attrSize = { MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE };
+    // MapIter iter = new MapIter(maps);
+
+    // try {
+    //   Sort st = new Sort(attrType, (short) 4, attrSize, iter, new int[] { 0, 1 }, new TupleOrder(TupleOrder.Ascending),
+    //       MAXROWLABELSIZE, GlobalConst.NUMBUF / 8);
+    //   Map m = st.get_next();
+    //   while (m != null) {
+    //     m.print();
+    //     m = st.get_next();
+    //   }
+      
+    // } catch (Exception e) {
+    //   e.printStackTrace();
+    //   return false;
+    // }
 
     try {
-      Sort st = new Sort(attrType, (short) 4, attrSize, iter, new int[] { 0 }, new TupleOrder(TupleOrder.Ascending),
-          MAXROWLABELSIZE, GlobalConst.NUMBUF / 8);
-      Map m = st.get_next();
-      if (m == null)
-        System.out.println("NOOOOOOO");
+      Mapfile f = new Mapfile("file_1");
+      f.batch_insert(maps);
+      Stream s = f.openStream();
+      MID rid = new MID();
+
+      Map m = s.getNext(rid);
       while (m != null) {
         m.print();
-        m = st.get_next();
+        m = s.getNext(rid);
       }
-      
+
+
     } catch (Exception e) {
       e.printStackTrace();
       return false;
     }
+
 
     return true;
   }

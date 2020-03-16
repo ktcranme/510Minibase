@@ -1,22 +1,32 @@
 package BigT;
 
 import java.io.*;
-import BigT.*;
 import diskmgr.*;
-import bufmgr.*;
 import global.*;
 import heap.DataPageInfo;
 import heap.Dirpage;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
+import heap.HFPage;
 import heap.Heapfile;
 import heap.InvalidSlotNumberException;
 import heap.InvalidTupleSizeException;
 import heap.InvalidUpdateException;
 import heap.SpaceNotAvailableException;
+import iterator.JoinsException;
+import iterator.LowMemException;
+import iterator.UnknowAttrType;
 
 public class Mapfile extends Heapfile implements Bigtablefile {
+
+	AttrType[] attrType = {
+		new AttrType(AttrType.attrString),
+		new AttrType(AttrType.attrString),
+		new AttrType(AttrType.attrInteger),
+		new AttrType(AttrType.attrString)
+	};
+	short[] attrSize = { MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE };
 
     public Mapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
@@ -197,4 +207,58 @@ public class Mapfile extends Heapfile implements Bigtablefile {
             InvalidSlotNumberException, IOException {
         return new Stream(this);
     }
+
+	@Override
+	protected MapPage loadNextDataPageWithSpace(int size, Dirpage dirpage, DataPageInfo dpinfo, boolean dirty)
+			throws HFException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException,
+			InvalidTupleSizeException, SpaceNotAvailableException, IOException {
+		HFPage page = super.loadNextDataPageWithSpace(size, dirpage, dpinfo, dirty);
+		return new MapPage(page);
+	}
+
+	@Override
+	protected MapPage loadNextDataPageWithSpace(int size, Dirpage dirpage, DataPageInfo dpinfo)
+			throws HFException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException,
+			InvalidTupleSizeException, SpaceNotAvailableException, IOException {
+		HFPage page = super.loadNextDataPageWithSpace(size, dirpage, dpinfo);
+		return new MapPage(page);
+	}
+
+	public RID[] batch_insert(Map[] maps) throws UnknowAttrType, LowMemException, JoinsException, Exception {
+		RID[] rids = new RID[maps.length];
+
+		MapIter iter = new MapIter(maps);
+		Sort st = new Sort(attrType, (short) 4, attrSize, iter, new int[]{0, 1}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF / 8);
+
+		DataPageInfo dpinfo = new DataPageInfo();
+		Dirpage currentDirPage = new Dirpage();
+		PageId currentDirPageId = new PageId(super._firstDirPageId.pid);
+		pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+
+		MapPage dataPage = loadNextDataPageWithSpace(PhysicalMap.map_size, currentDirPage, dpinfo);
+
+		PhysicalMap pmap = null;
+		Map m = st.get_next();
+
+		int pos = 0;
+		while (m != null) {
+			pmap = new PhysicalMap(m);
+			m = st.get_next();
+			while (m != null && m.getRowLabel().equals(pmap.getRowLabel()) && m.getColumnLabel().equals(pmap.getColumnLabel())) {
+				pmap.updateMap(m.getTimeStamp(), m.getValue());
+				m = st.get_next();
+			}
+			pmap.print();
+			rids[pos++] = dataPage.insertRecord(pmap.getMapByteArray());
+			if (dataPage.available_space() < PhysicalMap.map_size) {
+				dpinfo.recct += pmap.getVersionCount();
+				dpinfo.availspace = dataPage.available_space();
+				dpinfo.flushToTuple();
+
+				dataPage = loadNextDataPageWithSpace(PhysicalMap.map_size, currentDirPage, dpinfo, true);
+			}
+		}
+
+		return rids;
+	}
 }

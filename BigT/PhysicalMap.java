@@ -129,6 +129,15 @@ public class PhysicalMap implements GlobalConst{
 		map_length = map_size;
 		fldOffset = getFldOffsetArray();
 	}
+
+
+	public PhysicalMap(Map map) {
+		data = new byte[map_size];
+		System.arraycopy(map.data, 0, data, 0, Map.map_size);
+		map_offset = 0;
+		map_length = map_size;
+		fldOffset = getFldOffsetArray();
+	}
 	
 	/*
 	* Class constructor
@@ -311,27 +320,16 @@ public class PhysicalMap implements GlobalConst{
 	*/
 	public void print() throws IOException
 	{
-		String rowLabel;
-		String columnLabel;
-		int timeStamp;
-		String value;
-		
-		
-		//get the row label
-		rowLabel = Convert.getStrValue(fldOffset[0], data, fldOffset[1]-fldOffset[0]);
-
-		//get the column label
-		columnLabel = Convert.getStrValue(fldOffset[1], data, fldOffset[2]-fldOffset[1]);
-
-		//get the TimeStamp
-		timeStamp = Convert.getIntValue(fldOffset[2], data);
-		
-		//get the value
-		value = Convert.getStrValue(fldOffset[3], data, fldOffset[4]-fldOffset[3]);
+		int firstTs = Convert.getIntValue(fldOffset[2], data);
+		int secondTs = Convert.getIntValue(fldOffset[4], data);
+		int thirdTs = Convert.getIntValue(fldOffset[6], data);
+		String fv = Convert.getStrValue(fldOffset[3], data, fldOffset[4] - fldOffset[3]);
+		String sv = Convert.getStrValue(fldOffset[5], data, fldOffset[6] - fldOffset[5]);
+		String tv = Convert.getStrValue(fldOffset[7], data, fldOffset[8] - fldOffset[7]);
 		
 		
 		//print them all
-		System.out.println("(" + rowLabel + ", " + columnLabel + ", " + timeStamp + ") -> " + value);
+		System.out.println("(" + getRowLabel() + ", " + getColumnLabel() + ") -> " + "(" + firstTs + ", " + fv + ")" + "(" + secondTs + ", " + sv + ")" + "(" + thirdTs + ", " + tv + ")");
 	}
 
 	

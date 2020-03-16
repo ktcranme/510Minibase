@@ -9,6 +9,10 @@ import BigT.*;
 import diskmgr.*;
 import bufmgr.*;
 import global.*;
+import iterator.JoinsException;
+import iterator.LowMemException;
+import iterator.SortException;
+import iterator.UnknowAttrType;
 
 /**  This heapfile implementation is directory-based. We maintain a
  *  directory of info about the data pages (which are of type HFPage
@@ -46,14 +50,11 @@ interface Filetype {
 
 public class Heapfile implements Filetype, GlobalConst {
 
-	PageId _firstDirPageId; // page number of header page
+	protected PageId _firstDirPageId; // page number of header page
 	int _ftype;
 	private boolean _file_deleted;
 	private String _fileName;
 	private static int tempfilecount = 0;
-
-	AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
-    short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
 
 	protected HFPage getNewDataPage() {
 		return new HFPage();
@@ -96,22 +97,6 @@ public class Heapfile implements Filetype, GlobalConst {
 		dpinfop.recct = 0;
 		dpinfop.availspace = hfpage.available_space();
 
-		return hfpage;
-
-	} // end of _newDatapage
-
-	private HFPage _newDatapages(int count)
-			throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
-		Page apage = new Page();
-		PageId pageId = new PageId();
-		pageId = newPage(apage, count);
-
-		if (pageId == null)
-			throw new HFException(null, "can't new pae");
-
-		HFPage hfpage = getNewDataPage();
-		hfpage.init(pageId, apage);
-	
 		return hfpage;
 
 	} // end of _newDatapage
@@ -360,9 +345,9 @@ public class Heapfile implements Filetype, GlobalConst {
 			throws InvalidSlotNumberException, InvalidTupleSizeException, IOException {
 		RID currentDataPageRid = null;
 
-		for (currentDataPageRid = currentDirPage.firstRecord();
-			 currentDataPageRid != null;
-			 currentDataPageRid = currentDirPage.nextRecord(currentDataPageRid)) {
+		for (currentDataPageRid = currentDirPage
+				.firstRecord(); currentDataPageRid != null; currentDataPageRid = currentDirPage
+						.nextRecord(currentDataPageRid)) {
 			currentDirPage.getDatapageInfo(currentDataPageRid, newdpinfo);
 			// need check the record length == DataPageInfo'slength
 			if (requiredFreeSpace <= newdpinfo.availspace) {
@@ -373,8 +358,8 @@ public class Heapfile implements Filetype, GlobalConst {
 		return null;
 	}
 
-	protected HFPage addNewPageToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid) throws IOException, HFException,
-			HFBufMgrException, HFDiskMgrException {
+	protected HFPage addNewPageToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid)
+			throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
 		assert currentDirPage.available_space() >= DataPageInfo.size : "Full Dirpage!";
 		// Start IF02
 		// case (2.1) : add a new data page record into the
@@ -401,32 +386,7 @@ public class Heapfile implements Filetype, GlobalConst {
 		return currentDataPage;
 	}
 
-	protected PageId addNewPagesToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid, int count)
-			throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
-		HFPage startPage = _newDatapages(count);
-		PageId currentDirPageId = currentDirPage.curPage;
-		RID currentDataPageRid = null;
-		DataPageInfo dpinfop = new DataPageInfo();
-
-		for (int i = 0; i < count; i++) {
-			dpinfop.pageId.pid = startPage.curPage.pid;
-			dpinfop.recct = 0;
-			dpinfop.availspace = startPage.available_space();
-
-			if (currentDirPage.available_space() < DataPageInfo.size) {
-				currentDirPageId = loadNextDirPage(currentDirPage);
-			}
-
-			Tuple atuple = dpinfop.convertToTuple();
-
-			byte[] tmpData = atuple.getTupleByteArray();
-			currentDataPageRid = currentDirPage.insertRecord(tmpData);
-		}
-
-		return null;
-	}
-
-	protected PageId loadNextDirPage(Dirpage currentDirPage) throws IOException, HFBufMgrException, HFException {
+	protected PageId loadNextDirPage(Dirpage currentDirPage, boolean dirty_dir) throws IOException, HFBufMgrException, HFException {
 		Page pageinbuffer = new Page();
 		Dirpage nextDirPage = new Dirpage();
 		PageId nextDirPageId = currentDirPage.getNextPage();
@@ -441,7 +401,7 @@ public class Heapfile implements Filetype, GlobalConst {
 
 		if (nextDirPageId.pid != INVALID_PAGE) { // Start IF03
 													// case (2.2.1): there is another directory page:
-			unpinPage(currentDirPage.curPage, false);
+			unpinPage(currentDirPage.curPage, dirty_dir);
 			pinPage(nextDirPageId, currentDirPage, false);
 
 			// now go back to the beginning of the outer while-loop and
@@ -477,8 +437,14 @@ public class Heapfile implements Filetype, GlobalConst {
 
 		return nextDirPageId;
 	}
- 
+
 	protected HFPage loadNextDataPageWithSpace(int recLen, Dirpage currentDirPage, DataPageInfo dpinfo)
+			throws HFException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException,
+			InvalidTupleSizeException, SpaceNotAvailableException, IOException {
+		return loadNextDataPageWithSpace(recLen, currentDirPage, dpinfo, false);
+	}
+
+	protected HFPage loadNextDataPageWithSpace(int recLen, Dirpage currentDirPage, DataPageInfo dpinfo, boolean dirty_dir)
 			throws HFException, HFBufMgrException, HFDiskMgrException, IOException, InvalidSlotNumberException,
 			InvalidTupleSizeException, SpaceNotAvailableException {
 		boolean found = false;
@@ -487,7 +453,7 @@ public class Heapfile implements Filetype, GlobalConst {
 		HFPage currentDataPage = getNewDataPage();
 
 		while (found == false) { // Start While01
-						// look for suitable dpinfo-struct
+			// look for suitable dpinfo-struct
 			currentDataPageRid = findFreePageInDir(currentDirPage, recLen, dpinfo);
 			found = currentDataPageRid != null;
 
@@ -500,7 +466,7 @@ public class Heapfile implements Filetype, GlobalConst {
 			// whose corresponding datapage has enough space free
 			// several subcases: see below
 			if (found == false) { // Start IF01
-						// case (2)
+				// case (2)
 
 				// System.out.println("no datapagerecord on the current directory is OK");
 				// System.out.println("dirpage availspace "+currentDirPage.available_space());
@@ -519,34 +485,34 @@ public class Heapfile implements Filetype, GlobalConst {
 				// look at the next directory page, if necessary, create it.
 
 				if (currentDirPage.available_space() >= dpinfo.size) {
-				// Start IF02
-				// case (2.1) : add a new data page record into the
-				// current directory page
+					// Start IF02
+					// case (2.1) : add a new data page record into the
+					// current directory page
 
-				currentDataPageRid = new RID();
-				currentDataPage = addNewPageToDir(currentDirPage, dpinfo, currentDataPageRid);
-				// end the loop, because a new datapage with its record
-				// in the current directorypage was created and inserted into
-				// the heapfile; the new datapage has enough space for the
-				// record which the user wants to insert
+					currentDataPageRid = new RID();
+					currentDataPage = addNewPageToDir(currentDirPage, dpinfo, currentDataPageRid);
+					// end the loop, because a new datapage with its record
+					// in the current directorypage was created and inserted into
+					// the heapfile; the new datapage has enough space for the
+					// record which the user wants to insert
 
-				found = true;
+					found = true;
 
 				} // end of IF02
 				else { // Start else 02
-				// case (2.2)
-				currentDirPageId = loadNextDirPage(currentDirPage);
+						// case (2.2)
+					currentDirPageId = loadNextDirPage(currentDirPage, dirty_dir);
 				} // End of else02
-				// ASSERTIONS:
-				// - if found == true: search will end and see assertions below
-				// - if found == false: currentDirPage, currentDirPageId
-				// valid and pinned
+					// ASSERTIONS:
+					// - if found == true: search will end and see assertions below
+					// - if found == false: currentDirPage, currentDirPageId
+					// valid and pinned
 
 			} // end IF01
 			else { // Start else01
-				// found == true:
-				// we have found a datapage with enough space,
-				// but we have not yet pinned the datapage:
+					// found == true:
+					// we have found a datapage with enough space,
+					// but we have not yet pinned the datapage:
 
 				// ASSERTIONS:
 				// - dpinfo valid
@@ -608,7 +574,8 @@ public class Heapfile implements Filetype, GlobalConst {
 		unpinPage(dpinfo.pageId, true /* = DIRTY */);
 
 		// DataPage is now released
-		// DataPageInfo dpinfo_ondirpage = currentDirPage.returnDatapageInfo(currentDataPageRid);
+		// DataPageInfo dpinfo_ondirpage =
+		// currentDirPage.returnDatapageInfo(currentDataPageRid);
 
 		dpinfo.availspace = currentDataPage.available_space();
 		dpinfo.recct++;
@@ -618,78 +585,6 @@ public class Heapfile implements Filetype, GlobalConst {
 
 		return rid;
 	}
-
-	// public RID[] batch_insert(Map[] maps) throws HFBufMgrException, HFException, HFDiskMgrException,
-	// 		InvalidSlotNumberException, InvalidTupleSizeException, SpaceNotAvailableException, IOException {
-	// 	int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
-
-	// 	MapIter iter = new MapIter(maps);
-	// 	Sort st = new Sort(attrType, (short) 4, attrSize, iter, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF / 8);
-
-	// 	DataPageInfo dpinfo = new DataPageInfo();
-	// 	Dirpage currentDirPage = new Dirpage();
-	// 	HFPage dataPage = loadNextDataPageWithSpace(Map.map_size, currentDirPage, dpinfo);
-	// 	dataPage.batch_insert(bytes);
-
-	// 	int pagesNeeded = bytes.size() / 
-
-
-
-
-
-
-
-
-
-
-
-
-	// 	int mapsInPage = (HFPage.MAX_SPACE - HFPage.DPFIXED) / (HFPage.SIZE_OF_SLOT + Map.map_size);
-	// 	int pages_batch = NUMBUF / 2;
-
-	// 	DataPageInfo dpinfo = new DataPageInfo();
-	// 	Dirpage currentDirPage = new Dirpage();
-	// 	PageId currentDirPageId = new PageId(_firstDirPageId.pid);
-
-	// 	pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
-
-	// 	HFPage dataPage = loadNextDataPageWithSpace(mapsInPage * Map.map_size, currentDirPage, dpinfo);
-	// 	Stack<byte[]> bytes = new Stack<byte[]>();
-
-	// 	for (int i = 0; i < maps.length; i++) {
-	// 		bytes.push(maps[i].getMapByteArray());
-	// 	}
-
-	// 	dataPage.batch_insert(bytes);
-
-	// 	int pagesNeeded = (int) java.lang.Math.floor(bytes.size() / (double) mapsInPage);
-	// 	int batches = pagesNeeded / pages_batch;
-
-	// 	for (int i = 0; i < batches; i++) {
-			
-	// 	}
-
-	// 	int done = 0;
-	// 	for (int i = 0; i < first_set; i++) {
-	// 		bytes.add(maps[done].getMapByteArray());
-	// 		done++;
-	// 	}
-
-	// 	dataPage.batch_insert((byte[][]) bytes.toArray());
-	// 	bytes.clear();
-
-	// 	byte[][] bytes = new byte[mapsInPage][];
-	// 	for (int i = 0; i < pagesNeeded; i++) {
-	// 		for (int j = 0; j < mapsInPage; j++) {
-	// 			bytes[j] = maps[done].getMapByteArray();
-	// 			done++;
-	// 		}
-
-	// 		dataPage.batch_insert(bytes);
-	// 	}
-
-	// 	return null;
-	// }
 
 	/**
 	 * Delete record from file with given rid.

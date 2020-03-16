@@ -29,7 +29,7 @@ public class MapIter extends Iterator {
         if (this.closeFlag || curr_pos >= this.map_ref.length)
             return null;
 
-        return this.map_ref[curr_pos];
+        return this.map_ref[curr_pos++];
     }
 
     @Override
