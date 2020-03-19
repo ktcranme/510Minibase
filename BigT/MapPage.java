@@ -28,6 +28,39 @@ public class MapPage extends HFPage implements Mapview {
         return PhysicalMap.physicalMapToMap(rec, mid.slotNo % 3);
     }
 
+    public MID updateMap(MID mid, Map map, Map deletedMap) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
+        short recLen;
+        short offset;
+        PageId pageNo = new PageId();
+        pageNo.pid = mid.pageNo.pid;
+
+        curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+        int slotNo = mid.slotNo / 3;
+
+        // length of record being returned
+        recLen = getSlotLength(slotNo);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+        if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0) && (pageNo.pid == curPage.pid)) {
+
+            offset = getSlotOffset(slotNo);
+
+            PhysicalMap pmap = new PhysicalMap(data, offset);
+            int versions = pmap.getVersionCount();
+            int versionUpdated = pmap.updateMap(map.getTimeStamp(), map.getValue(), deletedMap);
+
+            if (versionUpdated != -1) {
+                MID retMid = new MID(mid.pageNo, mid.slotNo - (mid.slotNo % 3) + versionUpdated);
+                retMid.isReused = versions == 3;
+                return retMid;
+            }
+
+            return null;
+        }
+
+        throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
+    }
+
     public MID updateMap(MID mid, Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
         short recLen;
         short offset;
