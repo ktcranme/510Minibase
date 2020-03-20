@@ -5,6 +5,7 @@ import bufmgr.HashEntryNotFoundException;
 import bufmgr.InvalidFrameNumberException;
 import bufmgr.PageUnpinnedException;
 import bufmgr.ReplacerException;
+import driver.FilterParser;
 import global.*;
 import heap.*;
 import index.IndexException;
@@ -12,14 +13,8 @@ import index.UnknownIndexTypeException;
 import iterator.CondExpr;
 import iterator.FileScanException;
 import iterator.InvalidRelation;
-import iterator.SortException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import index.IndexUtils;
-import iterator.*;
 
 public class bigT implements GlobalConst {
     public static final String INDEXFILENAMEPREFIX = "bigTInd";
@@ -275,13 +270,13 @@ public class bigT implements GlobalConst {
                 tmpmid = crIndexMapFind(tempMap);
                 if (tmpmid != null) {
                     tm = hf.updateMap(tmpmid, tempMap, delMap);
-                    if(tm == null)
+                    if (tm == null)
                         return null;
                     if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     } else {
-                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),new RID(tm));
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
@@ -294,14 +289,14 @@ public class bigT implements GlobalConst {
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = naiveMapFind(tempMap);
                 if (tmpmid != null) {
-                    tm = hf.updateMap(tmpmid, tempMap,delMap);
-                    if(tm == null)
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
                         return null;
                     if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     } else {
-                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),  new RID(tm));
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
@@ -327,6 +322,11 @@ public class bigT implements GlobalConst {
                 s.closestream();
                 return mid;
             }
+        }
+        s.closestream();
+        return null;
+    }
+
     public Iterator openStream(int orderType, String rowFilter, String columnFilter, String valueFilter) throws Exception {
         SortTypeMap.init();
         Iterator it = null;
@@ -355,8 +355,7 @@ public class bigT implements GlobalConst {
                 }
                 break;
         }
-        s.closestream();
-        return null;
+        return it;
     }
 
     MID crIndexMapFind(Map findMap) throws IOException,
@@ -376,7 +375,6 @@ public class bigT implements GlobalConst {
         }
         bs.DestroyBTreeFileScan();
         return null;
-        return it;
     }
 
     Iterator filterVal(String filterSec, String rowFilter, String columnFilter, String valueFilter) throws FileScanException, IOException, InvalidRelation, IndexException, UnknownIndexTypeException {
