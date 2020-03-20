@@ -39,7 +39,8 @@ db:
 	make -C index
 	make -C iterator
 	make -C BigT
-	
+	make -C driver
+
 doc:
 	$(JAVADOC) $(DOCFILES)
 
@@ -60,6 +61,9 @@ testsort: db
 	
 filestream: db
 	cd tests; make filestream
+
+batchinsert: db
+	cd driver; make batchinsert
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
