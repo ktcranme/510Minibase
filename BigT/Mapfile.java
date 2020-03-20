@@ -47,7 +47,12 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         return PhysicalMap.physicalMapToMap(rec, rid.slotNo % 3);
     }
 
-    public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+	public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+			InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
+		return this.updateMap(rid, newtuple, null);
+	}
+
+    public MID updateMap(MID rid, Map newtuple, Map deletedMap) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
 
         boolean status;
@@ -62,7 +67,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         if (status != true)
             throw new InvalidSlotNumberException();
 
-        MID updatedRecord = dataPage.updateMap(rid, newtuple);
+        MID updatedRecord = dataPage.updateMap(rid, newtuple, deletedMap);
         
         if (updatedRecord != null && !updatedRecord.isReused) {
             DataPageInfo dpinfo_ondirpage = dirPage.returnDatapageInfo(currentDataPageRid);
