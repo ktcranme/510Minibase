@@ -46,9 +46,12 @@ public class VMapfile extends Heapfile implements Bigtablefile {
         return new Map(rec, 0);
     }
 
-    public boolean updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+    public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
-        return updateRecord(new RID(rid.pageNo, rid.slotNo), newtuple.getMapByteArray());
+        if (updateRecord(new RID(rid.pageNo, rid.slotNo), newtuple.getMapByteArray())) {
+            return rid;
+        }
+        return null;
     }
 
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,

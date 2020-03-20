@@ -1,6 +1,7 @@
 package tests;
 
 import java.io.*;
+import java.util.HashMap;
 
 import BigT.Map;
 import BigT.Mapfile;
@@ -457,18 +458,21 @@ class StreamDriver extends TestDriver implements GlobalConst
         }
 
         if (!done && status == OK) {
+
+          /**
+           * The idea here is that the MAP pointed to by rid must not change
+           * ... Unless it is very old and has to be removed because of the update.
+           */
+          HashMap<Integer, Map> h = new HashMap<Integer, Map>();
+          h.put(rid.slotNo, new Map(m));
+
           // Update multiple times to check versioning
           for (int k = 0; k < 6; k++) {
-            try {
-              m.setValue(Integer.toString(10 * i + k));
-            } catch (Exception e) {
-              status = FAIL;
-              System.err.println (""+e);
-              e.printStackTrace();
-            }
             Map newMap = null; 
             try {
               newMap = new Map (m.getMapByteArray(),0); 
+              newMap.setTimeStamp(10 * i + k);
+              newMap.setValue(Integer.toString(10 * i + k));
             }
             catch (Exception e) {
               status = FAIL;
@@ -476,7 +480,28 @@ class StreamDriver extends TestDriver implements GlobalConst
               e.printStackTrace();
             }
             try {
-              status = f.updateMap(rid, newMap);
+              Map mk = new Map();
+              MID tempMid = f.updateMap(rid, newMap, mk);
+
+              if (tempMid.isReused) {
+                // Verify if the map ejected was actually the same as the one at tempMid.slotNo
+                assert h.get(tempMid.slotNo).getTimeStamp() == mk.getTimeStamp() : "The ejected Map is not the same as expected";
+                assert h.get(tempMid.slotNo).getValue().equals(mk.getValue()) : "The ejected Map is not the same as expected";
+              }
+
+              h.put(tempMid.slotNo, new Map(newMap));
+
+              // Verify if all the maps we saved so far are still refered to by the same MIDs
+              for(java.util.Map.Entry<Integer, Map> entry : h.entrySet()) {
+                Integer slotNo = entry.getKey();
+                Map v = entry.getValue();
+            
+                Map tempMap = f.getMap(new MID(tempMid.pageNo, slotNo));
+                assert tempMap.getRowLabel().equals(v.getRowLabel()) : "MID must be constant! Row mismatch!";
+                assert tempMap.getColumnLabel().equals(v.getColumnLabel()) : "MID must be constant! Column mismatch!";
+                assert tempMap.getValue().equals(v.getValue()) : "MID must be constant! Value mismatch!";
+                assert tempMap.getTimeStamp() == v.getTimeStamp() : "MID must be constant! Timestamp mismatch!";
+              }
             }
             catch (Exception e) {
               status = FAIL;
@@ -547,6 +572,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             break;
           } else {
             //System.out.println(m.getColumnLabel() + ", " + m.getRowLabel() + ", " + m.getTimeStamp() + ", " + m.getValue());
+            // m.print();
             rec_cnt++;
           }
         }
@@ -567,8 +593,8 @@ class StreamDriver extends TestDriver implements GlobalConst
             break;
           }
 
-
-          if (m.getVersionNo() == 1) {
+          // i += 2;
+          if (m.getVersionNo() == 2) {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
                 System.err.println ("*** Record " + i
@@ -584,7 +610,8 @@ class StreamDriver extends TestDriver implements GlobalConst
                 status = FAIL;
                 break;
             }
-          } else if (m.getVersionNo() == 2) {
+            i += 2;     // Because we deleted the odd ones...
+          } else if (m.getVersionNo() == 1) {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
                 System.err.println ("*** Record " + i
@@ -600,7 +627,6 @@ class StreamDriver extends TestDriver implements GlobalConst
                 status = FAIL;
                 break;
             }
-            i += 2;     // Because we deleted the odd ones...
           } else {
             try {
               if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {

@@ -8,7 +8,8 @@ import java.io.*;
  */
 
 public class MID{
-  
+  public boolean isReused = false;
+
   /** public int slotNo
    */
   public int slotNo;

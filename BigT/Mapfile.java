@@ -47,7 +47,12 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         return PhysicalMap.physicalMapToMap(rec, rid.slotNo % 3);
     }
 
-    public boolean updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+	public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+			InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
+		return this.updateMap(rid, newtuple, null);
+	}
+
+    public MID updateMap(MID rid, Map newtuple, Map deletedMap) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
 
         boolean status;
@@ -60,20 +65,20 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         status = _findDataPage(new RID(rid.pageNo, rid.slotNo / 3), currentDirPageId, dirPage, currentDataPageId, dataPage, currentDataPageRid);
 
         if (status != true)
-            return status; // record not found
+            throw new InvalidSlotNumberException();
 
-        boolean newRecord = dataPage.updateMap(rid, newtuple);
+        MID updatedRecord = dataPage.updateMap(rid, newtuple, deletedMap);
         
-        if (newRecord) {
+        if (updatedRecord != null && !updatedRecord.isReused) {
             DataPageInfo dpinfo_ondirpage = dirPage.returnDatapageInfo(currentDataPageRid);
             dpinfo_ondirpage.recct++;
             dpinfo_ondirpage.flushToTuple();
         }
 
         unpinPage(currentDataPageId, true /* = DIRTY */);
-        unpinPage(currentDirPageId, newRecord /* undirty ? */);
+        unpinPage(currentDirPageId, updatedRecord != null && !updatedRecord.isReused /* undirty ? */);
 
-        return true;
+        return updatedRecord;
     }
 
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,

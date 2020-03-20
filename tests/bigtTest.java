@@ -2,6 +2,11 @@ package tests;
 
 import java.io.*;
 
+import BigT.IndexScan;
+import BigT.Stream;
+import BigT.bigT;
+import BigT.Map;
+
 import BigT.*;
 
 import java.lang.*;
@@ -14,10 +19,14 @@ import heap.*;
 import index.IndexException;
 import index.UnknownIndexTypeException;
 import iterator.CondExpr;
+import iterator.FileScan;
 import iterator.FldSpec;
 import iterator.RelSpec;
 
+import javax.sound.midi.MidiChannel;
+
 import static BigT.bigT.INDEXFILENAMEPREFIX;
+import static BigT.bigT.TSINDEXFILENAMEPREFIX;
 
 class bigTDriver extends TestDriver implements GlobalConst{
     private final static boolean OK = true;
@@ -101,21 +110,27 @@ class bigTDriver extends TestDriver implements GlobalConst{
         Map m = new Map();
         Map m7 = new Map();
         Map m8 = new Map();
+        Map m9 = new Map();
         try {
             m.setRowLabel("Dominica");
             m.setColumnLabel("Zebra");
             m.setTimeStamp(46067);
-            m.setValue("1");
+            m.setValue("3");
 
-            m7.setRowLabel("Nebraska");
-            m7.setColumnLabel("Alpaca");
+            m7.setRowLabel("Dominica");
+            m7.setColumnLabel("Zebra");
             m7.setTimeStamp(46021);
-            m7.setValue("322");
+            m7.setValue("2");
 
-            m8.setRowLabel("Brazil");
-            m8.setColumnLabel("Kookaburra");
-            m8.setTimeStamp(46021);
-            m8.setValue("1");
+            m8.setRowLabel("Dominica");
+            m8.setColumnLabel("Zebra");
+            m8.setTimeStamp(460);
+            m8.setValue("2");
+
+            m9.setRowLabel("Dominica");
+            m9.setColumnLabel("Zebra");
+            m9.setTimeStamp(46);
+            m9.setValue("1");
         } catch (IOException e) {
             System.out.println("IOException while creating a map");
             e.printStackTrace();
@@ -150,13 +165,14 @@ class bigTDriver extends TestDriver implements GlobalConst{
             m6.print();
             m7.print();
             m8.print();
+            m9.print();
         } catch (IOException e) {
             System.out.println("IOException while testing the constructor replacement methods");
             e.printStackTrace();
         }
 
         // Test BigT functionalities
-        int mapCnt=-1, rowCnt=-1, colCnt=-1;
+        int mapCnt = -1, rowCnt = -1, colCnt = -1;
         try {
             System.out.println("Creating a Big Table  with indexing as 1");
             bigT big = new bigT("Testing1", 1);
@@ -168,6 +184,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             big.insertMap(m6.getMapByteArray());
             big.insertMap(m7.getMapByteArray());
             big.insertMap(m8.getMapByteArray());
+            big.insertMap(m9.getMapByteArray());
             mapCnt = big.getMapCnt();
             System.out.println("Big1 map count:" + mapCnt);
             rowCnt = big.getRowCnt();
@@ -175,6 +192,12 @@ class bigTDriver extends TestDriver implements GlobalConst{
             colCnt = big.getColumnCnt();
             System.out.println("Big1 column count:" + colCnt);
             System.out.println("Deleting Big Table  with indexing as 1");
+            Stream s = new Stream(big.getHf());
+            MID mid = new MID();
+            Map mk;
+            while ((mk=s.getNext(mid))!=null){
+                mk.print();
+            }
             big.deleteBigt();
 
             System.out.println("Creating a Big Table  with indexing as 2");
@@ -187,6 +210,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             big2.insertMap(m6.getMapByteArray());
             big2.insertMap(m7.getMapByteArray());
             big2.insertMap(m8.getMapByteArray());
+            big2.insertMap(m9.getMapByteArray());
             mapCnt = big2.getMapCnt();
             System.out.println("Big2 map count:" + mapCnt);
             rowCnt = big2.getRowCnt();
@@ -216,12 +240,19 @@ class bigTDriver extends TestDriver implements GlobalConst{
             big3.insertMap(m6.getMapByteArray());
             big3.insertMap(m7.getMapByteArray());
             big3.insertMap(m8.getMapByteArray());
+            big3.insertMap(m9.getMapByteArray());
             mapCnt = big3.getMapCnt();
             System.out.println("Big3 map count:" + mapCnt);
             rowCnt = big3.getRowCnt();
             System.out.println("Big3 row count:" + rowCnt);
             colCnt = big3.getColumnCnt();
             System.out.println("Big3 column count:" + colCnt);
+            is = new IndexScan(new IndexType(IndexType.B_Index), big3.getName(), INDEXFILENAMEPREFIX + big3.getName(), null, null, false);
+            System.out.println("Index File created");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
             big3.deleteBigt();
             System.out.println("Deleting Big Table  with indexing as 3");
 
@@ -235,6 +266,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             big4.insertMap(m6.getMapByteArray());
             big4.insertMap(m7.getMapByteArray());
             big4.insertMap(m8.getMapByteArray());
+            big4.insertMap(m9.getMapByteArray());
             mapCnt = big4.getMapCnt();
             System.out.println("Big4 map count:" + mapCnt);
             rowCnt = big4.getRowCnt();
@@ -242,6 +274,19 @@ class bigTDriver extends TestDriver implements GlobalConst{
             colCnt = big4.getColumnCnt();
             System.out.println("Big4 column count:" + colCnt);
             System.out.println("Deleting Big Table  with indexing as 4");
+            is = new IndexScan(new IndexType(IndexType.B_Index), big4.getName(), INDEXFILENAMEPREFIX + big4.getName(), null, null, false);
+            System.out.println("Index Scan");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
+
+            is = new IndexScan(new IndexType(IndexType.B_Index), big4.getName(), TSINDEXFILENAMEPREFIX + big4.getName(), null, null, false);
+            System.out.println("Index Scan TS");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
             big4.deleteBigt();
 
             System.out.println("Creating a Big Table  with indexing as 5");
@@ -254,6 +299,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             big5.insertMap(m6.getMapByteArray());
             big5.insertMap(m7.getMapByteArray());
             big5.insertMap(m8.getMapByteArray());
+            big5.insertMap(m9.getMapByteArray());
             mapCnt = big5.getMapCnt();
             System.out.println("Big5 map count:" + mapCnt);
             rowCnt = big5.getRowCnt();
@@ -276,6 +322,20 @@ class bigTDriver extends TestDriver implements GlobalConst{
                 tt.print();
             it.close();
 
+            System.out.println("Test for index scan of maps!");
+            is = new IndexScan(new IndexType(IndexType.B_Index), big5.getName(), INDEXFILENAMEPREFIX + big5.getName(), null, null, false);
+            System.out.println("Index Scan");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
+
+            is = new IndexScan(new IndexType(IndexType.B_Index), big5.getName(), TSINDEXFILENAMEPREFIX + big5.getName(), null, null, false);
+            System.out.println("Index Scan TS");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
             big5.deleteBigt();
             System.out.println("Deleting Big Table with indexing as 5");
         } catch(Exception e){
@@ -403,10 +463,8 @@ class bigTDriver extends TestDriver implements GlobalConst{
     }
 }
 
-
-
-public class bigtTest{
-    public static void main(String [] args) throws Exception {
+public class bigtTest {
+    public static void main(String[] args) {
         new bigTDriver().runTests();
     }
 }
