@@ -46,8 +46,8 @@ public class BatchInsert {
                 temp.setRowLabel(rec[0]);
             }
             temp.setColumnLabel(rec[1]);
-            temp.setTimeStamp(Integer.parseInt(rec[2]));
-            temp.setValue(rec[3]);
+            temp.setTimeStamp(Integer.parseInt(rec[3]));
+            temp.setValue(rec[2]);
             b1.insertMap(temp.getMapByteArray());
             //mapLs.add(temp);
             c++;
