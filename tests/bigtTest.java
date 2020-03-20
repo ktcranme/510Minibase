@@ -18,6 +18,7 @@ import iterator.RelSpec;
 import javax.sound.midi.MidiChannel;
 
 import static BigT.bigT.INDEXFILENAMEPREFIX;
+import static BigT.bigT.TSINDEXFILENAMEPREFIX;
 
 class bigTDriver extends TestDriver implements GlobalConst {
     private final static boolean OK = true;
@@ -190,7 +191,6 @@ class bigTDriver extends TestDriver implements GlobalConst {
 
             System.out.println("Creating a Big Table  with indexing as 2");
             bigT big2 = new bigT("Testing_2", 2);
-            System.out.println("all good");
             big2.insertMap(m.getMapByteArray());
             big2.insertMap(m2.getMapByteArray());
             big2.insertMap(m3.getMapByteArray());
@@ -280,7 +280,14 @@ class bigTDriver extends TestDriver implements GlobalConst {
             System.out.println("Big4 column count:" + colCnt);
             System.out.println("Deleting Big Table  with indexing as 4");
             is = new IndexScan(new IndexType(IndexType.B_Index), big4.getName(), INDEXFILENAMEPREFIX + big4.getName(), null, null, false);
-            System.out.println("Index File created");
+            System.out.println("Index Scan");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
+
+            is = new IndexScan(new IndexType(IndexType.B_Index), big4.getName(), TSINDEXFILENAMEPREFIX + big4.getName(), null, null, false);
+            System.out.println("Index Scan TS");
             while ((tmpm = is.get_next()) != null) {
                 tmpm.print();
             }
@@ -306,7 +313,14 @@ class bigTDriver extends TestDriver implements GlobalConst {
             System.out.println("Big5 column count:" + colCnt);
             System.out.println("Test for index scan of maps!");
             is = new IndexScan(new IndexType(IndexType.B_Index), big5.getName(), INDEXFILENAMEPREFIX + big5.getName(), null, null, false);
-            System.out.println("Index File created");
+            System.out.println("Index Scan");
+            while ((tmpm = is.get_next()) != null) {
+                tmpm.print();
+            }
+            is.close();
+
+            is = new IndexScan(new IndexType(IndexType.B_Index), big5.getName(), TSINDEXFILENAMEPREFIX + big5.getName(), null, null, false);
+            System.out.println("Index Scan TS");
             while ((tmpm = is.get_next()) != null) {
                 tmpm.print();
             }

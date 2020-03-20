@@ -224,8 +224,9 @@ public class bigT implements GlobalConst {
 
     public MID insertMap(byte[] mapPtr) throws Exception {
         //need to handle versioning to remove 4th version
-        Map tempMap;
+        Map tempMap, delMap;
         MID mid, tmpmid, tm = null;
+        delMap = new Map();
         switch (type) {
             case 1: // no index update required
                 tempMap = new Map(mapPtr, 0);
@@ -266,34 +267,42 @@ public class bigT implements GlobalConst {
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = crIndexMapFind(tempMap);
                 if (tmpmid != null) {
-                    tm = hf.updateMap(tmpmid, tempMap);
-                    if (tm != null && !tm.isReused) {
-                        System.out.println("New Version but all versions not full");
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if(tm == null)
+                        return null;
+                    if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     } else {
-                        System.out.println("4th version");
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
-                    System.out.println("New Map");
-                    mid = hf.insertMap(tempMap);
-                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(mid));
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                 }
-                //btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), rid);
                 break;
             case 5: //one btree to index row label and value (combined key) and one btree to index timestamps
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = naiveMapFind(tempMap);
                 if (tmpmid != null) {
-                    tm = hf.updateMap(tmpmid, tempMap);
-                    if (tm != null && !tm.isReused) {
+                    tm = hf.updateMap(tmpmid, tempMap,delMap);
+                    if(tm == null)
+                        return null;
+                    if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),  new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
                     tm = hf.insertMap(tempMap);
                     btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                 }
                 break;
-            //btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), rid);
         }
         return tm;
     }
