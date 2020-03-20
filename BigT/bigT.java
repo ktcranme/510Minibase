@@ -11,6 +11,7 @@ import bufmgr.PageUnpinnedException;
 import bufmgr.ReplacerException;
 import global.*;
 import heap.*;
+import index.IndexUtils;
 import iterator.*;
 
 public class bigT implements GlobalConst {
@@ -221,68 +222,125 @@ public class bigT implements GlobalConst {
         return c;
     }
 
-    public RID insertMap(byte[] mapPtr) throws HFDiskMgrException,
-            InvalidTupleSizeException,
-            HFException,
-            IOException,
-            InvalidSlotNumberException,
-            SpaceNotAvailableException,
-            HFBufMgrException,
-            UnpinPageException,
-            DeleteRecException,
-            ConvertException,
-            PinPageException,
-            LeafDeleteException,
-            NodeNotMatchException,
-            LeafInsertRecException,
-            IndexInsertRecException,
-            IndexSearchException,
-            KeyTooLongException,
-            KeyNotMatchException,
-            ConstructPageException,
-            IteratorException,
-            InsertException {
+    public MID insertMap(byte[] mapPtr) throws Exception {
         //need to handle versioning to remove 4th version
-        Map tempMap = new Map(mapPtr, 0);
-        MID mid = hf.insertMap(tempMap);
-        RID rid = new RID(mid);
+        Map tempMap, delMap;
+        MID mid, tmpmid, tm = null;
+        delMap = new Map();
         switch (type) {
             case 1: // no index update required
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = naiveMapFind(tempMap);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap);
+                } else {
+                    tm = hf.insertMap(tempMap);
+                }
                 break;
             case 2:
-                btf.insert(new StringKey(tempMap.getRowLabel()), rid);
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = naiveMapFind(tempMap);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap);
+                    if (tm != null && !tm.isReused) {
+                        btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                }
                 break;
             case 3:
-                btf.insert(new StringKey(tempMap.getColumnLabel()), rid);
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = naiveMapFind(tempMap);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap);
+                    if (tm != null && !tm.isReused) {
+                        btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                }
                 break;
             case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
-                btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), rid);
-                btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), rid);
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if(tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
                 break;
             case 5: //one btree to index row label and value (combined key) and one btree to index timestamps
-                btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), rid);
-                btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), rid);
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = naiveMapFind(tempMap);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap,delMap);
+                    if(tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),  new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
                 break;
         }
-        return rid;
+        return tm;
     }
 
-    Stream openStream(int orderType, String rowFilter, String columnFilter, String value) throws InvalidMapSizeException,
-            InvalidTupleSizeException,
-            HFBufMgrException,
+    MID naiveMapFind(Map findMap) throws HFBufMgrException,
             IOException,
-            InvalidSlotNumberException {
-        Stream s;
-        switch (orderType) {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            default:
-                s = new Stream(hf);
-                break;
+            InvalidMapSizeException,
+            InvalidSlotNumberException,
+            InvalidTupleSizeException {
+        Stream s = new Stream(hf);
+        MID mid = new MID();
+        Map m;
+        while ((m = s.getNext(mid)) != null) {
+            if (m.getRowLabel().equalsIgnoreCase(findMap.getRowLabel()) && m.getColumnLabel().equalsIgnoreCase(findMap.getColumnLabel())) {
+                s.closestream();
+                return mid;
+            }
         }
-        return s;
+        s.closestream();
+        return null;
+    }
+
+    MID crIndexMapFind(Map findMap) throws IOException,
+            PinPageException,
+            IteratorException,
+            KeyNotMatchException,
+            UnpinPageException,
+            ConstructPageException,
+            ScanIteratorException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
+        BTFileScan bs = btf.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
+        KeyDataEntry ky;
+        MID mid = null;
+        if ((ky = bs.get_next()) != null) {
+            mid = new MID(((LeafData) ky.data).getData());
+            bs.DestroyBTreeFileScan();
+            return mid;
+        }
+        bs.DestroyBTreeFileScan();
+        return null;
     }
 }
