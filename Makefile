@@ -65,6 +65,9 @@ filestream: db
 batchinsert: db
 	cd driver; make batchinsert
 
+driver: db
+	cd driver; make driver
+
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
 
