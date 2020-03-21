@@ -657,59 +657,6 @@ class StreamDriver extends TestDriver implements GlobalConst
 
   }
 
-  protected boolean test4() {
-    System.out.println("Running Test 4");
-
-    boolean status = OK;
-    Stream stream = null;
-    MID rid = new MID();
-    Mapfile f = null;
-
-    System.out.println ("  - Open the same heap file as tests 1 and 2\n");
-    try {
-      f = new Mapfile("file_1");
-
-      stream = f.openStream();
-      System.out.println("Has: " + f.getMapCnt() + " Records");
-    }
-    catch (Exception e) {
-      status = FAIL;
-      System.err.println ("*** Could not create heap file\n");
-      e.printStackTrace();
-    }
-
-    Map map = null;
-    try {
-      map = new Map();
-      map.setColumnLabel("col8");
-      map.setRowLabel("row8");
-      map.setTimeStamp(99);
-      map.setValue("99");
-
-      MID mid = f.naiveSearch(map);
-
-      Map tmap = f.getMap(mid);
-      tmap.print();
-      assert tmap.getRowLabel().equals("row8") && tmap.getColumnLabel().equals("col8") && tmap.getValue().equals("99") && tmap.getTimeStamp() == 99 : "DID NOT STORE THE RECORD!";
-
-      map.setColumnLabel("col1");
-      map.setRowLabel("row1");
-      map.setTimeStamp(11);
-      map.setValue("11");
-
-      mid = f.naiveSearch(map);
-      tmap = f.getMap(mid);
-      tmap.print();
-      assert tmap.getRowLabel().equals("row1") && tmap.getColumnLabel().equals("col1") && tmap.getValue().equals("11") && tmap.getTimeStamp() == 11 : "DID NOT STORE THE RECORD!";
-
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
-    }
-
-    return true;
-  }
-
   protected String testName () {
     return "Heap File";
   }
