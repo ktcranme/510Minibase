@@ -686,18 +686,21 @@ class StreamDriver extends TestDriver implements GlobalConst
       map.setTimeStamp(99);
       map.setValue("99");
 
-      MapPage mp = f.naiveSearch(map);
+      MID mid = f.naiveSearch(map);
 
-      if (choice > 8)
-      assert mp != null : "Expected to find the record!";
+      Map tmap = f.getMap(mid);
+      tmap.print();
+      assert tmap.getRowLabel().equals("row8") && tmap.getColumnLabel().equals("col8") && tmap.getValue().equals("99") && tmap.getTimeStamp() == 99 : "DID NOT STORE THE RECORD!";
 
       map.setColumnLabel("col1");
       map.setRowLabel("row1");
-      map.setTimeStamp(1);
-      map.setValue("1");
+      map.setTimeStamp(11);
+      map.setValue("11");
 
-      mp = f.naiveSearch(map);
-      assert mp == null : "Expected to not find the record!";
+      mid = f.naiveSearch(map);
+      tmap = f.getMap(mid);
+      tmap.print();
+      assert tmap.getRowLabel().equals("row1") && tmap.getColumnLabel().equals("col1") && tmap.getValue().equals("11") && tmap.getTimeStamp() == 11 : "DID NOT STORE THE RECORD!";
 
     } catch (Exception e) {
       e.printStackTrace();

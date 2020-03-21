@@ -95,7 +95,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         return updatedRecord;
     }
 
-	public MapPage naiveSearch(Map map) throws InvalidTupleSizeException, InvalidSlotNumberException, IOException,
+	public MID naiveSearch(Map map) throws InvalidTupleSizeException, InvalidSlotNumberException, IOException,
 			Exception {
 		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 
@@ -176,7 +176,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 						unpinPage(currentDirPageId, verCnt < 3);
 						unpinPage(dpinfo.pageId, true);
 						
-						return currentDataPage;
+						return new MID(rid.pageNo, rid.slotNo * 3 + ver);
 					}
 					rid = currentDataPage.nextRecord(rid);
 				}
@@ -264,7 +264,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 			// Datapage and dirpage pinned. Next insert and flush dirpage and datapage
 		}
 
-		currentDataPage.insertRecord(PhysicalMap.getMapByteArray(map));
+		RID rid = currentDataPage.insertRecord(PhysicalMap.getMapByteArray(map));
 
 		unpinPage(currentDataPage.getCurPage(), true/* dirty */);
 
@@ -273,7 +273,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		dpinfo.flushToTuple();
 		unpinPage(currentDirPage.getCurPage(), true/* dirty */);
 
-		return null;
+		return new MID(rid.pageNo, rid.slotNo * 3);
 	}
 
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
