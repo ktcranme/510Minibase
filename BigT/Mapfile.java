@@ -60,14 +60,20 @@ public class Mapfile extends Heapfile implements Bigtablefile {
         PageId currentDirPageId = new PageId();
         MapPage dataPage = getNewDataPage();
         PageId currentDataPageId = new PageId();
-        RID currentDataPageRid = new RID();
+		RID currentDataPageRid = new RID();
+		long timeStart;
 
+		timeStart = System.currentTimeMillis();
         status = _findDataPage(new RID(rid.pageNo, rid.slotNo / 3), currentDirPageId, dirPage, currentDataPageId, dataPage, currentDataPageRid);
-
-        if (status != true)
+		System.out.println("Datapage Find Time taken: "+(System.currentTimeMillis()-timeStart));
+		
+		if (status != true)
             throw new InvalidSlotNumberException();
 
-        MID updatedRecord = dataPage.updateMap(rid, newtuple, deletedMap);
+		timeStart = System.currentTimeMillis();
+		MID updatedRecord = dataPage.updateMap(rid, newtuple, deletedMap);
+		System.out.println("Update on Datapage Time taken: "+(System.currentTimeMillis()-timeStart));
+
         
         if (updatedRecord != null && !updatedRecord.isReused) {
             DataPageInfo dpinfo_ondirpage = dirPage.returnDatapageInfo(currentDataPageRid);
@@ -75,8 +81,10 @@ public class Mapfile extends Heapfile implements Bigtablefile {
             dpinfo_ondirpage.flushToTuple();
         }
 
+		timeStart = System.currentTimeMillis();
         unpinPage(currentDataPageId, true /* = DIRTY */);
         unpinPage(currentDirPageId, updatedRecord != null && !updatedRecord.isReused /* undirty ? */);
+		System.out.println("Flushing datapage and dirpage Time taken: "+(System.currentTimeMillis()-timeStart));
 
         return updatedRecord;
     }

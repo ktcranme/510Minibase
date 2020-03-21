@@ -229,6 +229,7 @@ public class bigT implements GlobalConst {
         Map tempMap, delMap;
         MID mid, tmpmid, tm = null;
         delMap = new Map();
+        long timeStart;
         switch (type) {
             case 1: // no index update required
                 tempMap = new Map(mapPtr, 0);
@@ -240,16 +241,26 @@ public class bigT implements GlobalConst {
                 }
                 break;
             case 2:
+                timeStart = System.currentTimeMillis();
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = naiveMapFind(tempMap);
+                System.out.println("Find Time taken: "+(System.currentTimeMillis()-timeStart));
                 if (tmpmid != null) {
+                    timeStart = System.currentTimeMillis();
                     tm = hf.updateMap(tmpmid, tempMap);
+                    System.out.println("Update Time taken: "+(System.currentTimeMillis()-timeStart));
                     if (tm != null && !tm.isReused) {
+                        timeStart = System.currentTimeMillis();
                         btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                        System.out.println("Key Time taken: "+(System.currentTimeMillis()-timeStart));
                     }
                 } else {
+                    timeStart = System.currentTimeMillis();
                     tm = hf.insertMap(tempMap);
+                    System.out.println("Insert Time taken: "+(System.currentTimeMillis()-timeStart));
+                    timeStart = System.currentTimeMillis();
                     btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                    System.out.println("Key Time taken: "+(System.currentTimeMillis()-timeStart));
                 }
                 break;
             case 3:
@@ -266,12 +277,17 @@ public class bigT implements GlobalConst {
                 }
                 break;
             case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
+                timeStart = System.currentTimeMillis();
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = crIndexMapFind(tempMap);
+                System.out.println("Index Find Time taken: "+(System.currentTimeMillis()-timeStart));
                 if (tmpmid != null) {
+                    timeStart = System.currentTimeMillis();
                     tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    System.out.println("Update Time taken: "+(System.currentTimeMillis()-timeStart));
                     if (tm == null)
                         return null;
+                    timeStart = System.currentTimeMillis();
                     if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
@@ -279,10 +295,15 @@ public class bigT implements GlobalConst {
                         btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
+                    System.out.println("Key Time taken: "+(System.currentTimeMillis()-timeStart));
                 } else {
+                    timeStart = System.currentTimeMillis();
                     tm = hf.insertMap(tempMap);
+                    System.out.println("Insert Time taken: "+(System.currentTimeMillis()-timeStart));
+                    timeStart = System.currentTimeMillis();
                     btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
                     btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    System.out.println("Key Time taken: "+(System.currentTimeMillis()-timeStart));
                 }
                 break;
             case 5: //one btree to index row label and value (combined key) and one btree to index timestamps

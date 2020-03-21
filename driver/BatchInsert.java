@@ -37,6 +37,7 @@ public class BatchInsert {
         bigT b1 = new bigT(bigtName,type);
         long timeStart = System.currentTimeMillis();
         while ((line = read.readLine()) != null) {
+            long x = System.currentTimeMillis();
             rec = line.split(",");
             temp = new Map();
             if(c==0) {
@@ -48,13 +49,16 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
+            System.out.println("Time taken to create map: "+(System.currentTimeMillis()-x));
             b1.insertMap(temp.getMapByteArray());
             //mapLs.add(temp);
             c++;
-            System.out.println(c);
+            System.out.println("");
+            // if (c % 100 == 0)
+            // System.out.println(c);
         }
         System.out.println(b1.getMapCnt());
-        System.out.println("Time taken"+(System.currentTimeMillis()-timeStart));
+        System.out.println("Total Time taken: "+(System.currentTimeMillis()-timeStart));
         //System.out.println(mapLs.size());
         //Map mapArr[] = mapLs.toArray(new Map[mapLs.size()]);
         //System.out.println(mapArr[0].getRowLabel());
