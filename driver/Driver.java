@@ -3,7 +3,9 @@ package driver;
 import BigT.Iterator;
 import BigT.Map;
 import BigT.bigT;
+import diskmgr.PCounter;
 import global.GlobalConst;
+import global.SystemDefs;
 
 import java.io.*;
 import java.util.regex.*;
@@ -13,19 +15,23 @@ import java.util.List;
 
 public class Driver {
     public static void main(String [] args) throws Exception {
+        String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
+        SystemDefs sysdef = new SystemDefs(dbpath,100000,100,"Clock");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have two options: BatchInsert and Query. Their structures follow:");
         System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME");
         System.out.println("query BIGTABLENAME TYPE ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
         System.out.println("\nType \"quit\" to quit\n");
-
+        int rprev_count, wprev_count, rnext_count, wnext_count, wcount, rcount;
+        long prev_time,next_time;
+        PCounter.initialize();
         //begin reading in all the commands
         String command = br.readLine();
         while (!command.toLowerCase().equals("quit") && !command.toLowerCase().equals("q"))
         {
             String[] tokens = command.trim().split("\\s++");
-            
+
             //batchinsert
             if(tokens[0].toLowerCase().equals("batchinsert") && tokens.length == 4)
             {
@@ -55,7 +61,20 @@ public class Driver {
                     }
                     else
                     {
+                        rprev_count = PCounter.rcounter;
+                        wprev_count = PCounter.wcounter;
+                        prev_time = System.currentTimeMillis();
+
                         BatchInsert.batchinsert(fileName, type, bigtName);
+
+                        next_time = System.currentTimeMillis();
+                        rnext_count = PCounter.rcounter;
+                        wnext_count = PCounter.wcounter;
+                        rcount = rnext_count-rprev_count;
+                        wcount = wnext_count-wprev_count;
+                        System.out.println("Write Count : "+wcount);
+                        System.out.println("Read Count : "+rcount);
+                        System.out.println("Time Taken : "+(next_time-prev_time));
                     }
                 }
             }
@@ -99,9 +118,14 @@ public class Driver {
                     else
                     {
 
+                        rprev_count = PCounter.rcounter;
+                        wprev_count = PCounter.wcounter;
+                        prev_time = System.currentTimeMillis();
+
                         //QUERY EXECUTED HERE
                         bigT queryBigT = new bigT(bigtName, type);
                         Iterator queryResults = queryBigT.openStream(orderType, rowFilter, columnFilter, valueFilter);
+
 
                         Map m = queryResults.get_next();
                         while(m != null)
@@ -109,6 +133,15 @@ public class Driver {
                             m.print();
                             m = queryResults.get_next();
                         }
+                        queryResults.close();
+                        next_time = System.currentTimeMillis();
+                        rnext_count = PCounter.rcounter;
+                        wnext_count = PCounter.wcounter;
+                        rcount = rnext_count-rprev_count;
+                        wcount = wnext_count-wprev_count;
+                        System.out.println("Write Count : "+wcount);
+                        System.out.println("Read Count : "+rcount);
+                        System.out.println("Time Taken : "+(next_time-prev_time));
                     }
                 }
             }

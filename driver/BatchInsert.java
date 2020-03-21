@@ -54,6 +54,8 @@ public class BatchInsert {
             System.out.println(c);
         }
         System.out.println(b1.getMapCnt());
+        System.out.println(b1.getRowCnt());
+        System.out.println(b1.getColumnCnt());
         System.out.println("Time taken"+(System.currentTimeMillis()-timeStart));
         //System.out.println(mapLs.size());
         //Map mapArr[] = mapLs.toArray(new Map[mapLs.size()]);
@@ -73,10 +75,7 @@ public class BatchInsert {
         Map temp;
 
         int c=0;
-        String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
-        SystemDefs sysdef = new SystemDefs(dbpath,100000,100,"Clock");
         bigT b1 = new bigT(bigtName,type);
-        long timeStart = System.currentTimeMillis();
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -94,7 +93,8 @@ public class BatchInsert {
             c++;
             System.out.println(c);
         }
-        System.out.println(b1.getMapCnt());
-        System.out.println("Time taken"+(System.currentTimeMillis()-timeStart));
+        System.out.println("Map Count : "+b1.getMapCnt());
+        //System.out.println(b1.getColumnCnt());
+        //System.out.println(b1.getRowCnt());
     }
 }
