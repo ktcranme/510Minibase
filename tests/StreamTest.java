@@ -669,9 +669,6 @@ class StreamDriver extends TestDriver implements GlobalConst
     try {
       f = new Mapfile("file_1");
 
-      if (f.getMapCnt() < 8)
-        return true;
-
       stream = f.openStream();
       System.out.println("Has: " + f.getMapCnt() + " Records");
     }
@@ -690,6 +687,8 @@ class StreamDriver extends TestDriver implements GlobalConst
       map.setValue("8");
 
       MapPage mp = f.naiveSearch(map);
+
+      if (choice > 8)
       assert mp != null : "Expected to find the record!";
 
       map.setColumnLabel("col1");

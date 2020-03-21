@@ -66,6 +66,34 @@ public class Heapfile implements Filetype, GlobalConst {
 		return _firstDirPageId;
 	}
 
+	protected HFPage addNewPageToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid)
+			throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
+		assert currentDirPage.available_space() >= DataPageInfo.size : "Full Dirpage!";
+		// Start IF02
+		// case (2.1) : add a new data page record into the
+		// current directory page
+		HFPage currentDataPage = _newDatapage(dpinfo);
+		// currentDataPage is pinned! and dpinfo->pageId is also locked
+		// in the exclusive mode
+
+		// didn't check if currentDataPage==NULL, auto exception
+
+		// currentDataPage is pinned: insert its record
+		// calling a HFPage function
+
+		Tuple atuple = dpinfo.convertToTuple();
+
+		byte[] tmpData = atuple.getTupleByteArray();
+		RID currentDataPageRid = currentDirPage.insertRecord(tmpData);
+		newdpagerid.copyRid(currentDataPageRid);
+
+		// need catch error here!
+		if (currentDataPageRid == null)
+			throw new HFException(null, "no space to insert rec.");
+
+		return currentDataPage;
+	}
+
 	protected PageId loadNextDirPage(Dirpage currentDirPage, boolean dirty_dir) throws IOException, HFBufMgrException, HFException {
 		Page pageinbuffer = new Page();
 		Dirpage nextDirPage = new Dirpage();
@@ -920,7 +948,7 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	} // end of freePage
 
-	private PageId newPage(Page page, int num) throws HFBufMgrException {
+	protected PageId newPage(Page page, int num) throws HFBufMgrException {
 
 		PageId tmpId = new PageId();
 

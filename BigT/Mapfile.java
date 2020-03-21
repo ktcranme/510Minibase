@@ -10,6 +10,7 @@ import heap.Dirpage;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
+import heap.HFPage;
 import heap.Heapfile;
 import heap.InvalidSlotNumberException;
 import heap.InvalidTupleSizeException;
@@ -102,6 +103,9 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		MapPage currentDataPage = getNewDataPage();
 		RID currentDataPageRid = new RID();
 		PageId nextDirPageId = new PageId();
+
+		RID possibleInsertLoc = null;
+		PageId possibleInsertDir = null;
 		// datapageId is stored in dpinfo.pageId
 
 		pinPage(currentDirPageId, currentDirPage, false/* read disk */);
@@ -109,14 +113,28 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		while (currentDirPageId.pid != INVALID_PAGE) {// Start While01
 														// ASSERTIONS:
 														// currentDirPage, currentDirPageId valid and pinned and Locked.
-			System.out.println("IN WHILE");
+			System.out.println("Looking at DIRECTORY: " + currentDirPageId.pid + ", has space: " + currentDirPage.available_space());
+			if (possibleInsertDir == null && currentDirPage.available_space() >= DataPageInfo.size) {
+				// If we dont find a datapage to insert into and we have
+				// not seen the row col combination, we need to create a new
+				// datapage in here
+				possibleInsertDir = new PageId(currentDirPageId.pid);
+				System.out.println("POSSIBLE dir insert location: " + currentDirPageId.pid + ", has space: " + currentDirPage.available_space());
+			}
 			for (currentDataPageRid = currentDirPage
 					.firstRecord(); currentDataPageRid != null; currentDataPageRid = currentDirPage
 							.nextRecord(currentDataPageRid)) {
-				System.out.println("IN FOR");
 				DataPageInfo dpinfo = null;
 				try {
 					dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+					System.out.println("Looking at DATAPAGE: " + dpinfo.pageId + ", has space: " + dpinfo.availspace);
+
+					if (possibleInsertLoc == null && dpinfo.availspace >= Map.map_size + HFPage.SIZE_OF_SLOT) {
+						// If we dont find the row col combination, we need to insert
+						// here
+						possibleInsertLoc = new RID(currentDataPageRid.pageNo, currentDataPageRid.slotNo);
+						System.out.println("POSSIBLE datapage insert location: " + dpinfo.pageId);
+					}
 				} catch (InvalidSlotNumberException e) {
 					return null;
 				}
@@ -152,6 +170,9 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 			// read in next directory page:
 
 			nextDirPageId = currentDirPage.getNextPage();
+			if (nextDirPageId.pid == INVALID_PAGE) {
+				break;
+			}
 			try {
 				unpinPage(currentDirPageId, false /* undirty */);
 			} catch (Exception e) {
@@ -159,13 +180,20 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 			}
 
 			currentDirPageId.pid = nextDirPageId.pid;
-			if (currentDirPageId.pid != INVALID_PAGE) {
-				pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
-			}
-
+			pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
 		} // end of While01
-			// checked all dir pages and all data pages; user record not found:(
+		// checked all dir pages and all data pages; user record not found:(
 
+
+		// We are at the end!
+		// If we have possible insert datapage, insert there
+		// If we have possible insert dirtpage, add a datapage
+		// and then insert
+		// If both possible insert loc and insert dir is empty,
+		// We need to add a new dirpage, add a datapage
+		// then insert the new map here
+
+		System.out.println("We are in the endgame now");
 		return null;
 	}
 

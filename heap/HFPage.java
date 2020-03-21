@@ -442,7 +442,6 @@ public class HFPage extends Page implements ConstSlot {
     }
 
     if (i == slotCnt) {
-      System.out.println("Nothing to see here");
       return null;
     }
 
