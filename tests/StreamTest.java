@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.HashMap;
 
 import BigT.Map;
+import BigT.MapPage;
 import BigT.Mapfile;
 import BigT.PredEval;
 import BigT.Stream;
@@ -654,6 +655,57 @@ class StreamDriver extends TestDriver implements GlobalConst
       System.out.println ("  Test 3 completed successfully.\n");
     return status; 
 
+  }
+
+  protected boolean test4() {
+    System.out.println("Running Test 4");
+
+    boolean status = OK;
+    Stream stream = null;
+    MID rid = new MID();
+    Mapfile f = null;
+
+    System.out.println ("  - Open the same heap file as tests 1 and 2\n");
+    try {
+      f = new Mapfile("file_1");
+
+      if (f.getMapCnt() < 8)
+        return true;
+
+      stream = f.openStream();
+      System.out.println("Has: " + f.getMapCnt() + " Records");
+    }
+    catch (Exception e) {
+      status = FAIL;
+      System.err.println ("*** Could not create heap file\n");
+      e.printStackTrace();
+    }
+
+    Map map = null;
+    try {
+      map = new Map();
+      map.setColumnLabel("col8");
+      map.setRowLabel("row8");
+      map.setTimeStamp(8);
+      map.setValue("8");
+
+      MapPage mp = f.naiveSearch(map);
+      assert mp != null : "Expected to find the record!";
+
+      map.setColumnLabel("col1");
+      map.setRowLabel("row1");
+      map.setTimeStamp(1);
+      map.setValue("1");
+
+      mp = f.naiveSearch(map);
+      assert mp == null : "Expected to not find the record!";
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+
+    return true;
   }
 
   protected String testName () {

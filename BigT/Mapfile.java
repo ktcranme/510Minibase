@@ -52,6 +52,11 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		return this.updateMap(rid, newtuple, null);
 	}
 
+	public MID insertOrUpdateMap(MID rid, Map newtuple, Map deletedMap) {
+
+		return null;
+	}
+
     public MID updateMap(MID rid, Map newtuple, Map deletedMap) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
 
@@ -88,6 +93,81 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 
         return updatedRecord;
     }
+
+	public MapPage naiveSearch(Map map) throws InvalidTupleSizeException, InvalidSlotNumberException, IOException,
+			Exception {
+		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+
+		Dirpage currentDirPage = new Dirpage();
+		MapPage currentDataPage = getNewDataPage();
+		RID currentDataPageRid = new RID();
+		PageId nextDirPageId = new PageId();
+		// datapageId is stored in dpinfo.pageId
+
+		pinPage(currentDirPageId, currentDirPage, false/* read disk */);
+
+		while (currentDirPageId.pid != INVALID_PAGE) {// Start While01
+														// ASSERTIONS:
+														// currentDirPage, currentDirPageId valid and pinned and Locked.
+			System.out.println("IN WHILE");
+			for (currentDataPageRid = currentDirPage
+					.firstRecord(); currentDataPageRid != null; currentDataPageRid = currentDirPage
+							.nextRecord(currentDataPageRid)) {
+				System.out.println("IN FOR");
+				DataPageInfo dpinfo = null;
+				try {
+					dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+				} catch (InvalidSlotNumberException e) {
+					return null;
+				}
+
+				try {
+					pinPage(dpinfo.pageId, currentDataPage, false/* Rddisk */);
+
+					// check error;need unpin currentDirPage
+				} catch (Exception e) {
+					unpinPage(currentDirPageId, false/* undirty */);
+					throw e;
+				}
+
+				// ASSERTIONS:
+				// - currentDataPage, currentDataPageRid, dpinfo valid
+				// - currentDataPage pinned
+
+				RID rid = currentDataPage.firstRecord();
+				while (rid != null) {
+					PhysicalMap pm = new PhysicalMap(currentDataPage.data, currentDataPage.returnRecord(rid));
+					pm.print();
+					if (pm.getRowLabel().equals(map.getRowLabel()) && pm.getColumnLabel().equals(map.getColumnLabel())) {
+						return currentDataPage;
+					}
+					rid = currentDataPage.nextRecord(rid);
+				}
+
+			}
+
+			// if we would have found the correct datapage on the current
+			// directory page we would have already returned.
+			// therefore:
+			// read in next directory page:
+
+			nextDirPageId = currentDirPage.getNextPage();
+			try {
+				unpinPage(currentDirPageId, false /* undirty */);
+			} catch (Exception e) {
+				throw new HFException(e, "heapfile,_find,unpinpage failed");
+			}
+
+			currentDirPageId.pid = nextDirPageId.pid;
+			if (currentDirPageId.pid != INVALID_PAGE) {
+				pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+			}
+
+		} // end of While01
+			// checked all dir pages and all data pages; user record not found:(
+
+		return null;
+	}
 
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {

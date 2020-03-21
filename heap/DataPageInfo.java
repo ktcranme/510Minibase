@@ -22,7 +22,7 @@ public class DataPageInfo implements GlobalConst{
   public int    recct;    
   
   /** obvious: id of this particular data page (a HFPage) */
-  PageId pageId = new PageId();   
+  public PageId pageId = new PageId();   
     
   /** auxiliary fields of DataPageInfo */
 

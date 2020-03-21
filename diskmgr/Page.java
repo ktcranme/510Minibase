@@ -52,6 +52,6 @@ public class Page implements GlobalConst{
    * protected field: An array of bytes (for the page). 
    * 
    */
-  protected byte [] data;
+  public byte [] data;
   
 }
