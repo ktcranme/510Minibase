@@ -232,12 +232,20 @@ public class bigT implements GlobalConst {
         long timeStart;
         switch (type) {
             case 1: // no index update required
+                timeStart = System.currentTimeMillis();
                 tempMap = new Map(mapPtr, 0);
-                tmpmid = naiveMapFind(tempMap);
-                if (tmpmid != null) {
-                    tm = hf.updateMap(tmpmid, tempMap);
-                } else {
-                    tm = hf.insertMap(tempMap);
+                // tmpmid = naiveMapFind(tempMap);
+                // if (tmpmid != null) {
+                //     tm = hf.updateMap(tmpmid, tempMap);
+                // } else {
+                //     tm = hf.insertMap(tempMap);
+                // }
+                tmpmid = hf.naiveSearch(tempMap, null);
+                System.out.println("Upsert taken: "+(System.currentTimeMillis()-timeStart));
+                if ( SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() ) {
+                    System.err.println ("*** The heap-file scan has not unpinned " + "its page after finishing\n");
+                    System.err.println("Unpinned: " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + ", Total: " + SystemDefs.JavabaseBM.getNumBuffers());
+                    throw new Exception();
                 }
                 break;
             case 2:

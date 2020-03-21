@@ -49,13 +49,20 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            System.out.println("Time taken to create map: "+(System.currentTimeMillis()-x));
+            // System.out.println("Time taken to create map: "+(System.currentTimeMillis()-x));
+            // temp.print();
+            // if ( SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() ) {
+            //     System.err.println ("*** The heap-file scan has not unpinned " + "its page after finishing\n");
+            //     System.err.println("Unpinned: " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + ", Total: " + SystemDefs.JavabaseBM.getNumBuffers());
+            //     throw new Exception();
+            // }
+            // System.out.println("");
             b1.insertMap(temp.getMapByteArray());
             //mapLs.add(temp);
             c++;
-            System.out.println("");
+            // System.out.println("");
             // if (c % 100 == 0)
-            // System.out.println(c);
+            System.out.println(c);
         }
         System.out.println(b1.getMapCnt());
         System.out.println("Total Time taken: "+(System.currentTimeMillis()-timeStart));

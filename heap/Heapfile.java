@@ -94,7 +94,8 @@ public class Heapfile implements Filetype, GlobalConst {
 		return currentDataPage;
 	}
 
-	protected PageId loadNextDirPage(Dirpage currentDirPage, boolean dirty_dir) throws IOException, HFBufMgrException, HFException {
+	protected PageId loadNextDirPage(Dirpage currentDirPage, boolean dirty_dir)
+			throws IOException, HFBufMgrException, HFException {
 		Page pageinbuffer = new Page();
 		Dirpage nextDirPage = new Dirpage();
 		PageId nextDirPageId = currentDirPage.getNextPage();
@@ -917,8 +918,42 @@ public class Heapfile implements Filetype, GlobalConst {
 
 		try {
 			SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
-		} catch (Exception e) {
-			throw new HFBufMgrException(e, "Heapfile.java: pinPage() failed");
+		} catch (ReplacerException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "ReplacerException.java: pinPage() failed");
+		} catch (HashOperationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "HashOperationException.java: pinPage() failed");
+		} catch (PageUnpinnedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "PageUnpinnedException.java: pinPage() failed");
+		} catch (InvalidFrameNumberException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "InvalidFrameNumberException.java: pinPage() failed");
+		} catch (PageNotReadException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "PageNotReadException.java: pinPage() failed");
+		} catch (BufferPoolExceededException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "BufferPoolExceededException.java: pinPage() failed");
+		} catch (PagePinnedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "PagePinnedException.java: pinPage() failed");
+		} catch (BufMgrException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "BufMgrException.java: pinPage() failed");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new HFBufMgrException(e1, "IOException.java: pinPage() failed");
 		}
 
 	} // end of pinPage
