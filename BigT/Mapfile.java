@@ -104,7 +104,8 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		RID currentDataPageRid = new RID();
 		PageId nextDirPageId = new PageId();
 
-		RID possibleInsertLoc = null;
+		PageId possibleInsertLoc = null;
+		RID possibleInsertLocRid = null;
 		PageId possibleInsertDir = null;
 		// datapageId is stored in dpinfo.pageId
 
@@ -126,13 +127,15 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 							.nextRecord(currentDataPageRid)) {
 				DataPageInfo dpinfo = null;
 				try {
-					dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+					dpinfo = currentDirPage.returnDatapageInfo(currentDataPageRid);
 					System.out.println("Looking at DATAPAGE: " + dpinfo.pageId + ", has space: " + dpinfo.availspace);
 
 					if (possibleInsertLoc == null && dpinfo.availspace >= Map.map_size + HFPage.SIZE_OF_SLOT) {
 						// If we dont find the row col combination, we need to insert
 						// here
-						possibleInsertLoc = new RID(currentDataPageRid.pageNo, currentDataPageRid.slotNo);
+						possibleInsertLoc = new PageId(dpinfo.pageId.pid);
+						possibleInsertDir = new PageId(currentDirPageId.pid);
+						possibleInsertLocRid = new RID(currentDataPageRid.pageNo, currentDataPageRid.slotNo);
 						System.out.println("POSSIBLE datapage insert location: " + dpinfo.pageId);
 					}
 				} catch (InvalidSlotNumberException e) {
@@ -157,11 +160,30 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 					PhysicalMap pm = new PhysicalMap(currentDataPage.data, currentDataPage.returnRecord(rid));
 					pm.print();
 					if (pm.getRowLabel().equals(map.getRowLabel()) && pm.getColumnLabel().equals(map.getColumnLabel())) {
+						System.out.println("UPDATING");
+						int verCnt = pm.getVersionCount();
+						int ver = pm.updateMap(map.getTimeStamp(), map.getValue());
+
+						if (ver == -1)
+							return null;
+
+						if (verCnt < 3) {
+							dpinfo.recct++;
+							dpinfo.availspace = currentDataPage.available_space();
+							dpinfo.flushToTuple();
+						}
+
+						unpinPage(currentDirPageId, verCnt < 3);
+						unpinPage(dpinfo.pageId, true);
+						
 						return currentDataPage;
 					}
 					rid = currentDataPage.nextRecord(rid);
 				}
 
+
+				// Dont need this anymore
+				unpinPage(dpinfo.pageId, false/* Rddisk */);
 			}
 
 			// if we would have found the correct datapage on the current
@@ -171,6 +193,28 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 
 			nextDirPageId = currentDirPage.getNextPage();
 			if (nextDirPageId.pid == INVALID_PAGE) {
+				System.out.println("REACHED THE END! CREATING A NEW DIRPAGE!");
+
+				Page pageinbuffer = new Page();
+				nextDirPageId = newPage(pageinbuffer, 1);
+				// need check error!
+				if (nextDirPageId == null)
+					throw new HFException(null, "can't new pae");
+		
+				Dirpage nextDirPage = new Dirpage();
+				// initialize new directory page
+				nextDirPage.init(nextDirPageId, pageinbuffer);
+				PageId temppid = new PageId(INVALID_PAGE);
+				nextDirPage.setNextPage(temppid);
+				nextDirPage.setPrevPage(currentDirPageId);
+		
+				// update current directory page and unpin it
+				// currentDirPage is already locked in the Exclusive mode
+				currentDirPage.setNextPage(nextDirPageId);
+				unpinPage(currentDirPageId, true/* dirty */);
+		
+				currentDirPage.init(nextDirPageId, nextDirPage);
+
 				break;
 			}
 			try {
@@ -194,6 +238,41 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 		// then insert the new map here
 
 		System.out.println("We are in the endgame now");
+		DataPageInfo dpinfo = null;
+		if (possibleInsertLoc != null) {
+			System.out.println("INSERTING BACK INTO DATAPAGE");
+
+			pinPage(possibleInsertDir, currentDirPage, false);
+			dpinfo = currentDirPage.returnDatapageInfo(possibleInsertLocRid);
+			pinPage(possibleInsertLoc, currentDataPage, false);
+			// Datapage pinned. Next insert and flush dirpage and datapage
+		} else if (possibleInsertDir != null) {
+			System.out.println("INSERTING BACK INTO DIRPAGE");
+			pinPage(possibleInsertDir, currentDirPage, false);
+			// Add a new datapage to the possibleInsertDir
+			dpinfo = new DataPageInfo();
+			currentDataPageRid = new RID();
+			currentDataPage = new MapPage(addNewPageToDir(currentDirPage, dpinfo, currentDataPageRid));	
+			// Datapage and dirpage pinned. Next insert and flush dirpage and datapage
+		} else {
+			System.out.println("INSERTING AT THE VERY END");
+			// Add a new datapage to the currentdirpage
+			dpinfo = new DataPageInfo();
+			currentDataPageRid = new RID();
+			currentDataPage = new MapPage(addNewPageToDir(currentDirPage, dpinfo, currentDataPageRid));	
+			// Dirpage is already created in the while loop before breaking
+			// Datapage and dirpage pinned. Next insert and flush dirpage and datapage
+		}
+
+		currentDataPage.insertRecord(PhysicalMap.getMapByteArray(map));
+
+		unpinPage(currentDataPage.getCurPage(), true/* dirty */);
+
+		dpinfo.recct++;
+		dpinfo.availspace = currentDataPage.available_space();
+		dpinfo.flushToTuple();
+		unpinPage(currentDirPage.getCurPage(), true/* dirty */);
+
 		return null;
 	}
 

@@ -683,8 +683,8 @@ class StreamDriver extends TestDriver implements GlobalConst
       map = new Map();
       map.setColumnLabel("col8");
       map.setRowLabel("row8");
-      map.setTimeStamp(8);
-      map.setValue("8");
+      map.setTimeStamp(99);
+      map.setValue("99");
 
       MapPage mp = f.naiveSearch(map);
 
@@ -719,7 +719,7 @@ public class StreamTest {
     StreamDriver hd = new StreamDriver();
     boolean dbstatus = false;
 
-    int[] sizes = {0, 50, 100, 480, 179, 366, 29};
+    int[] sizes = {0, 50, 100, 470, 179, 366, 29};
 
     for (int size : sizes) {
       hd.setChoice(size);
