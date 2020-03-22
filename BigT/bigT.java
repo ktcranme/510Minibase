@@ -1,18 +1,20 @@
 package BigT;
 
-import java.io.*;
-import java.util.HashSet;
-import java.util.Set;
-
 import btree.*;
 import bufmgr.HashEntryNotFoundException;
 import bufmgr.InvalidFrameNumberException;
 import bufmgr.PageUnpinnedException;
 import bufmgr.ReplacerException;
+import driver.FilterParser;
 import global.*;
 import heap.*;
-import index.IndexUtils;
-import iterator.*;
+import index.IndexException;
+import index.UnknownIndexTypeException;
+import iterator.CondExpr;
+import iterator.FileScanException;
+import iterator.InvalidRelation;
+
+import java.io.IOException;
 
 public class bigT implements GlobalConst {
     public static final String INDEXFILENAMEPREFIX = "bigTInd";
@@ -268,13 +270,13 @@ public class bigT implements GlobalConst {
                 tmpmid = crIndexMapFind(tempMap);
                 if (tmpmid != null) {
                     tm = hf.updateMap(tmpmid, tempMap, delMap);
-                    if(tm == null)
+                    if (tm == null)
                         return null;
                     if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     } else {
-                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),new RID(tm));
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
@@ -287,14 +289,14 @@ public class bigT implements GlobalConst {
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = naiveMapFind(tempMap);
                 if (tmpmid != null) {
-                    tm = hf.updateMap(tmpmid, tempMap,delMap);
-                    if(tm == null)
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
                         return null;
                     if (!tm.isReused) {
                         btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     } else {
-                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()),  new RID(tm));
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
                         btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
                     }
                 } else {
@@ -325,6 +327,37 @@ public class bigT implements GlobalConst {
         return null;
     }
 
+    public Iterator openStream(int orderType, String rowFilter, String columnFilter, String valueFilter) throws Exception {
+        SortTypeMap.init();
+        Iterator it = null;
+        Iterator tmp = null;
+        switch (type) {
+            case 1:
+            case 2:
+            case 3:
+                tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                break;
+            case 4:
+                if (orderType == 5) {
+                    it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
+                } else {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                }
+                break;
+            case 5:
+                if (orderType == 5) {
+                    it = filterVal("i5o5", rowFilter, columnFilter, valueFilter);
+                } else {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                }
+                break;
+        }
+        return it;
+    }
+
     MID crIndexMapFind(Map findMap) throws IOException,
             PinPageException,
             IteratorException,
@@ -342,5 +375,21 @@ public class bigT implements GlobalConst {
         }
         bs.DestroyBTreeFileScan();
         return null;
+    }
+
+    Iterator filterVal(String filterSec, String rowFilter, String columnFilter, String valueFilter) throws FileScanException, IOException, InvalidRelation, IndexException, UnknownIndexTypeException {
+        Iterator it = null;
+        CondExpr[] filter;
+        switch (filterSec) {
+            case "i4o5":
+            case "i5o5":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
+                break;
+            case "scan":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                it = new FileStream(hf, filter);
+        }
+        return it;
     }
 }

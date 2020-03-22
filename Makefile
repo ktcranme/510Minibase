@@ -5,7 +5,7 @@
 
 JARFILES=bufmgr/*.class diskmgr/*.class global/*.class iterator/*.class\
          heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class\
-				 BigT/*.class
+				 BigT/*.class driver/*.class
 
 JDKPATH = $(JAVA_HOME)
 LIBPATH = .:..
@@ -64,6 +64,9 @@ filestream: db
 
 batchinsert: db
 	cd driver; make batchinsert
+
+driver: db
+	cd driver; make driver
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE

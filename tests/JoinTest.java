@@ -1,6 +1,7 @@
 package tests;
 //originally from : joins.C
 
+import driver.FilterParser;
 import iterator.*;
 import heap.*;
 import global.*;
@@ -383,6 +384,7 @@ class JoinsDriver implements GlobalConst {
     Query4();
     Query5();
     Query6();
+    Query7();
     
     
     System.out.print ("Finished joins testing"+"\n");
@@ -1672,6 +1674,11 @@ class JoinsDriver implements GlobalConst {
 	Runtime.getRuntime().exit(1);
       }
       
+    }
+    public void Query7(){
+      System.out.println("Test for conditional expression parsing.");
+      CondExpr[] cr = FilterParser.parse("*##[ab,abc]##abc");
+      System.out.println("Length of Parser"+cr.length);
     }
   
   

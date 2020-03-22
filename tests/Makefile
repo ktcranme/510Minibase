@@ -5,6 +5,7 @@ CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
+DATA  = $(CURDIR)/data/project2_testdata.csv -classpath $(CLASSPATH)
 
 sourcefiles = $(filter-out \
 	$(CURDIR)/TestDriver.java, $(wildcard $(CURDIR)/*.java))

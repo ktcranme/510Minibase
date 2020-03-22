@@ -19,6 +19,9 @@ $(CURDIR)/%.class: $(CURDIR)/%.java
 batchinsert: $(CURDIR)/BatchInsert.class
 	$(JAVA) driver.BatchInsert
 
+driver: $(CURDIR)/Driver.class
+	$(JAVA) driver.Driver
+
 #query: $(CURDIR)/Query.class
 #	$(JAVA) driver.Query
 
