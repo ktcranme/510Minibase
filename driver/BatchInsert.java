@@ -5,6 +5,7 @@ import BigT.bigT;
 import btree.AddFileEntryException;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
+import diskmgr.BigDB;
 import global.SystemDefs;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
@@ -75,7 +76,8 @@ public class BatchInsert {
         Map temp;
 
         int c=0;
-        bigT b1 = new bigT(bigtName,type);
+        BigDB b1 = new BigDB(type);
+        b1.initBigT(bigtName, type);
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -88,10 +90,15 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            b1.insertMap(temp.getMapByteArray());
+            b1.insertMap(temp);
             
             c++;
             System.out.println(c);
+
+            if(c>=5000)
+            {
+                break;
+            }
         }
         System.out.println("Map Count : "+b1.getMapCnt());
         //System.out.println(b1.getColumnCnt());
