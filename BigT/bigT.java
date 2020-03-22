@@ -152,7 +152,7 @@ public class bigT implements GlobalConst {
                 break;
             default:
                 FileStream fs = new FileStream(hf, null);
-                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, GlobalConst.NUMBUF);
+                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, 134);
                 Map m = st.get_next();
                 if (m != null) {
                     c = 1;
@@ -206,7 +206,7 @@ public class bigT implements GlobalConst {
                 break;
             default:
                 FileStream fs = new FileStream(hf, null);
-                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                Sort st = new Sort(attrType, (short) 4, attrSize, fs, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 Map m = st.get_next();
                 if (m != null) {
                     c = 1;
@@ -336,14 +336,14 @@ public class bigT implements GlobalConst {
             case 2:
             case 3:
                 tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 break;
             case 4:
                 if (orderType == 5) {
                     it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
                 } else {
                     tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 }
                 break;
             case 5:
@@ -351,7 +351,7 @@ public class bigT implements GlobalConst {
                     it = filterVal("i5o5", rowFilter, columnFilter, valueFilter);
                 } else {
                     tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 }
                 break;
         }
