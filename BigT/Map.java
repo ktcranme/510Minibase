@@ -213,11 +213,36 @@ public class Map implements GlobalConst{
 	*/
 	public Map setValue(String val) throws IOException
 	{
-		
+		//check if the val is an integer so we can pad with 0's
+		if(isInteger(val))
+		{
+			//pad with 0's
+			int numZeros = MAXVALUESIZE - val.length() - 2;
+			String zeros = "";
+			for (int i = 0; i < numZeros; i++)
+			{
+				zeros += "0";
+			}
+			val = zeros + val;
+		}
+
 		Convert.setStrValue (val, fldOffset[3], data);
 		return this;
 	}
 	
+	public boolean isInteger(String s)
+	{
+        if(s.isEmpty()) return false;
+        for(int i = 0; i < s.length(); i++) 
+        {
+            if(!Character.isDigit(s.charAt(i))) 
+            {
+                return false;
+            }
+		}
+		return true;
+	}
+
 	/*  Copy the map byte array out
 	*  @return  byte[], a byte array contains the map
 	*		the length of byte[] = length of the map		NOTE: Is this line here explaining my question on line 47
@@ -251,6 +276,18 @@ public class Map implements GlobalConst{
 		
 		//get the value
 		value = Convert.getStrValue(fldOffset[3], data, fldOffset[4]-fldOffset[3]);
+		if(isInteger(value))
+		{
+			//remove the padded 0's
+			while(value.charAt(0) == '0')
+			{
+				value = value.substring(1);
+			}
+			if(value.length() < 1)
+			{
+				value = "0";
+			}
+		}
 		
 		
 		//print them all

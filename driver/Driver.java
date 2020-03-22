@@ -117,6 +117,7 @@ public class Driver {
                     }
                     else
                     {
+                        valueFilter = fixValFilterForInts(valueFilter);
 
                         rprev_count = PCounter.rcounter;
                         wprev_count = PCounter.wcounter;
@@ -183,5 +184,46 @@ public class Driver {
         {
             return false;
         }
+    }
+
+    public static String fixValFilterForInts(String valFilter)
+    {
+        String pattern = "\\[(\\d+),(\\d+)\\]";
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(valFilter);
+
+        String patternEquality = "(\\d+)";
+        Pattern rEquality = Pattern.compile(patternEquality);
+        Matcher mEquality = rEquality.matcher(valFilter);
+        if(m.find())
+        {
+            String fro = m.group(1);
+            String to = m.group(2);
+
+            String newFilter = "[" + padZeros(fro) + "," + padZeros(to) + "]";
+            return newFilter;
+        }
+        else if(mEquality.find())
+        {
+            return padZeros(valFilter);
+        }
+        else
+        {
+            return valFilter;
+        }
+    }
+
+    //pad with 0's
+    public static String padZeros(String s)
+    {
+        int numZeros = GlobalConst.MAXVALUESIZE - s.length()-2;
+        String zeros = "";
+        for (int i = 0; i < numZeros; i++)
+        {
+            zeros += "0";
+        }
+        s = zeros + s;
+
+        return s;
     }
 }
