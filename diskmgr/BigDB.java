@@ -14,7 +14,7 @@ import heap.InvalidTupleSizeException;
 
 public class BigDB extends DB
 {
-    bigT bigt;
+    public bigT bigt;
     int _type;
 
     public BigDB(int type)
@@ -22,7 +22,7 @@ public class BigDB extends DB
         _type = type;
     }
 
-    public void initBigT(String name, int type) throws 
+    public void initBigT(String name) throws 
         IOException,
         HFDiskMgrException,
         HFBufMgrException,
@@ -31,12 +31,12 @@ public class BigDB extends DB
         GetFileEntryException,
         AddFileEntryException 
     {
-        bigt = new bigT(name, type);
+        bigt = new bigT(name, _type);
     }
 
-    public void insertMap(Map map) throws Exception
+    public void insertMap(byte[] mapbytearray) throws Exception
     {
-        bigt.insertMap(map.getMapByteArray());
+        bigt.insertMap(mapbytearray);
     }
 
     public int getMapCnt()throws HFBufMgrException,

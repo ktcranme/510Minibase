@@ -77,7 +77,8 @@ public class BatchInsert {
 
         int c=0;
         BigDB b1 = new BigDB(type);
-        b1.initBigT(bigtName, type);
+        b1.initBigT(bigtName);
+        //bigT b1 = new bigT(bigtName, type);
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -90,11 +91,10 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            b1.insertMap(temp);
+            b1.insertMap(temp.getMapByteArray());
             
             c++;
             System.out.println(c);
-
         }
         System.out.println("Map Count : "+b1.getMapCnt());
         //System.out.println(b1.getColumnCnt());
