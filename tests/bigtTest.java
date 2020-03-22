@@ -112,7 +112,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
         Map m8 = new Map();
         Map m9 = new Map();
         try {
-            m.setRowLabel("Dominica");
+            m.setRowLabel("Bran");
             m.setColumnLabel("Zebra");
             m.setTimeStamp(46067);
             m.setValue("3");
@@ -218,7 +218,7 @@ class bigTDriver extends TestDriver implements GlobalConst{
             colCnt = big2.getColumnCnt();
             System.out.println("Big2 column count:" + colCnt);
             CondExpr[] expr1 = FilterParser.parseSingle("1",4,AttrType.attrString);
-            CondExpr[] expr2 = FilterParser.parseSingle("[A,Z]",1,AttrType.attrString);
+            CondExpr[] expr2 = FilterParser.parseSingleIndex("Dominica",1,AttrType.attrString);
             IndexScan is = new IndexScan(new IndexType(IndexType.B_Index),big2.getName(),INDEXFILENAMEPREFIX+big2.getName(),expr2,expr1,false);
             System.out.println("Index File created");
             Map tmpm;
