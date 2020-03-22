@@ -3,11 +3,9 @@ package driver;
 import BigT.Map;
 import BigT.bigT;
 import btree.AddFileEntryException;
-import btree.BTreeFile;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
-import global.AttrType;
-import global.GlobalConst;
+import diskmgr.BigDB;
 import global.SystemDefs;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
@@ -78,12 +76,9 @@ public class BatchInsert {
         Map temp;
 
         int c=0;
-        BTreeFile tempbtf = null;
-        if(type!=4){
-            tempbtf = new BTreeFile("batch_insert_ind", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1);
-        }
-
-        bigT b1 = new bigT(bigtName,type);
+        BigDB b1 = new BigDB(type);
+        b1.initBigT(bigtName);
+        //bigT b1 = new bigT(bigtName, type);
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -96,14 +91,13 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            b1.insertMapBulk(temp.getMapByteArray(),tempbtf);
+            b1.insertMap(temp.getMapByteArray());
             
             c++;
             System.out.println(c);
         }
-        tempbtf.destroyFile();
         System.out.println("Map Count : "+b1.getMapCnt());
-        System.out.println("Column Count : "+b1.getColumnCnt());
-        System.out.println("Row Count : "+b1.getRowCnt());
+        //System.out.println(b1.getColumnCnt());
+        //System.out.println(b1.getRowCnt());
     }
 }
