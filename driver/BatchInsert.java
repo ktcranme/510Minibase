@@ -65,7 +65,7 @@ public class BatchInsert {
     }
 
     //perform the batchinsertion but not in a main method
-    public static void batchinsert(String fileName, int type, String bigtName) throws Exception
+    public static void batchinsert(String fileName, int type, String bigtName, int numbuf) throws Exception
     {
         URL url = BatchInsert.class.getResource("/data/".concat(fileName));
 

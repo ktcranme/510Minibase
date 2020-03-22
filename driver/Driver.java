@@ -20,7 +20,7 @@ public class Driver {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have two options: BatchInsert and Query. Their structures follow:");
-        System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME");
+        System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
         System.out.println("query BIGTABLENAME TYPE ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
         System.out.println("\nType \"quit\" to quit\n");
         int rprev_count, wprev_count, rnext_count, wnext_count, wcount, rcount;
@@ -33,20 +33,26 @@ public class Driver {
             String[] tokens = command.trim().split("\\s++");
 
             //batchinsert
-            if(tokens[0].toLowerCase().equals("batchinsert") && tokens.length == 4)
+            if(tokens[0].toLowerCase().equals("batchinsert") && tokens.length == 5)
             {
                 String fileName = tokens[1];
                 String typeStr = tokens[2];
                 String bigtName = tokens[3];
+                String numbufStr = tokens[4];
 
                 //check that type is a single character and digit
                 if( !isInteger(typeStr) || typeStr.length() != 1)
                 {
                     System.out.println("ERROR: TYPE must be a single digit 1 through 5");
                 }
+                else if ( !isInteger(numbufStr) )
+                {
+                    System.out.println("ERROR: NUMBUF must be an integer");
+                }
                 else
                 {
                     int type = Integer.parseInt(typeStr);
+                    int numbuf = Integer.parseInt(numbufStr);
 
                     //check that data file exists
                     URL url = Driver.class.getResource("/data/".concat(fileName));
@@ -65,7 +71,7 @@ public class Driver {
                         wprev_count = PCounter.wcounter;
                         prev_time = System.currentTimeMillis();
 
-                        BatchInsert.batchinsert(fileName, type, bigtName);
+                        BatchInsert.batchinsert(fileName, type, bigtName, numbuf);
 
                         next_time = System.currentTimeMillis();
                         rnext_count = PCounter.rcounter;
@@ -151,7 +157,7 @@ public class Driver {
             {
                 System.out.println("ERROR: The command you have entered does not match the corresponding number of parameters required.");
                 System.out.println("The required structures are as follows:");
-                System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME");
+                System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
                 System.out.println("query BIGTABLENAME TYPE ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
                 System.out.println("\n");
             }
