@@ -16,7 +16,7 @@ import java.util.List;
 public class Driver {
     public static void main(String [] args) throws Exception {
         String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
-        SystemDefs sysdef = new SystemDefs(dbpath,100000,100,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,100000,500,"Clock");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have two options: BatchInsert and Query. Their structures follow:");

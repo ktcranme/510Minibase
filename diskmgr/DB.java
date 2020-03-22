@@ -979,7 +979,17 @@ class DBHeaderPage implements PageUsedBytes, GlobalConst {
 
     int position = START_FILE_ENTRIES + entryNo * SIZE_OF_FILE_ENTRY;
     pageNo.pid = Convert.getIntValue (position, data);
-    return (Convert.getStrValue (position+4, data, MAX_NAME + 2));
+
+    try {
+      return (Convert.getStrValue (position+4, data, MAX_NAME + 2));
+    } catch (java.io.UTFDataFormatException e) {
+      // Bug which caused the "malformed input around byte 3" error
+      return "";
+    } catch (java.io.EOFException e) {
+      // For some reason, despite reading a 1024 data page somewhere
+      // in between, it still causes EOF Error
+      return "";
+    }
   }
   
 }
