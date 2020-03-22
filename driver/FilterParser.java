@@ -39,7 +39,7 @@ public class FilterParser {
         return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);
     }
 
-    public static CondExpr[] parseSingleIndex(String filterString, int field_off, int type) {
+    public static CondExpr[] parseSingleIndexEquality(String filterString, int field_off, int type) {
         List<CondExpr> flatAllFilters = fieldFilterGen(filterString, field_off, type);
         flatAllFilters.add(null);
         return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);

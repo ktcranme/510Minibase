@@ -95,10 +95,6 @@ public class BatchInsert {
             c++;
             System.out.println(c);
 
-            if(c>=5000)
-            {
-                break;
-            }
         }
         System.out.println("Map Count : "+b1.getMapCnt());
         //System.out.println(b1.getColumnCnt());

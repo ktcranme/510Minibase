@@ -334,6 +334,12 @@ public class bigT implements GlobalConst {
         switch (type) {
             case 1:
             case 2:
+                if(rowFilter.charAt(0) != '*' && rowFilter.charAt(0) != '[')
+                {
+                    tmp = filterVal("i2REqual", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                }
+                break;
             case 3:
                 tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
                 it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
@@ -381,6 +387,11 @@ public class bigT implements GlobalConst {
         Iterator it = null;
         CondExpr[] filter;
         switch (filterSec) {
+            case "i2REqual":
+                filter = FilterParser.parseCombine(String.join("##", columnFilter, valueFilter));
+                CondExpr[] rowEqualityCondExpr = FilterParser.parseSingleIndexEquality(rowFilter,1,AttrType.attrString);
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, rowEqualityCondExpr, filter, false);
+                break;
             case "i4o5":
             case "i5o5":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
