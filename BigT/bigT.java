@@ -270,7 +270,7 @@ public class bigT implements GlobalConst {
                 break;
             case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
                 tempMap = new Map(mapPtr, 0);
-                tmpmid = crIndexMapFind(tempMap);
+                tmpmid = crIndexMapFind(tempMap, btf);
                 if (tmpmid != null) {
                     tm = hf.updateMap(tmpmid, tempMap, delMap);
                     if (tm == null)
@@ -360,14 +360,14 @@ public class bigT implements GlobalConst {
         return it;
     }
 
-    MID crIndexMapFind(Map findMap) throws IOException,
+    MID crIndexMapFind(Map findMap, BTreeFile index_f) throws IOException,
             PinPageException,
             IteratorException,
             KeyNotMatchException,
             UnpinPageException,
             ConstructPageException,
             ScanIteratorException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
-        BTFileScan bs = btf.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
+        BTFileScan bs = index_f.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
         KeyDataEntry ky;
         MID mid = null;
         if ((ky = bs.get_next()) != null) {
