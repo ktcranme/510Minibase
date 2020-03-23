@@ -416,11 +416,35 @@ public class bigT implements GlobalConst {
         Iterator tmp = null;
         switch (type) {
             case 1:
-            case 2:
-            case 3:
                 tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
                 it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 break;
+            case 2:
+                if(rowFilter.charAt(0) != '*' && rowFilter.charAt(0) != '[')
+                {
+                    tmp = filterVal("i2REqual", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                    break;
+                }
+                else
+                {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+                    break;
+                }
+            case 3:
+                if(columnFilter.charAt(0) != '*' && columnFilter.charAt(0) != '[')
+                {
+                    tmp = filterVal("i3CEqual", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                    break;
+                }
+                else
+                {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+                    break;
+                }
             case 4:
                 if (orderType == 5) {
                     it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
@@ -464,6 +488,18 @@ public class bigT implements GlobalConst {
         Iterator it = null;
         CondExpr[] filter;
         switch (filterSec) {
+            case "i2REqual":
+                //filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                //CondExpr[] rowEqualityCondExpr = FilterParser.parseSingleIndexEquality(rowFilter,1,AttrType.attrString);
+                //it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, rowEqualityCondExpr, filter, false);
+                StringKey rowFilterKey = new StringKey(rowFilter);
+                it = getBtf().new_scan(rowFilterKey,rowFilterKey);
+                break;
+            case "i3CEqual":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                CondExpr[] columnEqualityCondExpr = FilterParser.parseSingleIndexEquality(columnFilter,2,AttrType.attrString);
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, columnEqualityCondExpr, filter, false);
+                break;
             case "i4o5":
             case "i5o5":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
