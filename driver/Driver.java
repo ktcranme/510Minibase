@@ -159,7 +159,6 @@ public class Driver {
 
                         if (SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers()) {
                             System.out.println("Buffer State: " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers());
-                            SystemDefs.JavabaseBM.culprit();
                         }
                     }
                 }
