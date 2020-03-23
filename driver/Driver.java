@@ -83,9 +83,9 @@ public class Driver {
                         rcount = rnext_count-rprev_count;
                         wcount = wnext_count-wprev_count;
 
-                        System.out.println("Map Count : "+ Driver.usedDbMap.get(fileName+"_"+type).getMapCnt());
-                        System.out.println("Row Count : "+Driver.usedDbMap.get(fileName+"_"+type).bigt.getRowCnt());
-                        System.out.println("Column Count : "+Driver.usedDbMap.get(fileName+"_"+type).bigt.getColumnCnt());
+                        System.out.println("Map Count : "+ Driver.usedDbMap.get(bigtName+"_"+type).getMapCnt());
+                        System.out.println("Row Count : "+Driver.usedDbMap.get(bigtName+"_"+type).bigt.getRowCnt());
+                        System.out.println("Column Count : "+Driver.usedDbMap.get(bigtName+"_"+type).bigt.getColumnCnt());
                         System.out.println("Write Count : "+wcount);
                         System.out.println("Read Count : "+rcount);
                         System.out.println("Time Taken : "+(next_time-prev_time));
@@ -102,7 +102,8 @@ public class Driver {
                 String columnFilter = tokens[5];
                 String valueFilter = tokens[6];
                 String numbufStr = tokens[7];
-                BigDB bDB = Driver.usedDbMap.get(bigtName+"_"+typeStr);
+                System.out.println(bigtName+"_"+Integer.parseInt(typeStr)+" "+ usedDbMap.size());
+                BigDB bDB = usedDbMap.get(bigtName+"_"+typeStr);
                 if(bDB == null){
                     System.out.println("No BigTable found to query");
                 }else

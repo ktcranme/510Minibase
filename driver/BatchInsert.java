@@ -50,10 +50,12 @@ public class BatchInsert {
                 bdB.insertMap(temp.getMapByteArray());
             }
             c++;
+            if(c==5000)
+                break;
             System.out.println(c);
         }
         if(tempbtf!=null)
             tempbtf.destroyFile();
-        Driver.usedDbMap.put(fileName+"_"+type , bdB);
+        Driver.usedDbMap.put(bigtName+"_"+type , bdB);
     }
 }
