@@ -33,7 +33,7 @@ public class BigDB extends DB
         AddFileEntryException 
     {
         bigt = new bigT(name + "_" + Integer.toString(_type), _type);
-        name = name + "_" + Integer.toString(_type);
+        this.name = name + "_" + Integer.toString(_type);
     }
 
     public void insertMap(byte[] mapbytearray) throws Exception

@@ -489,11 +489,11 @@ public class bigT implements GlobalConst {
         Iterator it = null;
         CondExpr[] filter;
         switch (filterSec) {
-            case "i4o5":
-            case "i5o5":
-                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
-                it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
-                break;
+            // case "i4o5":
+            // case "i5o5":
+            //     filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+            //     it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
+            //     break;
             case "scan":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 it = new FileStream(hf, filter);
