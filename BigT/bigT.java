@@ -435,31 +435,36 @@ public class bigT implements GlobalConst {
     public Iterator openStream(int orderType, String rowFilter, String columnFilter, String valueFilter) throws Exception {
         SortTypeMap.init();
         Iterator it = null;
-        switch (type) {
-            case 1:
-            case 2:
-            case 3:
-                tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
-                break;
-            case 4:
-                if (orderType == 5) {
-                    it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
-                } else {
-                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
-                }
-                break;
-            case 5:
-                if (orderType == 5) {
-                    it = filterVal("i5o5", rowFilter, columnFilter, valueFilter);
-                } else {
-                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
-                }
-                break;
-        }
+
+        tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+
         return it;
+        // switch (type) {
+        //     case 1:
+        //     case 2:
+        //     case 3:
+        //         tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        //         it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        //         break;
+        //     case 4:
+        //         if (orderType == 5) {
+        //             it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
+        //         } else {
+        //             tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        //             it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        //         }
+        //         break;
+        //     case 5:
+        //         if (orderType == 5) {
+        //             it = filterVal("i5o5", rowFilter, columnFilter, valueFilter);
+        //         } else {
+        //             tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        //             it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        //         }
+        //         break;
+        // }
+        // return it;
     }
 
     MID crIndexMapFind(Map findMap, BTreeFile index_f) throws IOException,
