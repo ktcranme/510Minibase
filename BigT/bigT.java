@@ -432,7 +432,9 @@ public class bigT implements GlobalConst {
         SortTypeMap.init();
         Iterator it = null;
         Iterator tmp = null;
-        switch (type) {
+        tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        /*switch (type) {
             case 1:
                 tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
                 it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
@@ -479,7 +481,7 @@ public class bigT implements GlobalConst {
                     it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 }
                 break;
-        }
+        }*/
         return it;
     }
 
@@ -506,12 +508,12 @@ public class bigT implements GlobalConst {
         Iterator it = null;
         CondExpr[] filter;
         switch (filterSec) {
-            case "i2REqual":
-                //filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
-                //CondExpr[] rowEqualityCondExpr = FilterParser.parseSingleIndexEquality(rowFilter,1,AttrType.attrString);
-                //it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, rowEqualityCondExpr, filter, false);
-                StringKey rowFilterKey = new StringKey(rowFilter);
-                it = getBtf().new_scan(rowFilterKey,rowFilterKey);
+            /*case "i2REqual":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                CondExpr[] rowEqualityCondExpr = FilterParser.parseSingleIndexEquality(rowFilter,1,AttrType.attrString);
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, rowEqualityCondExpr, filter, false);
+                //StringKey rowFilterKey = new StringKey(rowFilter);
+                //it = getBtf().new_scan(rowFilterKey,rowFilterKey);
                 break;
             case "i3CEqual":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
@@ -522,7 +524,7 @@ public class bigT implements GlobalConst {
             case "i5o5":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
-                break;
+                break;*/
             case "scan":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 it = new FileStream(hf, filter);
