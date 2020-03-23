@@ -3,6 +3,7 @@ package driver;
 import BigT.Iterator;
 import BigT.Map;
 import BigT.bigT;
+import diskmgr.BigDB;
 import diskmgr.PCounter;
 import global.GlobalConst;
 import global.SystemDefs;
@@ -11,10 +12,14 @@ import java.io.*;
 import java.util.regex.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Driver {
+    public static java.util.Map<String, BigDB> usedDbMap;
     public static void main(String [] args) throws Exception {
+        usedDbMap = new HashMap<>();
+
         String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
         if (args.length > 0 && args[0].equals("R"))
             SystemDefs.MINIBASE_RESTART_FLAG = true;
@@ -143,8 +148,19 @@ public class Driver {
                             // System.out.println("Fin resize");
 
                             // QUERY EXECUTED HERE
-                            queryBigT = new bigT(bigtName, type);
-                            queryResults = queryBigT.openStream(orderType, rowFilter, columnFilter, valueFilter);
+                            // queryBigT = new bigT(bigtName, type);
+
+                            System.out.println(bigtName+"_"+Integer.parseInt(typeStr)+" "+ usedDbMap.size());
+                            BigDB bDB = usedDbMap.get(bigtName);
+                            if(bDB == null){
+                                System.out.println("No BigTable found to query. Checking persistent data.");
+                                bDB = new BigDB(Integer.parseInt(typeStr));
+                                bDB.initBigT(bigtName);
+            
+                                Driver.usedDbMap.put(bigtName, bDB);
+                            }
+
+                            queryResults = bDB.bigt.openStream(orderType, rowFilter, columnFilter, valueFilter);
 
                             Map m = queryResults.get_next();
                             while (m != null) {
@@ -160,9 +176,9 @@ public class Driver {
                             System.out.println("Read Count : " + rcount);
                             System.out.println("Time Taken : " + (next_time - prev_time));
                             // queryResults.close();
-                            queryBigT.btf.close();
-                            queryBigT.btfTS.close();
-                            queryBigT.tmp.close();
+                            bDB.bigt.btf.close();
+                            bDB.bigt.btfTS.close();
+                            bDB.bigt.tmp.close();
                             // SystemDefs.JavabaseBM.flushAll();
                             // SystemDefs.JavabaseBM.flushAllPages();
                         } catch (Exception e) {

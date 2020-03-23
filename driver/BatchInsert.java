@@ -3,8 +3,12 @@ package driver;
 import BigT.Map;
 import BigT.bigT;
 import btree.AddFileEntryException;
+import btree.BTreeFile;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
+import diskmgr.BigDB;
+import global.AttrType;
+import global.GlobalConst;
 import global.SystemDefs;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
@@ -26,8 +30,17 @@ public class BatchInsert {
         String line,rec[];
         Map temp;
 
+        boolean new_flag = false;
+
         int c=0;
         bigT b1 = new bigT(bigtName,type);
+        BigDB bdB;
+        if((bdB=Driver.usedDbMap.get(fileName+"_"+type))==null){
+            bdB = new BigDB(type);
+            bdB.initBigT(bigtName);
+            new_flag = true;
+        }
+
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -50,5 +63,7 @@ public class BatchInsert {
         b1.btf.close();
         b1.btfTS.close();
         read.close();
+
+        Driver.usedDbMap.put(bigtName, bdB);
     }
 }

@@ -31,7 +31,7 @@ public class BigDB extends DB
         GetFileEntryException,
         AddFileEntryException 
     {
-        bigt = new bigT(name+_type, _type);
+        bigt = new bigT(name, _type);
     }
 
     public void insertMap(byte[] mapbytearray) throws Exception
