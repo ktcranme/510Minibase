@@ -24,7 +24,7 @@ public class Driver {
         if (args.length > 0 && args[0].equals("R"))
             SystemDefs.MINIBASE_RESTART_FLAG = true;
 
-        SystemDefs sysdef = new SystemDefs(dbpath,100000,500,"Clock");
+        SystemDefs sysdef = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have two options: BatchInsert and Query. Their structures follow:");
@@ -79,6 +79,7 @@ public class Driver {
                         wprev_count = PCounter.wcounter;
                         prev_time = System.currentTimeMillis();
 
+                        sysdef = new SystemDefs(dbpath,100000,numbuf,"Clock");
                         BatchInsert.batchinsert(fileName, type, bigtName, numbuf);
 
                         next_time = System.currentTimeMillis();
