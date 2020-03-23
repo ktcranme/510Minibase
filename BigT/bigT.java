@@ -19,7 +19,7 @@ import java.io.IOException;
 public class bigT implements GlobalConst {
     public static final String INDEXFILENAMEPREFIX = "bigTInd";
     public static final String TSINDEXFILENAMEPREFIX = "bigTIndTS";
-    public static final String DELIMITER = "_";
+    public static final String DELIMITER = ",";
     private int type;
     private String name;
     private Mapfile hf;
@@ -224,6 +224,107 @@ public class bigT implements GlobalConst {
         return c;
     }
 
+    public MID insertMapBulk(byte[] mapPtr, BTreeFile tempFile) throws Exception {
+        //need to handle versioning to remove 4th version
+        Map tempMap, delMap;
+        MID mid, tmpmid, tm = null;
+        delMap = new Map();
+        switch (type) {
+            case 1: // no index update required
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                }
+                break;
+            case 2:
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                }
+                break;
+            case 3:
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                }
+                break;
+            case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,btf);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
+                break;
+            case 5: //one btree to index row label and value (combined key) and one btree to index timestamps
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
+                break;
+        }
+        return tm;
+    }
+
     public MID insertMap(byte[] mapPtr) throws Exception {
         //need to handle versioning to remove 4th version
         Map tempMap, delMap;
@@ -267,7 +368,7 @@ public class bigT implements GlobalConst {
                 break;
             case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
                 tempMap = new Map(mapPtr, 0);
-                tmpmid = crIndexMapFind(tempMap);
+                tmpmid = crIndexMapFind(tempMap,btf);
                 if (tmpmid != null) {
                     tm = hf.updateMap(tmpmid, tempMap, delMap);
                     if (tm == null)
@@ -331,7 +432,9 @@ public class bigT implements GlobalConst {
         SortTypeMap.init();
         Iterator it = null;
         Iterator tmp = null;
-        switch (type) {
+        tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+        it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        /*switch (type) {
             case 1:
                 tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
                 it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
@@ -350,9 +453,18 @@ public class bigT implements GlobalConst {
                     break;
                 }
             case 3:
-                tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
-                it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
-                break;
+                if(columnFilter.charAt(0) != '*' && columnFilter.charAt(0) != '[')
+                {
+                    tmp = filterVal("i3CEqual", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, GlobalConst.NUMBUF);
+                    break;
+                }
+                else
+                {
+                    tmp = filterVal("scan", rowFilter, columnFilter, valueFilter);
+                    it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+                    break;
+                }
             case 4:
                 if (orderType == 5) {
                     it = filterVal("i4o5", rowFilter, columnFilter, valueFilter);
@@ -369,18 +481,18 @@ public class bigT implements GlobalConst {
                     it = new Sort(attrType, (short) 4, attrSize, tmp, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
                 }
                 break;
-        }
+        }*/
         return it;
     }
 
-    MID crIndexMapFind(Map findMap) throws IOException,
+    MID crIndexMapFind(Map findMap, BTreeFile index_f) throws IOException,
             PinPageException,
             IteratorException,
             KeyNotMatchException,
             UnpinPageException,
             ConstructPageException,
             ScanIteratorException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
-        BTFileScan bs = btf.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
+        BTFileScan bs = index_f.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
         KeyDataEntry ky;
         MID mid = null;
         if ((ky = bs.get_next()) != null) {
@@ -396,16 +508,23 @@ public class bigT implements GlobalConst {
         Iterator it = null;
         CondExpr[] filter;
         switch (filterSec) {
-            case "i2REqual":
+            /*case "i2REqual":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 CondExpr[] rowEqualityCondExpr = FilterParser.parseSingleIndexEquality(rowFilter,1,AttrType.attrString);
                 it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, rowEqualityCondExpr, filter, false);
+                //StringKey rowFilterKey = new StringKey(rowFilter);
+                //it = getBtf().new_scan(rowFilterKey,rowFilterKey);
+                break;
+            case "i3CEqual":
+                filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
+                CondExpr[] columnEqualityCondExpr = FilterParser.parseSingleIndexEquality(columnFilter,2,AttrType.attrString);
+                it = new IndexScan(new IndexType(IndexType.B_Index), name, INDEXFILENAMEPREFIX + name, columnEqualityCondExpr, filter, false);
                 break;
             case "i4o5":
             case "i5o5":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 it = new IndexScan(new IndexType(IndexType.B_Index), name, TSINDEXFILENAMEPREFIX + name, null, filter, false);
-                break;
+                break;*/
             case "scan":
                 filter = FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter));
                 it = new FileStream(hf, filter);
