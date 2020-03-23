@@ -50,8 +50,6 @@ public class BatchInsert {
                 bdB.insertMap(temp.getMapByteArray());
             }
             c++;
-            if(c==5000)
-                break;
             System.out.println(c);
         }
         if(tempbtf!=null)
