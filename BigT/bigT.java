@@ -280,7 +280,25 @@ public class bigT implements GlobalConst {
                 }
                 break;
             case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
-                insertMap(mapPtr);
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,btf);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
+                break;
             case 5: //one btree to index row label and value (combined key) and one btree to index timestamps
                 tempMap = new Map(mapPtr, 0);
                 tmpmid = crIndexMapFind(tempMap,tempFile);

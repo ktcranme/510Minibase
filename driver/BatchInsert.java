@@ -1,84 +1,37 @@
 package driver;
 
 import BigT.Map;
-import BigT.bigT;
-import btree.AddFileEntryException;
-import btree.ConstructPageException;
-import btree.GetFileEntryException;
+import btree.BTreeFile;
 import diskmgr.BigDB;
-import global.SystemDefs;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.HFException;
+import global.AttrType;
+import global.GlobalConst;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BatchInsert {
     //insert your data file in /data folder before running the make command, to include the data file in classpath.
-    public static void main(String[] args) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print("DATAFILENAME(ensure that it is placed in /driver/data/):");
-        String fileName = br.readLine();
-        System.out.print("TYPE(1,2,3,4,5):");
-        int type = Integer.parseInt(br.readLine());
-        System.out.print("BIGTABLENAME:");
-        String bigtName = br.readLine();
-        URL url = BatchInsert.class.getResource("/data/".concat(fileName));
-        File csvFile = new File(url.getPath());
-        BufferedReader read = new BufferedReader(new FileReader(csvFile));
-        String line,rec[];
-        Map temp;
-        List<Map> mapLs = new ArrayList<>();
-        int c=0;
-        String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
-        SystemDefs sysdef = new SystemDefs(dbpath,100000,100,"Clock");
-        bigT b1 = new bigT(bigtName,type);
-        long timeStart = System.currentTimeMillis();
-        while ((line = read.readLine()) != null) {
-            rec = line.split(",");
-            temp = new Map();
-            if(c==0) {
-                temp.setRowLabel(rec[0].substring(1));
-            }
-            else {
-                temp.setRowLabel(rec[0]);
-            }
-            temp.setColumnLabel(rec[1]);
-            temp.setTimeStamp(Integer.parseInt(rec[3]));
-            temp.setValue(rec[2]);
-            b1.insertMap(temp.getMapByteArray());
-            //mapLs.add(temp);
-            c++;
-            System.out.println(c);
-        }
-        System.out.println(b1.getMapCnt());
-        System.out.println(b1.getRowCnt());
-        System.out.println(b1.getColumnCnt());
-        System.out.println("Time taken"+(System.currentTimeMillis()-timeStart));
-        //System.out.println(mapLs.size());
-        //Map mapArr[] = mapLs.toArray(new Map[mapLs.size()]);
-        //System.out.println(mapArr[0].getRowLabel());
-        //insert code for batch insert
-        //insert code for setting up bigt
-    }
-
-    //perform the batchinsertion but not in a main method
     public static void batchinsert(String fileName, int type, String bigtName, int numbuf) throws Exception
     {
         URL url = BatchInsert.class.getResource("/data/".concat(fileName));
-
         File csvFile = new File(url.getPath());
         BufferedReader read = new BufferedReader(new FileReader(csvFile));
         String line,rec[];
         Map temp;
-
+        boolean new_flag = false;
         int c=0;
-        BigDB b1 = new BigDB(type);
-        b1.initBigT(bigtName);
-        //bigT b1 = new bigT(bigtName, type);
+        BigDB bdB;
+        BTreeFile tempbtf = null;
+        if((bdB=Driver.usedDbMap.get(fileName+"_"+type))==null){
+            bdB = new BigDB(type);
+            bdB.initBigT(bigtName);
+            new_flag = true;
+            if(type!=4){
+                tempbtf = new BTreeFile("batch_insert_ind", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1);
+            }
+        }
         while ((line = read.readLine()) != null) {
             rec = line.split(",");
             temp = new Map();
@@ -91,13 +44,16 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            b1.insertMap(temp.getMapByteArray());
-            
+            if(new_flag) {
+                bdB.bigt.insertMapBulk(temp.getMapByteArray(),tempbtf);
+            } else {
+                bdB.insertMap(temp.getMapByteArray());
+            }
             c++;
             System.out.println(c);
         }
-        System.out.println("Map Count : "+b1.getMapCnt());
-        //System.out.println(b1.getColumnCnt());
-        //System.out.println(b1.getRowCnt());
+        if(tempbtf!=null)
+            tempbtf.destroyFile();
+        Driver.usedDbMap.put(fileName+"_"+type , bdB);
     }
 }

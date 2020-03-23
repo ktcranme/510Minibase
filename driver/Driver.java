@@ -3,18 +3,22 @@ package driver;
 import BigT.Iterator;
 import BigT.Map;
 import BigT.bigT;
+import diskmgr.BigDB;
 import diskmgr.PCounter;
 import global.GlobalConst;
 import global.SystemDefs;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.regex.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Driver {
+    public static java.util.Map<String, BigDB> usedDbMap;
     public static void main(String [] args) throws Exception {
+        usedDbMap = new HashMap<>();
         String dbpath = "D:\\minibase_db\\"+"hf"+System.getProperty("user.name")+".minibase-db";
         SystemDefs sysdef = new SystemDefs(dbpath,100000,500,"Clock");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -78,6 +82,10 @@ public class Driver {
                         wnext_count = PCounter.wcounter;
                         rcount = rnext_count-rprev_count;
                         wcount = wnext_count-wprev_count;
+
+                        System.out.println("Map Count : "+ Driver.usedDbMap.get(fileName+"_"+type).getMapCnt());
+                        System.out.println("Row Count : "+Driver.usedDbMap.get(fileName+"_"+type).bigt.getRowCnt());
+                        System.out.println("Column Count : "+Driver.usedDbMap.get(fileName+"_"+type).bigt.getColumnCnt());
                         System.out.println("Write Count : "+wcount);
                         System.out.println("Read Count : "+rcount);
                         System.out.println("Time Taken : "+(next_time-prev_time));
@@ -94,7 +102,10 @@ public class Driver {
                 String columnFilter = tokens[5];
                 String valueFilter = tokens[6];
                 String numbufStr = tokens[7];
-
+                BigDB bDB = Driver.usedDbMap.get(bigtName+"_"+typeStr);
+                if(bDB == null){
+                    System.out.println("No BigTable found to query");
+                }else
                 //check that the integers are actually integers
                 if(!isInteger(typeStr) || !isInteger(orderTypeStr) || !isInteger(numbufStr))
                 {
@@ -129,10 +140,7 @@ public class Driver {
                         wprev_count = PCounter.wcounter;
                         prev_time = System.currentTimeMillis();
 
-                        //QUERY EXECUTED HERE
-                        bigT queryBigT = new bigT(bigtName, type);
-                        Iterator queryResults = queryBigT.openStream(orderType, rowFilter, columnFilter, valueFilter);
-
+                        Iterator queryResults = bDB.bigt.openStream(orderType, rowFilter, columnFilter, valueFilter);
 
                         Map m = queryResults.get_next();
                         while(m != null)
