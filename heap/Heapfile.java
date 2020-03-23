@@ -826,6 +826,7 @@ public class Heapfile implements Filetype, GlobalConst {
 			}
 		}
 
+		// System.out.println("Deleting file entry " + _fileName);
 		delete_file_entry(_fileName);
 	}
 
@@ -890,6 +891,7 @@ public class Heapfile implements Filetype, GlobalConst {
 		try {
 			tmpId = SystemDefs.JavabaseDB.get_file_entry(filename);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new HFDiskMgrException(e, "Heapfile.java: get_file_entry() failed");
 		}
 

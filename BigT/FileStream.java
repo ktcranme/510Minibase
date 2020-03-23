@@ -42,6 +42,7 @@ public class FileStream extends Iterator {
         try {
             stream = f.openStream();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new FileScanException(e, "openScan() failed");
         }
     }

@@ -23,10 +23,13 @@ public class bigT implements GlobalConst {
     private int type;
     private String name;
     private Mapfile hf;
-    private BTreeFile btf;
-    private BTreeFile btfTS;
+    public BTreeFile btf;
+    public BTreeFile btfTS;
     AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
     short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
+
+    public Iterator tmp = null;
+
 
     public Mapfile getHf() {
         return hf;
@@ -330,7 +333,6 @@ public class bigT implements GlobalConst {
     public Iterator openStream(int orderType, String rowFilter, String columnFilter, String valueFilter) throws Exception {
         SortTypeMap.init();
         Iterator it = null;
-        Iterator tmp = null;
         switch (type) {
             case 1:
             case 2:

@@ -92,8 +92,11 @@ public class BatchInsert {
             
             c++;
             System.out.println(c);
+            // if (c == 100) break;
         }
         System.out.println("Map Count : "+b1.getMapCnt());
+        b1.btf.close();
+        b1.btfTS.close();
         //System.out.println(b1.getColumnCnt());
         //System.out.println(b1.getRowCnt());
     }
