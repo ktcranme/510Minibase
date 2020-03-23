@@ -151,7 +151,7 @@ public class IndexScan extends Iterator {
     private IndexFileScan indScan;
     private CondExpr[] _selects;
     private CondExpr[] _selects_index;
-    private Bigtablefile f;
+    private Mapfile f;
     private Map map1;
     private boolean index_only;
 
