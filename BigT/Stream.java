@@ -571,8 +571,6 @@ class _Stream implements GlobalConst {
         SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
       }
       catch (Exception e) {
-        System.out.println("PIN: " + pageno.pid + "BUFFER STATE: " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers());
-        e.printStackTrace();
         throw new HFBufMgrException(e,"Stream.java: pinPage() failed");
       }
 

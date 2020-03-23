@@ -489,7 +489,6 @@ public class Sort extends Iterator implements GlobalConst {
    */
   public Sort(AttrType[] in, short len_in, short[] str_sizes, Iterator am, int[] sort_flds, TupleOrder sort_order,
       int sort_fld_len, int n_pages) throws IOException, SortException {
-    System.out.println("Using " + n_pages + " to Sort.");
     _in = new AttrType[len_in];
     n_cols = len_in;
     int n_strs = 0;
@@ -528,7 +527,6 @@ public class Sort extends Iterator implements GlobalConst {
       try {
         get_buffer_pages(_n_pages, bufs_pids, bufs);
       } catch (Exception e) {
-        e.printStackTrace();
         throw new SortException(e, "Sort.java: BUFmgr error");
       }
     } else {
@@ -548,7 +546,6 @@ public class Sort extends Iterator implements GlobalConst {
     try {
       temp_files[0] = new VMapfile(null);
     } catch (Exception e) {
-      e.printStackTrace();
       throw new SortException(e, "Sort.java: VMapfile error");
     }
 
@@ -614,7 +611,6 @@ public class Sort extends Iterator implements GlobalConst {
    * @exception SortException something went wrong in the lower layer.
    */
   public void close() throws SortException, IOException {
-    System.out.println("Closing sort...");
     // clean up
     if (!closeFlag) {
 

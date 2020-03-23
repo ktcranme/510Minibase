@@ -608,8 +608,7 @@ public class DB implements GlobalConst {
 	
 	while(entry < dp.getNumOfEntries())
 	  {
-      tmpname = dp.getFileEntry(tmppid, entry);
-      // System.out.println(tmpname);
+	    tmpname = dp.getFileEntry(tmppid, entry);
 	    
 	    if((tmppid.pid != INVALID_PAGE)&&
 	       (tmpname.compareTo(name) == 0)) break; 
@@ -817,7 +816,6 @@ public class DB implements GlobalConst {
   private void pinPage(PageId pageno, Page page, boolean emptyPage)
     throws DiskMgrException {
 
-    // System.out.println("PINN: " + pageno.pid);
     try {
       SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
     }
