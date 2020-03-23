@@ -546,6 +546,11 @@ public class Sort extends Iterator implements GlobalConst {
     try {
       temp_files[0] = new VMapfile(null);
     } catch (Exception e) {
+      try {
+        close();
+      } catch (Exception e1) {
+        e1.printStackTrace();
+      }
       throw new SortException(e, "Sort.java: VMapfile error");
     }
 

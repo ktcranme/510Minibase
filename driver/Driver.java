@@ -24,7 +24,7 @@ public class Driver {
         if (args.length > 0 && args[0].equals("R"))
             SystemDefs.MINIBASE_RESTART_FLAG = true;
 
-        SystemDefs sysdef = null;
+        SystemDefs sysdef = new SystemDefs(dbpath,100000,500,"Clock");;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have two options: BatchInsert and Query. Their structures follow:");
@@ -179,15 +179,14 @@ public class Driver {
                             System.out.println("Read Count : " + rcount);
                             System.out.println("Time Taken : " + (next_time - prev_time));
                             // queryResults.close();
-                            bDB.bigt.btf.close();
-                            bDB.bigt.btfTS.close();
+                            if (bDB.bigt.btf != null)
+                                bDB.bigt.btf.close();
+                            if (bDB.bigt.btfTS != null)
+                                bDB.bigt.btfTS.close();
                             bDB.bigt.tmp.close();
                             // SystemDefs.JavabaseBM.flushAll();
                             // SystemDefs.JavabaseBM.flushAllPages();
-                        } catch (Exception e) {
-                            SystemDefs.MINIBASE_RESTART_FLAG = true;
-                            sysdef = new SystemDefs(dbpath, 100000, 500, "Clock");
-                        } finally {
+
                             if (queryResults != null) {
                                 queryResults.close();
                                 // queryBigT.btf.close();
@@ -195,6 +194,18 @@ public class Driver {
                                 // queryBigT.tmp.close();
                                 SystemDefs.JavabaseBM.flushAllPages();
                             }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            SystemDefs.MINIBASE_RESTART_FLAG = true;
+                            sysdef = new SystemDefs(dbpath, 100000, numbuf, "Clock");
+                        } finally {
+                            // if (queryResults != null) {
+                            //     queryResults.close();
+                            //     // queryBigT.btf.close();
+                            //     // queryBigT.btfTS.close();
+                            //     // queryBigT.tmp.close();
+                            //     SystemDefs.JavabaseBM.flushAllPages();
+                            // }
                         }
                     
                         System.out.println("Buffer State: " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers());
