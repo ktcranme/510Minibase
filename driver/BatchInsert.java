@@ -33,7 +33,7 @@ public class BatchInsert {
         boolean new_flag = false;
 
         int c=0;
-        bigT b1 = new bigT(bigtName,type);
+        // bigT b1 = new bigT(bigtName,type);
         BigDB bdB;
         if((bdB=Driver.usedDbMap.get(fileName+"_"+type))==null){
             bdB = new BigDB(type);
@@ -53,15 +53,15 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            b1.insertMap(temp.getMapByteArray());
+            bdB.bigt.insertMap(temp.getMapByteArray());
             
             c++;
             System.out.println(c);
             // if (c == 100) break;
         }
-        System.out.println("Map Count : "+b1.getMapCnt());
-        b1.btf.close();
-        b1.btfTS.close();
+        System.out.println("Map Count : "+bdB.bigt.getMapCnt());
+        bdB.bigt.btf.close();
+        bdB.bigt.btfTS.close();
         read.close();
 
         Driver.usedDbMap.put(bigtName, bdB);

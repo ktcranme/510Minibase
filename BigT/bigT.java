@@ -102,6 +102,108 @@ public class bigT implements GlobalConst {
         }
     }
 
+    public MID insertMapBulk(byte[] mapPtr, BTreeFile tempFile) throws Exception {
+        //need to handle versioning to remove 4th version
+        Map tempMap, delMap;
+        MID mid, tmpmid, tm = null;
+        delMap = new Map();
+        switch (type) {
+            case 1: // no index update required
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                }
+                break;
+            case 2:
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btf.insert(new StringKey(tempMap.getRowLabel()), new RID(tm));
+                }
+                break;
+            case 3:
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btf.insert(new StringKey(tempMap.getColumnLabel()), new RID(tm));
+                }
+                break;
+            case 4: //one btree to index column label and row label (combined key) and one btree to index timestamps
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,btf);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
+                break;
+            case 5: //one btree to index row label and value (combined key) and one btree to index timestamps
+                tempMap = new Map(mapPtr, 0);
+                tmpmid = crIndexMapFind(tempMap,tempFile);
+                if (tmpmid != null) {
+                    tm = hf.updateMap(tmpmid, tempMap, delMap);
+                    if (tm == null)
+                        return null;
+                    if (!tm.isReused) {
+                        btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                        tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    } else {
+                        btfTS.Delete(new IntegerKey(delMap.getTimeStamp()), new RID(tm));
+                        btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                    }
+                } else {
+                    tm = hf.insertMap(tempMap);
+                    btf.insert(new StringKey(String.join(DELIMITER, tempMap.getRowLabel(), tempMap.getValue())), new RID(tm));
+                    tempFile.insert(new StringKey(String.join(DELIMITER, tempMap.getColumnLabel(), tempMap.getRowLabel())), new RID(tm));
+                    btfTS.insert(new IntegerKey(tempMap.getTimeStamp()), new RID(tm));
+                }
+                break;
+        }
+        return tm;
+    }
+
+
     public void deleteBigt() throws IOException,
             HFDiskMgrException,
             FileAlreadyDeletedException,
