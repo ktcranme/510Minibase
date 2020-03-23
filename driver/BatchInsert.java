@@ -35,10 +35,14 @@ public class BatchInsert {
         int c=0;
         // bigT b1 = new bigT(bigtName,type);
         BigDB bdB;
+        BTreeFile tempbtf = null;
         if((bdB=Driver.usedDbMap.get(fileName+"_"+type))==null){
             bdB = new BigDB(type);
             bdB.initBigT(bigtName);
             new_flag = true;
+            if(type!=4){
+                tempbtf = new BTreeFile("batch_insert_ind", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1);
+            }
         }
 
         while ((line = read.readLine()) != null) {
@@ -53,15 +57,25 @@ public class BatchInsert {
             temp.setColumnLabel(rec[1]);
             temp.setTimeStamp(Integer.parseInt(rec[3]));
             temp.setValue(rec[2]);
-            bdB.bigt.insertMap(temp.getMapByteArray());
+            if(new_flag) {
+                bdB.bigt.insertMapBulk(temp.getMapByteArray(),tempbtf);
+            } else {
+                bdB.insertMap(temp.getMapByteArray());
+            }
             
             c++;
             System.out.println(c);
             // if (c == 100) break;
         }
         System.out.println("Map Count : "+bdB.bigt.getMapCnt());
-        bdB.bigt.btf.close();
-        bdB.bigt.btfTS.close();
+
+        if(tempbtf!=null) {
+            tempbtf.close();
+            tempbtf.destroyFile();
+        } else {
+            bdB.bigt.btf.close();
+            bdB.bigt.btfTS.close();
+        }
         read.close();
 
         Driver.usedDbMap.put(bigtName, bdB);
