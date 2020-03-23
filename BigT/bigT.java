@@ -19,7 +19,7 @@ import java.io.IOException;
 public class bigT implements GlobalConst {
     public static final String INDEXFILENAMEPREFIX = "bigTInd";
     public static final String TSINDEXFILENAMEPREFIX = "bigTIndTS";
-    public static final String DELIMITER = "_";
+    public static final String DELIMITER = ",";
     private int type;
     private String name;
     private Mapfile hf;

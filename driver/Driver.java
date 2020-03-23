@@ -160,6 +160,8 @@ public class Driver {
                                 Driver.usedDbMap.put(bigtName, bDB);
                             }
 
+                            System.out.println("Querying from " + bDB.name);
+
                             queryResults = bDB.bigt.openStream(orderType, rowFilter, columnFilter, valueFilter);
 
                             Map m = queryResults.get_next();

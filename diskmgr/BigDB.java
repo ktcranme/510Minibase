@@ -16,6 +16,7 @@ public class BigDB extends DB
 {
     public bigT bigt;
     int _type;
+    public String name = "";
 
     public BigDB(int type)
     {
@@ -31,7 +32,8 @@ public class BigDB extends DB
         GetFileEntryException,
         AddFileEntryException 
     {
-        bigt = new bigT(name, _type);
+        bigt = new bigT(name + "_" + Integer.toString(_type), _type);
+        name = name + "_" + Integer.toString(_type);
     }
 
     public void insertMap(byte[] mapbytearray) throws Exception
