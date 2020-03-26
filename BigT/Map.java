@@ -278,14 +278,16 @@ public class Map implements GlobalConst{
 		value = Convert.getStrValue(fldOffset[3], data, fldOffset[4]-fldOffset[3]);
 		if(isInteger(value))
 		{
-			//remove the padded 0's
-			while(value.charAt(0) == '0')
-			{
-				value = value.substring(1);
-			}
 			if(value.length() < 1)
 			{
 				value = "0";
+			}
+			else{
+				//remove the padded 0's
+				while(value.charAt(0) == '0')
+				{
+					value = value.substring(1);
+				}
 			}
 		}
 		
