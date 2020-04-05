@@ -1677,7 +1677,7 @@ class JoinsDriver implements GlobalConst {
     }
     public void Query7(){
       System.out.println("Test for conditional expression parsing.");
-      CondExpr[] cr = FilterParser.parse("*##[ab,abc]##abc");
+      CondExpr[] cr = FilterParser.parseCombine("*##[ab,abc]##abc");
       System.out.println("Length of Parser"+cr.length);
     }
   
