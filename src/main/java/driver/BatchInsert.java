@@ -9,15 +9,16 @@ import global.GlobalConst;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.net.URL;
 
 public class BatchInsert {
     //insert your data file in /data folder before running the make command, to include the data file in classpath.
     public static void batchinsert(String fileName, int type, String bigtName, int numbuf) throws Exception
     {
-        URL url = BatchInsert.class.getResource("/data/".concat(fileName));
-        File csvFile = new File(url.getPath());
-        BufferedReader read = new BufferedReader(new FileReader(csvFile));
+        //URL url = BatchInsert.class.getResource("/data/".concat(fileName));
+        //File csvFile = new File(url.getPath());
+        BufferedReader read = new BufferedReader(new InputStreamReader(BatchInsert.class.getResourceAsStream("/data/".concat(fileName))));
         String line,rec[];
         Map temp;
         boolean new_flag = false;
