@@ -58,37 +58,22 @@ class bigTDriver extends TestDriver implements GlobalConst{
 
         // Commands here is very machine dependent.  We assume
         // user are on UNIX system here
-        try {
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        }
-        catch (IOException e) {
-            System.err.println ("IO error: "+e);
-        }
+        new File(newlogpath).delete();
+        new File(newdbpath).delete();
 
         remove_logcmd = remove_cmd + newlogpath;
         remove_dbcmd = remove_cmd + newdbpath;
 
-        try {
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        }
-        catch (IOException e) {
-            System.err.println ("IO error: "+e);
-        }
+        new File(newlogpath).delete();
+        new File(newdbpath).delete();
 
         //Run the tests. Return type different from C++
         boolean _pass = runTest1();
         boolean _pass2 = runTest3();
 
         //Clean up again
-        try {
-            Runtime.getRuntime().exec(remove_logcmd);
-            Runtime.getRuntime().exec(remove_dbcmd);
-        }
-        catch (IOException e) {
-            System.err.println ("IO error: "+e);
-        }
+        new File(newlogpath).delete();
+        new File(newdbpath).delete();
 
         System.out.print ("\n" + "..." + testName() + " tests ");
         System.out.print (_pass==OK && _pass2==OK ? "completely successfully" : "failed");
