@@ -101,7 +101,7 @@ public class Heapfile implements Filetype, GlobalConst {
 	 */
 	protected boolean _findDataPage(RID rid, PageId dirPageId, Dirpage dirpage, PageId dataPageId, HFPage datapage,
 			RID rpDataPageRid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
-			HFBufMgrException, HFDiskMgrException, Exception {
+			HFBufMgrException, HFDiskMgrException, IOException {
 		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 
 		Dirpage currentDirPage = new Dirpage();
@@ -731,7 +731,7 @@ public class Heapfile implements Filetype, GlobalConst {
 	 * @return a Tuple. if Tuple==null, no more tuple
 	 */
 	public byte[] getRecord(RID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
-			HFDiskMgrException, HFBufMgrException, Exception {
+			HFDiskMgrException, HFBufMgrException, IOException {
 		boolean status;
 		Dirpage dirPage = new Dirpage();
 		PageId currentDirPageId = new PageId();
