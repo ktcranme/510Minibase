@@ -182,7 +182,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           try {
             if( (!m2.getRowLabel().equals("row" + i))
                 || (!m2.getColumnLabel().equals("col" + i))
-                || (!m2.getValue().equals(Integer.toString(i)))
+                || (Integer.parseInt(m2.getValue()) != i)
                 || (m2.getTimeStamp() != i)) {
               System.err.println ("*** Record " + i
                   + " differs from what we inserted\n");
@@ -366,7 +366,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           try {
             if( (!m2.getRowLabel().equals("row" + i))
                 || (!m2.getColumnLabel().equals("col" + i))
-                || (!m2.getValue().equals(Integer.toString(i)))
+                || (Integer.parseInt(m2.getValue()) != i)
                 || (m2.getTimeStamp() != i)) {
               System.err.println ("*** Record " + i
                   + " differs from what we inserted\n");
@@ -596,7 +596,7 @@ class StreamDriver extends TestDriver implements GlobalConst
           // i += 2;
           if (m.getVersionNo() == 2) {
             try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 4)) || !m2.getValue().equals(Integer.toString(i * 10 + 4))) {
+              if( Integer.parseInt(m.getValue()) != i * 10 + 4 || Integer.parseInt(m2.getValue()) != i * 10 + 4) {
                 System.err.println ("*** Record " + i
                     + " differs from our update\n");
                 System.err.println ("m.value: "+ m.getValue()
@@ -613,7 +613,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             i += 2;     // Because we deleted the odd ones...
           } else if (m.getVersionNo() == 1) {
             try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 3)) || !m2.getValue().equals(Integer.toString(i * 10 + 3))) {
+              if( Integer.parseInt(m.getValue()) != i * 10 + 3 || Integer.parseInt(m2.getValue()) != i * 10 + 3) {
                 System.err.println ("*** Record " + i
                     + " differs from our update\n");
                 System.err.println ("m.value: "+ m.getValue()
@@ -629,7 +629,7 @@ class StreamDriver extends TestDriver implements GlobalConst
             }
           } else {
             try {
-              if( !m.getValue().equals(Integer.toString(i * 10 + 5)) || !m2.getValue().equals(Integer.toString(i * 10 + 5))) {
+              if( Integer.parseInt(m.getValue()) != i * 10 + 5 || Integer.parseInt(m2.getValue()) != i * 10 + 5) {
                 System.err.println ("*** Record " + i
                     + " differs from our update\n");
                 System.err.println ("m.value: "+ m.getValue()
