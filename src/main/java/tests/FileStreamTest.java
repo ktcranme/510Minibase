@@ -100,7 +100,7 @@ class FileStreamDriver extends TestDriver implements GlobalConst {
     boolean checkDummyRecord(Map m2, int i) {
         try {
             if ((!m2.getRowLabel().equals("row" + i)) || (!m2.getColumnLabel().equals("col" + i))
-                    || (!m2.getValue().equals(Integer.toString(i))) || (m2.getTimeStamp() != i)) {
+                || Integer.parseInt(m2.getValue()) != i || (m2.getTimeStamp() != i)) {
                 System.err.println("*** Record " + i + " differs from what we inserted\n");
                 System.err.println("Row: " + m2.getRowLabel() + " should be " + "row" + i + "\n");
                 System.err.println("Column: " + m2.getColumnLabel() + " should be " + "col" + i + "\n");

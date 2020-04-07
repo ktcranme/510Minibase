@@ -1,1 +1,7 @@
 *.class
+.gradle/
+.idea/
+.classpath
+.project
+.settings/
+bin/
