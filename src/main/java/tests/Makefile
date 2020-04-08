@@ -29,10 +29,18 @@ run: all
 	$(JAVA) tests.HFTest
 	$(JAVA) tests.DBTest
 	$(JAVA) tests.BMTest
-	$(JAVA) tests.StreamTest
+	$(JAVA) -ea tests.StreamTest
 	$(JAVA) tests.bigtTest
 	$(JAVA) tests.VStreamTest
 	$(JAVA) tests.FileStreamTest
+    $(JAVA) -ea tests.SmallMapTest
+    $(JAVA) -ea tests.SmallMapFileTest
+
+runsmallmap: $(CURDIR)/SmallMapTest.class
+	$(JAVA) -ea tests.SmallMapTest
+
+runsmallmapfile: $(CURDIR)/SmallMapFileTest.class
+	$(JAVA) -ea tests.SmallMapFileTest
 
 runstream: $(CURDIR)/StreamTest.class
 	$(JAVA) -ea tests.StreamTest

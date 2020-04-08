@@ -16,6 +16,8 @@ import heap.Dirpage;
 import heap.HFBufMgrException;
 import heap.DataPageInfo;
 import heap.Tuple;
+import storage.SmallMapFile;
+import storage.SmallMapPage;
 
 
 interface PageView {
@@ -29,6 +31,11 @@ public class Stream {
   public Stream(VMapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
       InvalidSlotNumberException, IOException {
     s = new _Stream(f, () -> { return new VMapPage(); });
+  }
+
+  public Stream(SmallMapFile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
+          InvalidSlotNumberException, IOException {
+    s = new _Stream(f, () -> { return f.getNewDataPage(); });
   }
 
   public Stream(Mapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,

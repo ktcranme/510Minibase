@@ -5,7 +5,7 @@
 
 JARFILES=bufmgr/*.class diskmgr/*.class global/*.class iterator/*.class\
          heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class\
-				 BigT/*.class driver/*.class
+				 BigT/*.class driver/*.class storage/*.class
 
 JDKPATH = $(JAVA_HOME)
 LIBPATH = .:..
@@ -40,6 +40,7 @@ db:
 	make -C iterator
 	make -C BigT
 	make -C driver
+	make -C storage
 
 doc:
 	$(JAVADOC) $(DOCFILES)
@@ -58,7 +59,13 @@ testvstream: db
 	
 testsort: db
 	cd tests; make runsorttest
-	
+
+testsmallmap: db
+	cd tests; make runsmallmap
+
+testsmallmapfile: db
+	cd tests; make runsmallmapfile
+
 filestream: db
 	cd tests; make filestream
 
