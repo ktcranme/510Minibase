@@ -34,6 +34,22 @@ public class SmallMapPage extends HFPage implements Mapview {
         this.ignoredPos = ignoredPos;
     }
 
+    public String getMaxVal() throws IOException, InvalidSlotNumberException {
+        String maxVal = "";
+        MID mid = firstMap();
+        SmallMap map = null;
+        while (mid != null) {
+            map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
+            if (map.getValue().compareTo(maxVal) > 0) {
+                maxVal = map.getValue();
+            }
+
+            mid = nextMap(mid);
+        }
+
+        return maxVal;
+    }
+
     public BigT.Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo));
         return (new SmallMap(rec, 0)).toMap(this.ignoredLabel, this.ignoredPos);

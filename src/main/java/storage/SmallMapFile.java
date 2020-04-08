@@ -67,4 +67,41 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
     public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
         return new Stream(this);
     }
+
+
+    public void test() throws HFBufMgrException, IOException, InvalidSlotNumberException, InvalidTupleSizeException {
+        RID currentDataPageRid = new RID();
+        Dirpage currentDirPage = new Dirpage();
+        SmallMapPage currentDataPage = getNewDataPage();
+
+        PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+        PageId nextDirPageId = new PageId(); // OK
+
+        pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+
+        Tuple atuple;
+        DataPageInfo dpinfo = new DataPageInfo();
+        while (currentDirPageId.pid != INVALID_PAGE) { // Start While01
+            // look for suitable dpinfo-struct
+            for (currentDataPageRid = currentDirPage.firstRecord();
+                 currentDataPageRid != null;
+                 currentDataPageRid = currentDirPage.nextRecord(currentDataPageRid)) {
+                dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+
+                pinPage(dpinfo.getPageId(), currentDataPage, false);
+
+                System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
+
+                unpinPage(dpinfo.getPageId(), false);
+            }
+
+            nextDirPageId = currentDirPage.getNextPage();
+            unpinPage(currentDirPageId, false);
+            currentDirPageId.pid = nextDirPageId.pid;
+
+            if (nextDirPageId.pid != INVALID_PAGE) {
+                pinPage(currentDirPageId, currentDirPage, false);
+            }
+        } // end of While01
+    }
 }

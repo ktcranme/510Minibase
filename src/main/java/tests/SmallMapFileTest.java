@@ -1,6 +1,7 @@
 package tests;
 
 import java.io.IOException;
+import java.util.Random;
 
 import BigT.Map;
 import BigT.Stream;
@@ -8,10 +9,14 @@ import BigT.VMapfile;
 import global.GlobalConst;
 import global.MID;
 import global.SystemDefs;
+import heap.HFBufMgrException;
+import heap.InvalidSlotNumberException;
+import heap.InvalidTupleSizeException;
 import storage.SmallMap;
 import storage.SmallMapFile;
 
 class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
+    public Integer[] randoms = new Integer[100];
 
     public SmallMapFileTestDriver() {
         super("Small Map File Test");
@@ -23,6 +28,13 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
+
+        Random rand = new Random();
+
+        for (int i = 0; i < 100; i++) {
+            randoms[i] = rand.nextInt(1000);
+        }
+
         MID rid = new MID();
         SmallMapFile f = null;
 
@@ -42,9 +54,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             Map m1 = new Map();
             try {
                 m1.setRowLabel("row1");
-                m1.setColumnLabel("col" + i);
-                m1.setTimeStamp(i);
-                m1.setValue(Integer.toString(i));
+                m1.setColumnLabel("col" + randoms[i]);
+                m1.setTimeStamp(randoms[i]);
+                m1.setValue(Integer.toString(randoms[i]));
 
                 f.insertMap(m1);
             } catch (Exception e) {
@@ -81,14 +93,14 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 map = stream.getNext(rid);
 
                 assert map.getRowLabel().equals("row1") : "Got row label " + map.getRowLabel() + " but expected row1";
-                assert map.getColumnLabel().equals("col" + count) : "Got row label " + map.getColumnLabel() + " but expected col" + count;
-                assert map.getTimeStamp() == count : "Got row label " + map.getTimeStamp() + " but expected " + count;
-                assert Integer.parseInt(map.getValue()) == count : "Got value " + map.getValue() + " but expected " + count;
+                assert map.getColumnLabel().equals("col" + randoms[count]) : "Got row label " + map.getColumnLabel() + " but expected col" + randoms[count];
+                assert map.getTimeStamp() == randoms[count] : "Got row label " + map.getTimeStamp() + " but expected " + randoms[count];
+                assert Integer.parseInt(map.getValue()) == randoms[count] : "Got value " + map.getValue() + " but expected " + randoms[count];
 
                 if (map == null)
                     break;
 
-                map.print();
+//                map.print();
                 count++;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -99,6 +111,19 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         stream.closestream();
         assert count == 100 : "Returned records from stream doesnt match insert count!";
+
+        try {
+            f.test();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidSlotNumberException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        }
+
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
         System.out.println ("  Test 1 completed successfully.\n");
@@ -172,9 +197,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 count += 2;
 
                 assert map.getRowLabel().equals("row1") : "Got row label " + map.getRowLabel() + " but expected row1";
-                assert map.getColumnLabel().equals("col" + count) : "Got row label " + map.getColumnLabel() + " but expected col" + count;
-                assert map.getTimeStamp() == count : "Got row label " + map.getTimeStamp() + " but expected " + count;
-                assert Integer.parseInt(map.getValue()) == count : "Got value " + map.getValue() + " but expected " + count;
+                assert map.getColumnLabel().equals("col" + randoms[count]) : "Got row label " + map.getColumnLabel() + " but expected col" + randoms[count];
+                assert map.getTimeStamp() == randoms[count] : "Got row label " + map.getTimeStamp() + " but expected " + randoms[count];
+                assert Integer.parseInt(map.getValue()) == randoms[count] : "Got value " + map.getValue() + " but expected " + randoms[count];
 
                 map = stream.getNext(rid);
             } catch (Exception e) {
@@ -183,6 +208,10 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 return false;
             }
         }
+
+        stream.closestream();
+        assert count == 100 : "*** Record count before deletion does not match!!! Found " + count + " records!";
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
         System.out.println ("  Test 2 completed successfully.\n");
         return true;
@@ -256,9 +285,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 count += 2;
 
                 assert map.getRowLabel().equals("row1") : "Got row label " + map.getRowLabel() + " but expected row1";
-                assert map.getColumnLabel().equals("col" + count) : "Got row label " + map.getColumnLabel() + " but expected col" + count;
-                assert map.getTimeStamp() == count : "Got row label " + map.getTimeStamp() + " but expected " + count;
-                assert Integer.parseInt(map.getValue()) == count * 10 : "Got value " + map.getValue() + " but expected " + count;
+                assert map.getColumnLabel().equals("col" + randoms[count]) : "Got row label " + map.getColumnLabel() + " but expected col" + randoms[count];
+                assert map.getTimeStamp() == randoms[count] : "Got row label " + map.getTimeStamp() + " but expected " + randoms[count];
+                assert Integer.parseInt(map.getValue()) == randoms[count] * 10 : "Got value " + map.getValue() + " but expected " + randoms[count];
 
                 map = stream.getNext(rid);
             } catch (Exception e) {
