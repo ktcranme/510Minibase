@@ -91,6 +91,8 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
                 pinPage(dpinfo.getPageId(), currentDataPage, false);
 
                 System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
+                System.out.println("PREV PAGE IS: " + currentDataPage.getPrevPage().pid);
+                System.out.println("NEXT PAGE IS: " + currentDataPage.getNextPage().pid);
 
                 unpinPage(dpinfo.getPageId(), false);
             }

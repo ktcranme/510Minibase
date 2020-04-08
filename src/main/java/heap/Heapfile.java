@@ -414,7 +414,21 @@ public class Heapfile implements Filetype, GlobalConst {
 					// Start IF02
 					// case (2.1) : add a new data page record into the
 					// current directory page
+					HFPage prevPage = getNewDataPage();
+					PageId prevPageId = new PageId(dpinfo.getPageId().pid);
+
+					if (prevPageId.pid != INVALID_PAGE) {
+						pinPage(prevPageId, prevPage, false);
+					}
+
 					currentDataPage = _newDatapage(dpinfo);
+
+					if (prevPageId.pid != INVALID_PAGE) {
+						currentDataPage.setNextPage(prevPage.getNextPage());
+						prevPage.setNextPage(dpinfo.getPageId());
+						currentDataPage.setPrevPage(prevPageId);
+						unpinPage(prevPageId, true);
+					}
 					// currentDataPage is pinned! and dpinfo->pageId is also locked
 					// in the exclusive mode
 
@@ -612,6 +626,8 @@ public class Heapfile implements Filetype, GlobalConst {
 			// a) it's not the first directory page, and
 			// b) we've removed the last DataPageInfo record on it.
 
+			PageId prevDataPageId = currentDataPage.getPrevPage();
+			PageId nextDataPageId = currentDataPage.getNextPage();
 			// delete empty datapage: (does it get unpinned automatically? -NO, Ranjani)
 			unpinPage(currentDataPageId, false /* undirty */);
 
@@ -621,6 +637,19 @@ public class Heapfile implements Filetype, GlobalConst {
 			// currentDataPageRid points to datapage (from for loop above)
 
 			currentDirPage.deleteRecord(currentDataPageRid);
+
+			HFPage tempPage = getNewDataPage();
+			if (prevDataPageId.pid != INVALID_PAGE) {
+				pinPage(prevDataPageId, tempPage, false);
+				tempPage.setNextPage(nextDataPageId);
+				unpinPage(prevDataPageId, true);
+			}
+
+			if (nextDataPageId.pid != INVALID_PAGE) {
+				pinPage(nextDataPageId, tempPage, false);
+				tempPage.setPrevPage(prevDataPageId);
+				unpinPage(nextDataPageId, true);
+			}
 
 			// ASSERTIONS:
 			// - currentDataPage, currentDataPageId invalid
