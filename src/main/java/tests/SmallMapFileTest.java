@@ -114,14 +114,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         try {
             f.test();
-        } catch (HFBufMgrException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidSlotNumberException e) {
-            e.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            e.printStackTrace();
+            return false;
         }
 
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
@@ -210,6 +205,14 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
 
         stream.closestream();
+
+        try {
+            f.test();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         assert count == 100 : "*** Record count before deletion does not match!!! Found " + count + " records!";
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
@@ -298,6 +301,14 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
 
         stream.closestream();
+
+        try {
+            f.test();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         assert count == 100 : "*** Record count after updating does not match!!! Found " + count / 2 + " records!";
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 

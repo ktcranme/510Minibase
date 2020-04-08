@@ -81,29 +81,21 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
 
         Tuple atuple;
         DataPageInfo dpinfo = new DataPageInfo();
-        while (currentDirPageId.pid != INVALID_PAGE) { // Start While01
-            // look for suitable dpinfo-struct
-            for (currentDataPageRid = currentDirPage.firstRecord();
-                 currentDataPageRid != null;
-                 currentDataPageRid = currentDirPage.nextRecord(currentDataPageRid)) {
-                dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
 
-                pinPage(dpinfo.getPageId(), currentDataPage, false);
+        currentDataPageRid = currentDirPage.firstRecord();
+        dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+        PageId currentDatapageId = dpinfo.getPageId();
 
-                System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
-                System.out.println("PREV PAGE IS: " + currentDataPage.getPrevPage().pid);
-                System.out.println("NEXT PAGE IS: " + currentDataPage.getNextPage().pid);
+        while (currentDatapageId.pid != INVALID_PAGE) {
+            pinPage(currentDatapageId, currentDataPage, false);
 
-                unpinPage(dpinfo.getPageId(), false);
-            }
+            System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
+            System.out.println("PREV PAGE IS: " + currentDataPage.getPrevPage().pid);
+            System.out.println("NEXT PAGE IS: " + currentDataPage.getNextPage().pid);
 
-            nextDirPageId = currentDirPage.getNextPage();
-            unpinPage(currentDirPageId, false);
-            currentDirPageId.pid = nextDirPageId.pid;
-
-            if (nextDirPageId.pid != INVALID_PAGE) {
-                pinPage(currentDirPageId, currentDirPage, false);
-            }
-        } // end of While01
+            PageId nextDatapageId = currentDataPage.getNextPage();
+            unpinPage(currentDatapageId, false);
+            currentDatapageId.pid = nextDatapageId.pid;
+        }
     }
 }
