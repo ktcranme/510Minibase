@@ -59,7 +59,9 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
 
     public MID insertMap(Map tuple) throws InvalidSlotNumberException, InvalidTupleSizeException,
             SpaceNotAvailableException, HFException, HFBufMgrException, HFDiskMgrException, IOException {
-        RID rid = insertRecord(new SmallMap(tuple, this.ignoredPos).getMapByteArray());
+//        RID rid = insertRecord(new SmallMap(tuple, this.ignoredPos).getMapByteArray());
+
+        RID rid = insertMap(new SmallMap(tuple, this.ignoredPos));
         return new MID(rid.pageNo, rid.slotNo);
     }
 
@@ -68,6 +70,112 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
         return new Stream(this);
     }
 
+    /*
+    * dirpage must be pinned.
+    * Returns a new SmallMapPage which is already pinned and must be unpinned by the caller.
+    * */
+    private SmallMapPage makeFirstDataPage(Dirpage dirpage) throws IOException, HFException, HFBufMgrException {
+        PageId newPageId = new PageId();
+        Page apage = _newDatapage(newPageId);
+        SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+        DataPageInfo dpinfo = new DataPageInfo();
+        newPage.setCurPage(newPageId);
+        newPage.setPrevPage(new PageId(-1));
+        newPage.setNextPage(new PageId(-1));
+
+        newPage.init(newPageId, apage);
+
+        dpinfo.getPageId().pid = newPageId.pid;
+        dpinfo.recct = 0;
+        dpinfo.availspace = newPage.available_space();
+
+        Tuple atuple = dpinfo.convertToTuple();
+
+        byte[] tmpData = atuple.getTupleByteArray();
+        RID currentDataPageRid = dirpage.insertRecord(tmpData);
+
+        // need catch error here!
+        if (currentDataPageRid == null)
+            throw new HFException(null, "no space to insert rec.");
+
+        return newPage;
+    }
+
+    /*
+    * Dont make an entry in directory page. Directory page is only for the first datapage.
+    * currentPage is expected to be pinned.
+    * returns a SmallMapPage that is already pinned and must be unpinned by the caller.
+    * */
+    private SmallMapPage makeNextDataPage(SmallMapPage currentPage, PageId currentPageId) throws HFBufMgrException, HFException, IOException {
+        PageId newPageId = new PageId();
+        Page apage = _newDatapage(newPageId);
+        SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+
+        currentPage.setNextPage(newPageId);
+        newPage.setPrevPage(currentPageId);
+        newPage.setCurPage(newPageId);
+        newPage.setNextPage(new PageId(-1));
+
+        newPage.init(newPageId, apage);
+
+        return newPage;
+    }
+
+    private RID insertMap(SmallMap map) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
+        PageId dirPageId = new PageId(_firstDirPageId.pid);
+        Dirpage dirpage = new Dirpage();
+        pinPage(dirPageId, dirpage, false);
+
+        PageId curDataPageId = new PageId();
+        SmallMapPage curDataPage = getNewDataPage();
+
+        PageId nextDataPageId = new PageId();
+        SmallMapPage nextDataPage = getNewDataPage();
+
+        DataPageInfo dpinfo;
+
+        RID currentDataPageRid = dirpage.firstRecord();
+        if (currentDataPageRid == null) {
+            curDataPage = makeFirstDataPage(dirpage);
+            curDataPageId = curDataPage.getCurPage();
+        } else {
+            dpinfo = dirpage.getDatapageInfo(currentDataPageRid);
+            pinPage(dpinfo.getPageId(), curDataPage, false);
+            curDataPageId = dpinfo.getPageId();
+        }
+
+        unpinPage(dirPageId, currentDataPageRid == null);
+
+        // At this point, only curDataPage is pinned
+
+        while (curDataPageId.pid != INVALID_PAGE) {
+            nextDataPageId = curDataPage.getNextPage();
+
+            if (curDataPage.available_space() < HFPage.SIZE_OF_SLOT + SmallMap.map_size) {
+                if (nextDataPageId.pid == INVALID_PAGE) {
+                    // Create a new page
+                    nextDataPage = makeNextDataPage(curDataPage, nextDataPageId);
+                    unpinPage(curDataPageId, true);
+                } else {
+                    unpinPage(curDataPageId, false);
+                    pinPage(nextDataPageId, nextDataPage, false);
+                }
+
+                curDataPage = nextDataPage;
+                curDataPageId = new PageId(nextDataPageId.pid);
+                nextDataPage = getNewDataPage();
+                nextDataPageId = new PageId();
+                continue;
+            }
+
+            break;
+        }
+
+        RID res = curDataPage.insertRecord(map.getMapByteArray());
+        unpinPage(curDataPageId, true);
+
+        return res;
+    }
 
     public void test() throws HFBufMgrException, IOException, InvalidSlotNumberException, InvalidTupleSizeException {
         RID currentDataPageRid = new RID();
@@ -89,8 +197,9 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
         while (currentDatapageId.pid != INVALID_PAGE) {
             pinPage(currentDatapageId, currentDataPage, false);
 
-            System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
             System.out.println("PREV PAGE IS: " + currentDataPage.getPrevPage().pid);
+            currentDataPage.printAllValues();
+            System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
             System.out.println("NEXT PAGE IS: " + currentDataPage.getNextPage().pid);
 
             PageId nextDatapageId = currentDataPage.getNextPage();

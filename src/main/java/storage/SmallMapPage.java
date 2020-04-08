@@ -50,6 +50,39 @@ public class SmallMapPage extends HFPage implements Mapview {
         return maxVal;
     }
 
+    public String getMinVal() throws IOException, InvalidSlotNumberException {
+        String minVal = "";
+        MID mid = firstMap();
+
+        if (mid == null)
+            return minVal;
+
+        SmallMap map = null;
+        map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
+        minVal = map.getValue();
+        mid = nextMap(mid);
+
+        while (mid != null) {
+            map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
+            if (map.getValue().compareTo(minVal) < 0) {
+                minVal = map.getValue();
+            }
+            mid = nextMap(mid);
+        }
+
+        return minVal;
+    }
+
+    public void printAllValues() throws IOException, InvalidSlotNumberException {
+        MID mid = firstMap();
+        SmallMap map = null;
+        while (mid != null) {
+            map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
+            map.print();
+            mid = nextMap(mid);
+        }
+    }
+
     public BigT.Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo));
         return (new SmallMap(rec, 0)).toMap(this.ignoredLabel, this.ignoredPos);

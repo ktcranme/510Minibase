@@ -71,7 +71,7 @@ public class Heapfile implements Filetype, GlobalConst {
 	 * 
 	 * @param dpinfop the information in the new HFPage
 	 */
-	private HFPage _newDatapage(DataPageInfo dpinfop)
+	protected HFPage _newDatapage(DataPageInfo dpinfop)
 			throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
 		Page apage = new Page();
 		PageId pageId = new PageId();
@@ -92,6 +92,18 @@ public class Heapfile implements Filetype, GlobalConst {
 		return hfpage;
 
 	} // end of _newDatapage
+
+	protected Page _newDatapage(PageId newPageId) throws HFException, HFBufMgrException {
+		Page apage = new Page();
+		PageId pageId = new PageId();
+		pageId = newPage(apage, 1);
+
+		if (pageId == null)
+			throw new HFException(null, "can't new pae");
+
+		newPageId.pid = pageId.pid;
+		return apage;
+	}
 
 	/*
 	 * Internal HeapFile function (used in getRecord and updateRecord): returns
