@@ -1,5 +1,6 @@
 package storage;
 
+import BigT.Map;
 import BigT.Mapview;
 import diskmgr.Page;
 import global.Convert;
@@ -11,6 +12,11 @@ import heap.InvalidSlotNumberException;
 import heap.InvalidUpdateException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SmallMapPage extends HFPage implements Mapview {
     String ignoredLabel;
@@ -83,6 +89,29 @@ public class SmallMapPage extends HFPage implements Mapview {
         }
     }
 
+    public void migrateHalf(SmallMapPage page) throws IOException, InvalidSlotNumberException {
+        HashMap<RID, Integer> hmap = new HashMap<RID, Integer>();
+        List<RID> rids = new ArrayList<>();
+        MID mid = firstMap();
+        SmallMap map = null;
+        while (mid != null) {
+            RID rid = new RID(mid.pageNo, mid.slotNo);
+            map = new SmallMap(getRecord(rid), 0);
+            hmap.put(rid, Integer.parseInt(map.getValue()));
+            rids.add(rid);
+            mid = nextMap(mid);
+        }
+
+        List<RID> ridList = rids.stream().sorted((rid1, rid2) -> {
+            return hmap.get(rid2).compareTo(hmap.get(rid1));
+        }).limit(rids.size() / 2).collect(Collectors.toList());
+
+        for (RID rid : ridList) {
+            page.insertRecord(getRecord(rid));
+            deleteRecord(rid);
+        }
+    }
+
     public BigT.Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo));
         return (new SmallMap(rec, 0)).toMap(this.ignoredLabel, this.ignoredPos);
@@ -111,7 +140,7 @@ public class SmallMapPage extends HFPage implements Mapview {
         RID paramrid = new RID();
 
         int slotCnt = Convert.getShortValue(SLOT_CNT, data);
-        if (curMid.slotNo / 3 >= slotCnt) {
+        if (curMid.slotNo >= slotCnt) {
             throw new InvalidSlotNumberException();
         }
 
