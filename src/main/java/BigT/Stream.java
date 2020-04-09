@@ -33,11 +33,6 @@ public class Stream {
     s = new _Stream(f, () -> { return new VMapPage(); });
   }
 
-  public Stream(SmallMapFile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
-          InvalidSlotNumberException, IOException {
-    s = new _Stream(f, () -> { return f.getNewDataPage(); });
-  }
-
   public Stream(Mapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
       InvalidSlotNumberException, IOException {
     s = new _Stream(f, () -> { return new MapPage(); });

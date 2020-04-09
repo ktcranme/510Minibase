@@ -9,7 +9,7 @@ import heap.*;
 
 import java.io.IOException;
 
-public class SmallMapFile extends Heapfile implements Bigtablefile {
+public class SmallMapFile extends Heapfile {
     String ignoredLabel;
     Integer ignoredPos;
 
@@ -65,7 +65,6 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
         return new MID(rid.pageNo, rid.slotNo);
     }
 
-    @Override
     public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
         return new Stream(this);
     }
@@ -190,17 +189,17 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
             if (!pageHasSpace(curDataPage) && !pageHasSpace(nextDataPage)) {
                 // split current page
                 SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
-                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
+//                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
 
                 // his work is done here
                 unpinPage(nextDataPageId, true);
                 // move data from curDatapage to split
                 // HOW??
                 curDataPage.migrateHalf(split);
-                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-                System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
+//                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
+//                System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
 
-                System.out.println("SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
+//                System.out.println("SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
                 // Choose where the new record must go - split or curDataPage
                 RID rid = curDataPage.insertRecord(map.getMapByteArray());
 
@@ -218,22 +217,22 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
 
                     // split current page
                     SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
-                    System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
+//                    System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
                     // his work is done here
                     unpinPage(nextDataPageId, true);
                     // move data from curDatapage to split
                     // HOW??
                     curDataPage.migrateHalf(split);
-                    System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-                    System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
+//                    System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
+//                    System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
 
                     // Choose where the new record must go - split or curDataPage
-                    RID rid = null;
+                    RID rid;
                     if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
-                        System.out.println("AFTER SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
+//                        System.out.println("AFTER SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
                         rid = curDataPage.insertRecord(map.getMapByteArray());
                     } else {
-                        System.out.println("AFTER SPLIT " + split.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + split.getMinVal() + " AND " + split.getMaxVal());
+//                        System.out.println("AFTER SPLIT " + split.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + split.getMinVal() + " AND " + split.getMaxVal());
                         rid = split.insertRecord(map.getMapByteArray());
                     }
 
@@ -247,7 +246,7 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
 
                 // Insert to nextDataPage. This becomes the new minVal
                 unpinPage(curDataPageId, false);
-                System.out.println("CURRPAGE FULL " + nextDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + nextDataPage.getMinVal() + " AND " + nextDataPage.getMaxVal());
+//                System.out.println("CURRPAGE FULL " + nextDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + nextDataPage.getMinVal() + " AND " + nextDataPage.getMaxVal());
 
                 RID rid = nextDataPage.insertRecord(map.getMapByteArray());
                 unpinPage(nextDataPageId, true);
@@ -255,7 +254,7 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
             } else {
                 // Insert to curDataPage.
                 unpinPage(nextDataPageId, false);
-                System.out.println("CURRPAGE NOT FULL " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
+//                System.out.println("CURRPAGE NOT FULL " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
 
                 RID rid = curDataPage.insertRecord(map.getMapByteArray());
                 unpinPage(curDataPageId, true);
@@ -271,10 +270,10 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
             if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
                 // Split
                 nextDataPage = makeNextDataPage(curDataPage, curDataPageId);
-                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + nextDataPage.getCurPage().pid);
+//                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + nextDataPage.getCurPage().pid);
                 curDataPage.migrateHalf(nextDataPage);
-                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-                System.out.println("NEW RANGE FOR " + nextDataPage.getCurPage().pid + ": " + nextDataPage.getMinVal() + " to " + nextDataPage.getMaxVal());
+//                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
+//                System.out.println("NEW RANGE FOR " + nextDataPage.getCurPage().pid + ": " + nextDataPage.getMinVal() + " to " + nextDataPage.getMaxVal());
 
                 if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
                     unpinPage(nextDataPage.getCurPage(), true);
@@ -295,7 +294,7 @@ public class SmallMapFile extends Heapfile implements Bigtablefile {
             }
         }
 
-        System.out.println("END OF THE LINE " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
+//        System.out.println("END OF THE LINE " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
 
         RID rid = curDataPage.insertRecord(map.getMapByteArray());
         unpinPage(curDataPage.getCurPage(), true);
