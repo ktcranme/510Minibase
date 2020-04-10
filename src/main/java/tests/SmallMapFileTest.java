@@ -87,10 +87,11 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-
+        int numRec = 1758;
         Random rand = new Random();
+        Integer[] randoms = new Integer[numRec];
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < numRec; i++) {
             randoms[i] = rand.nextInt(1000);
         }
 
@@ -108,8 +109,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers();
 
-        System.out.println ("  - Insert 100 random records\n");
-        for (int i = 0; i < 100; i++) {
+        System.out.println ("  - Insert " + numRec + " random records\n");
+        for (int i = 0; i < numRec; i++) {
             //fixed length record
             Map m1 = new Map();
             try {
@@ -170,7 +171,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             }
         }
 
-        assert count == 100 : "Returned records from stream doesnt match insert count!";
+        assert count == numRec : "Returned records from stream doesnt match insert count!";
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
         System.out.println ("  Test 1 completed successfully.\n");
