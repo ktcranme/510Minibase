@@ -38,7 +38,7 @@ public class RowJoin implements GlobalConst {
                         String currColumn1 = tempMap1_1.getColumnLabel();
                         String new_row_label = tempMap1.getRowLabel() + ":" + tempMap2.getRowLabel();
 
-                        FileStream fs2_2 = new FileStream(b2.getHf(), FilterParser.parseCombine(String.join("##", currRow1, currColumn1)));
+                        FileStream fs2_2 = new FileStream(b2.getHf(), FilterParser.parseCombine(String.join("##", tempMap2.getRowLabel(), currColumn1)));
                         Map tempMap2_2 = fs2_2.get_next();
                         if (tempMap2_2 == null) {
                             while(tempMap1_1.getColumnLabel().equals(currColumn1)) {
@@ -55,7 +55,7 @@ public class RowJoin implements GlobalConst {
                             }
                         } else {
                             //both rows have the column
-
+                            System.out.println(columnFilter+ "----" +currColumn1);
                             //The column filter matches - only grab latest three
                             if (currColumn1.equals(columnFilter)) {
                                 Map[] maps = new Map[6];
@@ -82,6 +82,7 @@ public class RowJoin implements GlobalConst {
 
                                 Map[] latest = get_three_latest(maps);
                                 for(int i = 0; i < latest.length; i++) {
+                                    if(latest[i]==null) break;
                                     latest[i].setRowLabel(new_row_label);
                                     outB.insertMap(latest[i].getMapByteArray());
                                 }
@@ -110,12 +111,7 @@ public class RowJoin implements GlobalConst {
                         }
                     }
 
-
-
-
-
-
-                    String currRow2 = tempMap1.getRowLabel();
+                    String currRow2 = tempMap2.getRowLabel();
                     FileStream fs2_2 = new FileStream(b2.getHf(), FilterParser.parseSingle(currRow2, 1, AttrType.attrString));
                     Sort s2 = new Sort(attrType, (short) 4, attrSize, fs2_2, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
 
@@ -192,16 +188,14 @@ public class RowJoin implements GlobalConst {
     }
 
     private static Map[] get_three_latest(Map[] maps) throws IOException {
-        for(int k = 0; k < maps.length; k++) {
-            maps[k].print();
-        }
-
 
         int numberToReturn = 3;
-        if(maps.length < 3) numberToReturn = maps.length;
+        System.out.println("len :"+maps.length);
+        if(maps.length <= 3) return maps;
 
         Map[] returnMaps = new Map[maps.length];
         for(int i = 0; i < numberToReturn; i++) {
+            if(maps[i] == null) break;
             int highestTimeStamp = -1;
             int highestIndex = 0;
             for(int j = 0; j < maps.length; j++) {
@@ -215,12 +209,6 @@ public class RowJoin implements GlobalConst {
             returnMaps[i].mapCopy(maps[highestIndex]);
             maps[highestIndex] = null;
         }
-
-
-        for(int k = 0; k < returnMaps.length; k++) {
-            returnMaps[k].print();
-        }
-
         return returnMaps;
     }
 }

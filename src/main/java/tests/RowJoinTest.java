@@ -84,6 +84,7 @@ class RowJoinTestDriver extends TestDriver implements GlobalConst {
             Map tempMap;
             for (CSVRecord csvRecord : csvParser) {
                 if(count<4) {
+                    System.out.println("count:"+count);
                     tempMap = new Map();
                     tempMap.setRowLabel(csvRecord.get(0));
                     tempMap.setColumnLabel(csvRecord.get(1));
@@ -93,7 +94,8 @@ class RowJoinTestDriver extends TestDriver implements GlobalConst {
                     b1.insertMap(tempMap.getMapByteArray());
                     count++;
                 }
-                if(count >= 4) {
+                else if(count >= 4) {
+                    System.out.println("count:"+count);
                     tempMap = new Map();
                     tempMap.setRowLabel(csvRecord.get(0));
                     tempMap.setColumnLabel(csvRecord.get(1));
