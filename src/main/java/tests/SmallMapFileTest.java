@@ -25,47 +25,65 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         return "Small Map File";
     }
 
-//    protected boolean test1() {
-//        Random rand = new Random();
-//        SmallMap[] maps = new SmallMap[100];
-//        SmallMapPage page = new SmallMapPage("row1", 1);
-//        try {
-//            page.init(new PageId(1), new Page(), "row1", 1);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        for (int i = 0; i < 100; i++) {
-//            randoms[i] = rand.nextInt(1000);
-//            try {
-//                SmallMap map = new SmallMap();
-//                map.setValue(Integer.toString(randoms[i]));
-//                map.setTimeStamp(randoms[i]);
-//                map.setLabel("col" + randoms[i]);
-//                maps[i] = map;
-//                RID rid = page.insertRecord(map.getMapByteArray());
-//                if (rid == null)
-//                    break;
+    protected boolean test2() {
+        System.out.println ("\n  Test 2: Insert and sort within a page\n");
+
+        Integer[] randoms = new Integer[26];
+        Random rand = new Random();
+        SmallMapPage page = new SmallMapPage("row1", 1);
+        try {
+            System.out.println ("  - Create a page\n");
+            page.init(new PageId(1), new Page(), "row1", 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        System.out.println ("  - Insert 26 records\n");
+        for (int i = 0; i < 26; i++) {
+            randoms[i] = rand.nextInt(1000);
+            try {
+                SmallMap map = new SmallMap();
+                map.setValue(Integer.toString(randoms[i]));
+                map.setTimeStamp(randoms[i]);
+                map.setLabel("col" + randoms[i]);
+                RID rid = page.insertRecord(map.getMapByteArray());
+
+                // Because we cant insert more than 26 records in a page
+                if (rid == null)
+                    break;
 //                map.print();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                return false;
-//            }
-//        }
-//
-//        System.out.println("-----------------------------------------------------------");
-//
-//        try {
-//            page.sort();
-//            page.printSeq();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        return true;
-//    }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        System.out.println ("  - Verify the sorted order\n");
+        List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+
+        try {
+            page.sort();
+            MID mid = page.firstSorted();
+            int count = 0;
+
+            while (mid != null) {
+                Map map = page.getMap(mid);
+                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Unexpected value found!";
+                mid = page.nextSorted(mid);
+                count++;
+            }
+
+            assert count == 26 : "Count of records did not match insert count!";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        System.out.println ("  Test 2 completed successfully.\n");
+
+        return true;
+    }
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
@@ -90,6 +108,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers();
 
+        System.out.println ("  - Insert 100 random records\n");
         for (int i = 0; i < 100; i++) {
             //fixed length record
             Map m1 = new Map();
@@ -101,15 +120,13 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
                 f.insertMap(m1);
 
-                m1.print();
+//                m1.print();
             } catch (Exception e) {
                 System.err.println ("*** Could not make map");
                 e.printStackTrace();
                 return false;
             }
         }
-
-        System.out.println("--------------------------------------------------------------------");
 
 //        try {
 //            assert f.getRecCnt() == 100 : "*** File reports " + f.getRecCnt() + " records, not " + 100;
@@ -120,7 +137,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 //        }
 
         Stream stream = null;
-        System.out.println ("  - Scan the records just inserted\n");
+        System.out.println ("  - Verify Sorted Stream\n");
 
         try {
             stream = f.openSortedStream();
@@ -141,7 +158,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 if (map == null)
                     break;
 
-                map.print();
+//                map.print();
                 if (Integer.parseInt(map.getValue()) != sorted.get(count)) {
                     throw new Exception("Did not match!");
                 }
