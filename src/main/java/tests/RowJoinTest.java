@@ -50,7 +50,10 @@ class RowJoinTestDriver extends TestDriver implements GlobalConst {
         new File(newdbpath).delete();
 
         //Run the tests. Return type different from C++
-        boolean _pass = runTest1();
+        boolean _pass = runTest2();
+        if(_pass) {
+            _pass = runTest1();
+        }
 
         //Clean up again
         new File(newlogpath).delete();
@@ -83,29 +86,25 @@ class RowJoinTestDriver extends TestDriver implements GlobalConst {
             int count = 0;
             Map tempMap;
             for (CSVRecord csvRecord : csvParser) {
-                if(count<4) {
-                    System.out.println("count:"+count);
+                if(count<9) {
                     tempMap = new Map();
                     tempMap.setRowLabel(csvRecord.get(0));
                     tempMap.setColumnLabel(csvRecord.get(1));
                     tempMap.setTimeStamp(Integer.parseInt(csvRecord.get(3)));
                     tempMap.setValue(csvRecord.get(2));
-                    tempMap.print();
                     b1.insertMap(tempMap.getMapByteArray());
                     count++;
                 }
-                else if(count >= 4) {
-                    System.out.println("count:"+count);
+                else if(count >= 9) {
                     tempMap = new Map();
                     tempMap.setRowLabel(csvRecord.get(0));
                     tempMap.setColumnLabel(csvRecord.get(1));
                     tempMap.setTimeStamp(Integer.parseInt(csvRecord.get(3)));
                     tempMap.setValue(csvRecord.get(2));
-                    tempMap.print();
                     b2.insertMap(tempMap.getMapByteArray());
                     count++;
                 }
-                else if (count >= 15000){
+                if (count >= 100){
                     break;
                 }
             }
@@ -116,6 +115,69 @@ class RowJoinTestDriver extends TestDriver implements GlobalConst {
 
             //bigT outB = RowSort.rowSort(b1,"Mule",100);
             Stream stream = new Stream(outB.getHf());
+            Map stMap;
+            MID m = new MID();
+            while ((stMap=stream.getNext(m))!=null){
+                stMap.print();
+            }
+            stream.closestream();
+            System.out.println("Buffers after Operation : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+            System.out.println("\n------------------------------------------");
+            System.out.println("Testing Done - RowJoin.java");
+            System.out.println("------------------------------------------");
+        } catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean runTest2() {
+        try {
+            System.out.println("---------------------------------");
+            System.out.println("Starting test 2 - RowJoin.java");
+            System.out.println("---------------------------------");
+
+            System.out.println("Creating maps");
+
+            bigT b1 = new bigT("test_rj12", 1);
+            bigT b2 = new bigT("test_rj22", 1);
+            String columnFilter = "Mule";
+
+            Reader reader = new InputStreamReader(new BOMInputStream(BatchInsert.class.getResourceAsStream("/data/project2_testdata.csv")), "UTF-8");
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT);
+            int count = 0;
+            Map tempMap;
+            for (CSVRecord csvRecord : csvParser) {
+                if(count<1000) {
+                    tempMap = new Map();
+                    tempMap.setRowLabel(csvRecord.get(0));
+                    tempMap.setColumnLabel(csvRecord.get(1));
+                    tempMap.setTimeStamp(Integer.parseInt(csvRecord.get(3)));
+                    tempMap.setValue(csvRecord.get(2));
+                    b1.insertMap(tempMap.getMapByteArray());
+                    count++;
+                }
+                else if(count >= 1000) {
+                    tempMap = new Map();
+                    tempMap.setRowLabel(csvRecord.get(0));
+                    tempMap.setColumnLabel(csvRecord.get(1));
+                    tempMap.setTimeStamp(Integer.parseInt(csvRecord.get(3)));
+                    tempMap.setValue(csvRecord.get(2));
+                    b2.insertMap(tempMap.getMapByteArray());
+                    count++;
+                }
+                if (count >= 2000){
+                    break;
+                }
+            }
+            System.out.println("Buffers before Operation : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+
+
+            bigT outB2 = RowJoin.rowJoin(b1, b2, "rowJoinOut2", columnFilter ,200);
+
+            //bigT outB = RowSort.rowSort(b1,"Mule",100);
+            Stream stream = new Stream(outB2.getHf());
             Map stMap;
             MID m = new MID();
             while ((stMap=stream.getNext(m))!=null){

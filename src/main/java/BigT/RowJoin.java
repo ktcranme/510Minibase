@@ -55,7 +55,6 @@ public class RowJoin implements GlobalConst {
                             }
                         } else {
                             //both rows have the column
-                            System.out.println(columnFilter+ "----" +currColumn1);
                             //The column filter matches - only grab latest three
                             if (currColumn1.equals(columnFilter)) {
                                 Map[] maps = new Map[6];
@@ -121,7 +120,7 @@ public class RowJoin implements GlobalConst {
                         String currColumn2 = tempMap2_2.getColumnLabel();
                         String new_row_label = tempMap1.getRowLabel() + ":" + tempMap2.getRowLabel();
 
-                        FileStream fs1_1_1 = new FileStream(b2.getHf(), FilterParser.parseCombine(String.join("##", currRow2, currColumn2)));
+                        FileStream fs1_1_1 = new FileStream(b1.getHf(), FilterParser.parseCombine(String.join("##", tempMap1.getRowLabel(), currColumn2)));
                         Map tempMap1_1_1 = fs1_1_1.get_next();
                         if (tempMap1_1_1 == null) {
                             while(tempMap2_2.getColumnLabel().equals(currColumn2)) {
@@ -190,7 +189,6 @@ public class RowJoin implements GlobalConst {
     private static Map[] get_three_latest(Map[] maps) throws IOException {
 
         int numberToReturn = 3;
-        System.out.println("len :"+maps.length);
         if(maps.length <= 3) return maps;
 
         Map[] returnMaps = new Map[maps.length];
