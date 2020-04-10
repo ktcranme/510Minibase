@@ -65,8 +65,12 @@ public class SmallMapFile extends Heapfile {
         return new MID(rid.pageNo, rid.slotNo);
     }
 
-    public Stream openStream() throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
+    public Stream openStream() throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
         return new Stream(this);
+    }
+
+    public Stream openSortedStream() throws IOException, HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException {
+        return new Stream(this, true);
     }
 
     /*

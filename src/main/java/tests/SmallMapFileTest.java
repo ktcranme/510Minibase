@@ -123,7 +123,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         System.out.println ("  - Scan the records just inserted\n");
 
         try {
-            stream = f.openStream();
+            stream = f.openSortedStream();
         } catch (Exception e) {
             System.err.println ("*** Error opening scan\n");
             e.printStackTrace();

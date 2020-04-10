@@ -18,8 +18,14 @@ public class Stream {
     private MID nextMapId;
     private SmallMapPage currentDataPage;
     private SmallMapFile file;
+    private Boolean sorted;
 
-    public Stream(SmallMapFile file) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+    public Stream(SmallMapFile file, Boolean sorted) throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
+        this.sorted = sorted;
+        init(file);
+    }
+
+    private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
         Dirpage currentDirPage = new Dirpage();
         PageId currentDirPageId = new PageId(file.getFirstDirPageId().pid);
         pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
@@ -36,17 +42,18 @@ public class Stream {
             this.currentDataPage = file.getNewDataPage();
             pinPage(currentDatapageId, this.currentDataPage, false);
             unpinPage(currentDirPageId, false);
-//            this.currentDataPage.printAllValues();
-//            System.out.println("--------------------------------------------------------------------");
-//            this.currentDataPage.printSeq();
-//            System.out.println("--------------------------------------------------------------------");
-            this.currentDataPage.sort();
-//            this.currentDataPage.printSeq();
-//            System.out.println("--------------------------------------------------------------------");
-//            this.currentDataPage.printAllValues();
-//            System.out.println("--------------------------------------------------------------------");
-            this.nextMapId = this.currentDataPage.firstSorted();
+
+            if (this.sorted) {
+                this.currentDataPage.sort();
+                this.nextMapId = this.currentDataPage.firstSorted();
+            } else {
+                this.nextMapId = this.currentDataPage.firstMap();
+            }
         }
+    }
+
+    public Stream(SmallMapFile file) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+        init(file);
     }
 
     private void pinPage(PageId pageno, Page page, boolean emptyPage) throws HFBufMgrException {
@@ -78,8 +85,12 @@ public class Stream {
 
             if (nextPage.pid != -1) {
                 pinPage(nextPage, this.currentDataPage, false);
-                this.currentDataPage.sort();
-                this.nextMapId = this.currentDataPage.firstSorted();
+                if (this.sorted) {
+                    this.currentDataPage.sort();
+                    this.nextMapId = this.currentDataPage.firstSorted();
+                } else {
+                    this.nextMapId = this.currentDataPage.firstMap();
+                }
             } else {
                 this.currentDataPage = null;
                 return null;
@@ -87,7 +98,11 @@ public class Stream {
         }
 
         Map map = this.currentDataPage.getMap(this.nextMapId);
-        this.nextMapId = this.currentDataPage.nextSorted(this.nextMapId);
+
+        if (this.sorted)
+            this.nextMapId = this.currentDataPage.nextSorted(this.nextMapId);
+        else
+            this.nextMapId = this.currentDataPage.nextMap(this.nextMapId);
 
         return map;
     }
