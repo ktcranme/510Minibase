@@ -173,6 +173,7 @@ public class SmallMapFile extends Heapfile {
 
         // At this point, only curDataPage is pinned
         nextDataPageId = new PageId(curDataPage.getNextPage().pid);
+
         while (nextDataPageId.pid != INVALID_PAGE) {
             pinPage(nextDataPageId, nextDataPage, false);
 
@@ -193,20 +194,17 @@ public class SmallMapFile extends Heapfile {
             if (!pageHasSpace(curDataPage) && !pageHasSpace(nextDataPage)) {
                 // split current page
                 SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
-//                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
-
                 // his work is done here
                 unpinPage(nextDataPageId, true);
                 // move data from curDatapage to split
-                // HOW??
                 curDataPage.migrateHalf(split);
-//                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-//                System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
-
-//                System.out.println("SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
                 // Choose where the new record must go - split or curDataPage
-                RID rid = curDataPage.insertRecord(map.getMapByteArray());
-
+                RID rid;
+                if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+                    rid = curDataPage.insertRecord(map.getMapByteArray());
+                } else {
+                    rid = split.insertRecord(map.getMapByteArray());
+                }
                 unpinPage(curDataPageId, true);
                 try {
                     unpinPage(split.getCurPage(), true);
@@ -221,22 +219,15 @@ public class SmallMapFile extends Heapfile {
 
                     // split current page
                     SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
-//                    System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + split.getCurPage().pid);
                     // his work is done here
                     unpinPage(nextDataPageId, true);
                     // move data from curDatapage to split
-                    // HOW??
                     curDataPage.migrateHalf(split);
-//                    System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-//                    System.out.println("NEW RANGE FOR " + split.getCurPage().pid + ": " + split.getMinVal() + " to " + split.getMaxVal());
-
                     // Choose where the new record must go - split or curDataPage
                     RID rid;
                     if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
-//                        System.out.println("AFTER SPLIT " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
                         rid = curDataPage.insertRecord(map.getMapByteArray());
                     } else {
-//                        System.out.println("AFTER SPLIT " + split.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + split.getMinVal() + " AND " + split.getMaxVal());
                         rid = split.insertRecord(map.getMapByteArray());
                     }
 
@@ -245,21 +236,16 @@ public class SmallMapFile extends Heapfile {
 
                     return rid;
 
-
                 }
 
                 // Insert to nextDataPage. This becomes the new minVal
                 unpinPage(curDataPageId, false);
-//                System.out.println("CURRPAGE FULL " + nextDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + nextDataPage.getMinVal() + " AND " + nextDataPage.getMaxVal());
-
                 RID rid = nextDataPage.insertRecord(map.getMapByteArray());
                 unpinPage(nextDataPageId, true);
                 return rid;
             } else {
                 // Insert to curDataPage.
                 unpinPage(nextDataPageId, false);
-//                System.out.println("CURRPAGE NOT FULL " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
-
                 RID rid = curDataPage.insertRecord(map.getMapByteArray());
                 unpinPage(curDataPageId, true);
 
@@ -274,11 +260,7 @@ public class SmallMapFile extends Heapfile {
             if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
                 // Split
                 nextDataPage = makeNextDataPage(curDataPage, curDataPageId);
-//                System.out.println("Splitting page " + curDataPage.getCurPage().pid + " to get " + curDataPage.getCurPage().pid + " and " + nextDataPage.getCurPage().pid);
                 curDataPage.migrateHalf(nextDataPage);
-//                System.out.println("NEW RANGE FOR " + curDataPage.getCurPage().pid + ": " + curDataPage.getMinVal() + " to " + curDataPage.getMaxVal());
-//                System.out.println("NEW RANGE FOR " + nextDataPage.getCurPage().pid + ": " + nextDataPage.getMinVal() + " to " + nextDataPage.getMaxVal());
-
                 if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
                     unpinPage(nextDataPage.getCurPage(), true);
                 } else {
@@ -298,42 +280,8 @@ public class SmallMapFile extends Heapfile {
             }
         }
 
-//        System.out.println("END OF THE LINE " + curDataPage.getCurPage().pid + ": Inserting " + map.getValue() + " In range " + curDataPage.getMinVal() + " AND " + curDataPage.getMaxVal());
-
         RID rid = curDataPage.insertRecord(map.getMapByteArray());
         unpinPage(curDataPage.getCurPage(), true);
         return rid;
-    }
-
-    public void test() throws HFBufMgrException, IOException, InvalidSlotNumberException, InvalidTupleSizeException {
-        RID currentDataPageRid = new RID();
-        Dirpage currentDirPage = new Dirpage();
-        SmallMapPage currentDataPage = getNewDataPage();
-
-        PageId currentDirPageId = new PageId(_firstDirPageId.pid);
-        PageId nextDirPageId = new PageId(); // OK
-
-        pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
-
-        Tuple atuple;
-        DataPageInfo dpinfo = new DataPageInfo();
-
-        currentDataPageRid = currentDirPage.firstRecord();
-        dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
-        PageId currentDatapageId = dpinfo.getPageId();
-
-        while (currentDatapageId.pid != INVALID_PAGE) {
-            pinPage(currentDatapageId, currentDataPage, false);
-
-            System.out.println("PREV PAGE IS: " + currentDataPage.getPrevPage().pid);
-            System.out.println("MIN VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMinVal());
-//            currentDataPage.printAllValues();
-            System.out.println("MAX VALUE IN PAGE: " + dpinfo.getPageId().pid + " IS: " + currentDataPage.getMaxVal());
-            System.out.println("NEXT PAGE IS: " + currentDataPage.getNextPage().pid);
-
-            PageId nextDatapageId = currentDataPage.getNextPage();
-            unpinPage(currentDatapageId, false);
-            currentDatapageId.pid = nextDatapageId.pid;
-        }
     }
 }
