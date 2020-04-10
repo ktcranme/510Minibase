@@ -1,6 +1,5 @@
 package storage;
 
-import BigT.Map;
 import BigT.Mapview;
 import diskmgr.Page;
 import global.Convert;
@@ -16,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SmallMapPage extends HFPage implements Mapview {
     String ignoredLabel;
@@ -38,6 +36,56 @@ public class SmallMapPage extends HFPage implements Mapview {
         super.init(pageNo, apage);
         this.ignoredLabel = ignoredLabel;
         this.ignoredPos = ignoredPos;
+    }
+
+    public void printSeq() throws IOException {
+        short start = MAX_SPACE;
+        short slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+        for (short i = 0; i < slotCnt; i++) {
+            SmallMap map = new SmallMap(data, start - (i + 1) * SmallMap.map_size);
+            map.print();
+        }
+    }
+
+    // Expects all the elements to be tightly packed
+    public void sort() throws IOException {
+        short start = MAX_SPACE;
+        short slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+        HashMap<Short, Short> offsetToSlot = new HashMap<>();
+        for (short i = 0; i < slotCnt; i++) {
+            offsetToSlot.put(getSlotOffset(i), i);
+        }
+
+        for (short i = 1; i < slotCnt; i++) {
+            SmallMap map = new SmallMap(data, start - (i + 1) * SmallMap.map_size);
+            String key = map.getValue();
+            int j = i - 1;
+
+            while (j >= 0 && new SmallMap(data, start - (j + 1) * SmallMap.map_size).getValue().compareTo(key) > 0) {
+                byte[] temp = new byte[SmallMap.map_size];
+                short slotOffsetDest = (short) (start - (j + 2) * SmallMap.map_size);
+                short slotOffsetSrc  = (short) (start - (j + 1) * SmallMap.map_size);
+                short slotDest = offsetToSlot.remove(slotOffsetDest);
+                short slotSrc  = offsetToSlot.remove(slotOffsetSrc);
+
+                offsetToSlot.put(slotOffsetSrc, slotDest);
+                offsetToSlot.put(slotOffsetDest, slotSrc);
+
+                System.arraycopy(data, slotOffsetDest, temp, 0, SmallMap.map_size);
+                System.arraycopy(data, slotOffsetSrc, data, slotOffsetDest, SmallMap.map_size);
+                System.arraycopy(temp, 0, data, slotOffsetSrc, SmallMap.map_size);
+
+                setSlot(slotDest, SmallMap.map_size, slotOffsetSrc);
+                setSlot(slotSrc, SmallMap.map_size, slotOffsetDest);
+
+                j = j - 1;
+            }
+
+            byte[] temp = map.getMapByteArray();
+            System.arraycopy(data, start - (j + 2) * SmallMap.map_size, temp, 0, SmallMap.map_size);
+        }
     }
 
     public String getMaxVal() throws IOException, InvalidSlotNumberException {
