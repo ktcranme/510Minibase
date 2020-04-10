@@ -34,10 +34,18 @@ public class Stream {
             PageId currentDatapageId = dpinfo.getPageId();
 
             this.currentDataPage = file.getNewDataPage();
-            pinPage(currentDatapageId, currentDataPage, false);
+            pinPage(currentDatapageId, this.currentDataPage, false);
             unpinPage(currentDirPageId, false);
-
-            this.nextMapId = currentDataPage.firstMap();
+//            this.currentDataPage.printAllValues();
+//            System.out.println("--------------------------------------------------------------------");
+//            this.currentDataPage.printSeq();
+//            System.out.println("--------------------------------------------------------------------");
+            this.currentDataPage.sort();
+//            this.currentDataPage.printSeq();
+//            System.out.println("--------------------------------------------------------------------");
+//            this.currentDataPage.printAllValues();
+//            System.out.println("--------------------------------------------------------------------");
+            this.nextMapId = this.currentDataPage.firstSorted();
         }
     }
 
@@ -70,7 +78,8 @@ public class Stream {
 
             if (nextPage.pid != -1) {
                 pinPage(nextPage, this.currentDataPage, false);
-                this.nextMapId = this.currentDataPage.firstMap();
+                this.currentDataPage.sort();
+                this.nextMapId = this.currentDataPage.firstSorted();
             } else {
                 this.currentDataPage = null;
                 return null;
@@ -78,7 +87,7 @@ public class Stream {
         }
 
         Map map = this.currentDataPage.getMap(this.nextMapId);
-        this.nextMapId = this.currentDataPage.nextMap(this.nextMapId);
+        this.nextMapId = this.currentDataPage.nextSorted(this.nextMapId);
 
         return map;
     }

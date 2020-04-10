@@ -58,8 +58,11 @@ public class SmallMapPage extends HFPage implements Mapview {
         HashMap<Short, Short> offsetToSlot = new HashMap<>();
         for (short i = 0; i < totalSlots; i++) {
             short length = getSlotLength(i);
-            if (length != EMPTY_SLOT)
+            if (length == SmallMap.map_size)
                 offsetToSlot.put(getSlotOffset(i), i);
+            else {
+                offsetToSlot.put(getSlotOffset(i), (short) -1);
+            }
         }
 
         for (short i = 1; i < slotCnt; i++) {
@@ -71,6 +74,9 @@ public class SmallMapPage extends HFPage implements Mapview {
                 byte[] temp = new byte[SmallMap.map_size];
                 short slotOffsetDest = (short) (start - (j + 2) * SmallMap.map_size);
                 short slotOffsetSrc  = (short) (start - (j + 1) * SmallMap.map_size);
+
+                if (!offsetToSlot.containsKey(slotOffsetSrc) || offsetToSlot.get(slotOffsetSrc) == -1)
+                    continue;
 
                 if (!offsetToSlot.containsKey(slotOffsetDest) ||!offsetToSlot.containsKey(slotOffsetSrc) ) {
                     System.out.println("TEST");
@@ -190,6 +196,40 @@ public class SmallMapPage extends HFPage implements Mapview {
         mid.pageNo = rid.pageNo;
         mid.slotNo = rid.slotNo;
         return mid;
+    }
+
+    public MID firstSorted() throws IOException, InvalidSlotNumberException {
+        MID mid = new MID();
+        mid.pageNo.pid = Convert.getIntValue(CUR_PAGE, data);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+        short start = MAX_SPACE - SmallMap.map_size;
+
+        for (int i = 0; i < slotCnt; i++) {
+            if (getSlotOffset(i) == start) {
+                mid.slotNo = i;
+                return mid;
+            }
+        }
+
+        throw new InvalidSlotNumberException();
+    }
+
+    public MID nextSorted(MID prevMid) throws IOException, InvalidSlotNumberException {
+        MID mid = new MID();
+        mid.pageNo.pid = Convert.getIntValue(CUR_PAGE, data);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+        short curOffset = getSlotOffset(prevMid.slotNo);
+        short nextOffset = (short) (curOffset - SmallMap.map_size);
+
+        for (int i = 0; i < slotCnt; i++) {
+            if (getSlotOffset(i) == nextOffset) {
+                mid.slotNo = i;
+                return mid;
+            }
+        }
+
+//        throw new InvalidSlotNumberException();
+        return null;
     }
 
     public MID nextMap(MID curMid) throws IOException, InvalidSlotNumberException {
