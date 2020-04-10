@@ -4,7 +4,6 @@ import driver.FilterParser;
 import global.AttrType;
 import global.GlobalConst;
 import global.TupleOrder;
-import org.w3c.dom.Attr;
 
 import java.io.IOException;
 
@@ -20,7 +19,7 @@ public class RowJoin implements GlobalConst {
         FileStream fs1 = new FileStream(b1.getHf(), FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
         LatestVersion lv1 = new LatestVersion(fs1,num_pages);
 
-        Map tempMap1, tempWriteMap1;
+        Map tempMap1;
         while ((tempMap1 = lv1.get_next())!=null){
             FileStream fs2 = new FileStream(b2.getHf(), FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
             LatestVersion lv2 = new LatestVersion(fs2,num_pages);
