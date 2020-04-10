@@ -51,11 +51,15 @@ public class SmallMapPage extends HFPage implements Mapview {
     // Expects all the elements to be tightly packed
     public void sort() throws IOException {
         short start = MAX_SPACE;
-        short slotCnt = Convert.getShortValue(SLOT_CNT, data);
+        short totalSlots = Convert.getShortValue(SLOT_CNT, data);
+        short usedPtr = Convert.getShortValue(USED_PTR, data);
+        short slotCnt = (short) ((start - usedPtr) / SmallMap.map_size);
 
         HashMap<Short, Short> offsetToSlot = new HashMap<>();
-        for (short i = 0; i < slotCnt; i++) {
-            offsetToSlot.put(getSlotOffset(i), i);
+        for (short i = 0; i < totalSlots; i++) {
+            short length = getSlotLength(i);
+            if (length != EMPTY_SLOT)
+                offsetToSlot.put(getSlotOffset(i), i);
         }
 
         for (short i = 1; i < slotCnt; i++) {
@@ -67,6 +71,11 @@ public class SmallMapPage extends HFPage implements Mapview {
                 byte[] temp = new byte[SmallMap.map_size];
                 short slotOffsetDest = (short) (start - (j + 2) * SmallMap.map_size);
                 short slotOffsetSrc  = (short) (start - (j + 1) * SmallMap.map_size);
+
+                if (!offsetToSlot.containsKey(slotOffsetDest) ||!offsetToSlot.containsKey(slotOffsetSrc) ) {
+                    System.out.println("TEST");
+                }
+
                 short slotDest = offsetToSlot.remove(slotOffsetDest);
                 short slotSrc  = offsetToSlot.remove(slotOffsetSrc);
 
