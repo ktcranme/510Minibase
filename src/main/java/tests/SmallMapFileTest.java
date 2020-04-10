@@ -1,7 +1,10 @@
 package tests;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import BigT.Map;
 import diskmgr.Page;
@@ -127,6 +130,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
+        List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+
         Map map = new Map();
         int count = 0;
         while (map != null) {
@@ -137,6 +142,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                     break;
 
                 map.print();
+                if (Integer.parseInt(map.getValue()) != sorted.get(count)) {
+                    throw new Exception("Did not match!");
+                }
 
                 count++;
             } catch (Exception e) {
