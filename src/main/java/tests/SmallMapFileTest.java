@@ -27,20 +27,21 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test2() {
         System.out.println ("\n  Test 2: Insert and sort within a page\n");
+        Integer numRecsInPage = 25;
 
-        Integer[] randoms = new Integer[26];
+        Integer[] randoms = new Integer[numRecsInPage];
         Random rand = new Random();
-        SmallMapPage page = new SmallMapPage(1);
+        SmallMapPage page = new SmallMapPage(MAXROWLABELSIZE);
         try {
             System.out.println ("  - Create a page\n");
-            page.init(new PageId(1), new Page(), 1, "row1");
+            page.init(new PageId(1), new Page(), MAXROWLABELSIZE, "row1");
         } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
 
-        System.out.println ("  - Insert 26 records\n");
-        for (int i = 0; i < 26; i++) {
+        System.out.println ("  - Insert " + numRecsInPage + " records\n");
+        for (int i = 0; i < numRecsInPage; i++) {
             randoms[i] = rand.nextInt(1000);
             try {
                 SmallMap map = new SmallMap();
@@ -49,7 +50,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 map.setLabel("col" + randoms[i]);
                 RID rid = page.insertRecord(map.getMapByteArray());
 
-                // Because we cant insert more than 26 records in a page
+                // Because we cant insert more than numRecsInPage records in a page
                 if (rid == null)
                     break;
 //                map.print();
@@ -74,7 +75,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 count++;
             }
 
-            assert count == 26 : "Count of records did not match insert count!";
+            assert count == numRecsInPage : "Count of records did not match insert count!";
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -100,7 +101,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         System.out.println ("  - Create a heap file\n");
         try {
-            f = new SmallMapFile("file_1", 1, 1, MAXROWLABELSIZE);
+            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
         } catch (Exception e) {
             System.err.println ("*** Could not create heap file\n");
             e.printStackTrace();
@@ -151,7 +152,12 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 if (map == null)
                     break;
                 map.print();
-                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Did not match!";
+
+                if (Integer.parseInt(map.getValue()) != sorted.get(count)) {
+                    System.out.println("TEST");
+                }
+
+                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Expected value " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
                 count++;
             } catch (Exception e) {
                 e.printStackTrace();

@@ -38,12 +38,98 @@ public class SmallMapPage extends HFPage {
         return Convert.getStrValue(IGNORED_LABEL, data, this.pkLength);
     }
 
+    @Override
+    public void deleteRecord(RID rid) throws IOException, InvalidSlotNumberException {
+        int slotNo = rid.slotNo;
+        short recLen = getSlotLength(slotNo);
+        short slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+        // first check if the record being deleted is actually valid
+        if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0)) {
+            // The records always need to be compacted, as they are
+            // not necessarily stored on the page in the order that
+            // they are listed in the slot index.
+
+            // offset of record being deleted
+            int offset = getSlotOffset(slotNo);
+            short usedPtr = Convert.getShortValue(USED_PTR, data);
+            int newSpot = usedPtr + recLen;
+            int size = offset - usedPtr;
+
+            // shift bytes to the right
+            System.arraycopy(data, usedPtr, data, newSpot, size);
+
+            // now need to adjust offsets of all valid slots that refer
+            // to the left of the record being removed. (by the size of the hole)
+
+            int i, n, chkoffset;
+            for (i = 0, n = this.DPFIXED; i < slotCnt; n += SIZE_OF_SLOT, i++) {
+                if ((getSlotLength(i) >= 0)) {
+                    chkoffset = getSlotOffset(i);
+                    if (chkoffset < offset) {
+                        chkoffset += recLen;
+                        Convert.setShortValue((short) chkoffset, n + 2, data);
+                    }
+                }
+            }
+
+            // move used Ptr forwar
+            usedPtr += recLen;
+            Convert.setShortValue(usedPtr, USED_PTR, data);
+
+            // increase freespace by size of hole
+            short freeSpace = Convert.getShortValue(FREE_SPACE, data);
+            freeSpace += recLen;
+            Convert.setShortValue(freeSpace, FREE_SPACE, data);
+
+            setSlot(slotNo, EMPTY_SLOT, 0); // mark slot free
+        } else {
+            throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
+        }
+    }
+
+    @Override
+    public void init(PageId pageNo, Page apage) throws IOException {
+        throw new IOException("Dont call this!");
+    }
+
+    @Override
+    public short getSlotOffset(int slotno) throws IOException {
+        int position = this.DPFIXED + slotno * SIZE_OF_SLOT;
+        short val = Convert.getShortValue(position + 2, data);
+        return val;
+    }
+
+    @Override
+    public short getSlotLength(int slotno) throws IOException {
+        int position = this.DPFIXED + slotno * SIZE_OF_SLOT;
+        short val = Convert.getShortValue(position, data);
+        return val;
+    }
+
+    @Override
+    public void setSlot(int slotno, int length, int offset) throws IOException {
+        int position = this.DPFIXED + slotno * SIZE_OF_SLOT;
+        Convert.setShortValue((short) length, position, data);
+        Convert.setShortValue((short) offset, position + 2, data);
+    }
+
     public void init(PageId pageNo, Page apage, Integer pkLength, String primary) throws IOException {
-        super.init(pageNo, apage);
+        data = apage.getpage();
+        Convert.setShortValue((short) 0, SLOT_CNT, data);
+
         this.pkLength = pkLength;
         Convert.setStrValue (primary, IGNORED_LABEL, data);
-        short freeSpace = (short) (MAX_SPACE - this.DPFIXED);
-        Convert.setShortValue(freeSpace, FREE_SPACE, data);
+
+        curPage.pid = pageNo.pid;
+        Convert.setIntValue(curPage.pid, CUR_PAGE, data);
+
+        Convert.setIntValue(INVALID_PAGE, PREV_PAGE, data);
+        Convert.setIntValue(INVALID_PAGE, NEXT_PAGE, data);
+
+        Convert.setShortValue((short) MAX_SPACE, USED_PTR, data);
+
+        Convert.setShortValue((short) (MAX_SPACE - this.DPFIXED), FREE_SPACE, data);
     }
 
     public void printSeq() throws IOException {
