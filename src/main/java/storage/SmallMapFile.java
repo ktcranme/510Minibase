@@ -335,4 +335,26 @@ public class SmallMapFile extends Heapfile {
 
         return answer;
     } // end of getRecCnt
+
+    public SmallMapPage getFirstDataPage() throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+        SmallDirpage currentDirPage = new SmallDirpage();
+        PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+        pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
+
+        SmallMapPage currentDataPage;
+
+        RID currentDataPageRid = currentDirPage.firstRecord();
+        if (currentDataPageRid == null) {
+            return null;
+        } else {
+            SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+            PageId currentDatapageId = dpinfo.getPageId();
+
+            currentDataPage = getNewDataPage();
+            pinPage(currentDatapageId, currentDataPage, false);
+            unpinPage(currentDirPageId, false);
+        }
+
+        return currentDataPage;
+    }
 }

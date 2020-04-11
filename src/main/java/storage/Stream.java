@@ -26,23 +26,11 @@ public class Stream {
     }
 
     private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
-        SmallDirpage currentDirPage = new SmallDirpage();
-        PageId currentDirPageId = new PageId(file.getFirstDirPageId().pid);
-        pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
-
         this.file = file;
-        RID currentDataPageRid = currentDirPage.firstRecord();
-        if (currentDataPageRid == null) {
-            this.currentDataPage = null;
+        this.currentDataPage = file.getFirstDataPage();
+        if (this.currentDataPage == null) {
             this.nextMapId = null;
         } else {
-            SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid, file.ignoredLabel, file.ignoredLabel.length() * 2);
-            PageId currentDatapageId = dpinfo.getPageId();
-
-            this.currentDataPage = file.getNewDataPage();
-            pinPage(currentDatapageId, this.currentDataPage, false);
-            unpinPage(currentDirPageId, false);
-
             if (this.sorted) {
                 this.currentDataPage.sort(file.secondaryKey);
                 this.nextMapId = this.currentDataPage.firstSorted();
