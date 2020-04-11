@@ -66,22 +66,22 @@ public class SmallMapFile extends Heapfile {
     public MID insertMap(Map tuple) throws InvalidSlotNumberException, InvalidTupleSizeException,
             HFException, HFBufMgrException, HFDiskMgrException, IOException {
         PageId dirPageId = new PageId(_firstDirPageId.pid);
-        Dirpage dirpage = new Dirpage();
+        SmallDirpage dirpage = new SmallDirpage();
         pinPage(dirPageId, dirpage, false);
 
         PageId curDataPageId = new PageId();
         SmallMapPage curDataPage = getNewDataPage();
 
-        DataPageInfo dpinfo = new DataPageInfo();
+        SmallDataPageInfo dpinfo;
 
         RID currentDataPageRid = dirpage.firstRecord();
         if (currentDataPageRid == null) {
-            curDataPage = makeFirstDataPage(dirpage, dpinfo);
+            curDataPage = makeFirstDataPage(dirpage);
             curDataPageId.pid = curDataPage.getCurPage().pid;
             currentDataPageRid = dirpage.firstRecord();
-            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid);
+            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
         } else {
-            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid);
+            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
             pinPage(dpinfo.getPageId(), curDataPage, false);
             curDataPageId.pid = dpinfo.getPageId().pid;
         }
@@ -107,7 +107,7 @@ public class SmallMapFile extends Heapfile {
     * dirpage must be pinned.
     * Returns a new SmallMapPage which is already pinned and must be unpinned by the caller.
     * */
-    private SmallMapPage makeFirstDataPage(Dirpage dirpage, DataPageInfo dpinfo) throws IOException, HFException, HFBufMgrException {
+    private SmallMapPage makeFirstDataPage(Dirpage dirpage) throws IOException, HFException, HFBufMgrException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
@@ -118,10 +118,9 @@ public class SmallMapFile extends Heapfile {
         newPage.setPrevPage(new PageId(-1));
         newPage.setNextPage(new PageId(-1));
 
-
+        SmallDataPageInfo dpinfo = new SmallDataPageInfo(this.ignoredLabel, this.ignoredLabel.length() * 2);
         dpinfo.getPageId().pid = newPageId.pid;
         dpinfo.recct = 0;
-        dpinfo.availspace = newPage.available_space();
 
         Tuple atuple = dpinfo.convertToTuple();
 
@@ -295,4 +294,45 @@ public class SmallMapFile extends Heapfile {
         unpinPage(curDataPage.getCurPage(), true);
         return rid;
     }
+
+
+    public int getRecCnt() throws InvalidSlotNumberException, InvalidTupleSizeException, HFDiskMgrException,
+            HFBufMgrException, IOException
+
+    {
+        int answer = 0;
+        PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+
+        PageId nextDirPageId = new PageId(0);
+
+        SmallDirpage currentDirPage = new SmallDirpage();
+
+        while (currentDirPageId.pid != INVALID_PAGE) {
+            pinPage(currentDirPageId, currentDirPage, false);
+
+            RID rid = new RID();
+            Tuple atuple;
+            for (rid = currentDirPage.firstRecord(); rid != null; // rid==NULL means no more record
+                 rid = currentDirPage.nextRecord(rid)) {
+                SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(rid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+
+                answer += dpinfo.recct;
+            }
+
+            // ASSERTIONS: no more record
+            // - we have read all datapage records on
+            // the current directory page.
+
+            nextDirPageId = currentDirPage.getNextPage();
+            unpinPage(currentDirPageId, false /* undirty */);
+            currentDirPageId.pid = nextDirPageId.pid;
+        }
+
+        // ASSERTIONS:
+        // - if error, exceptions
+        // - if end of heapfile reached: currentDirPageId == INVALID_PAGE
+        // - if not yet end of heapfile: currentDirPageId valid
+
+        return answer;
+    } // end of getRecCnt
 }

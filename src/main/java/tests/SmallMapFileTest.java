@@ -87,7 +87,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-        int numRec = 100;
+        int numRec = 1500;
         Random rand = new Random();
         Integer[] randoms = new Integer[numRec];
 

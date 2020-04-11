@@ -26,7 +26,7 @@ public class Stream {
     }
 
     private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
-        Dirpage currentDirPage = new Dirpage();
+        SmallDirpage currentDirPage = new SmallDirpage();
         PageId currentDirPageId = new PageId(file.getFirstDirPageId().pid);
         pinPage(currentDirPageId, currentDirPage, false/* Rdisk */);
 
@@ -36,7 +36,7 @@ public class Stream {
             this.currentDataPage = null;
             this.nextMapId = null;
         } else {
-            DataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid);
+            SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid, file.ignoredLabel, file.ignoredLabel.length() * 2);
             PageId currentDatapageId = dpinfo.getPageId();
 
             this.currentDataPage = file.getNewDataPage();
