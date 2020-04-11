@@ -57,17 +57,40 @@ public class SmallMapFile extends Heapfile {
         return bigMap;
     }
 
-    public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
-            InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
-        if (updateRecord(new RID(rid.pageNo, rid.slotNo), new SmallMap(newtuple, this.primaryKey).getMapByteArray())) {
-            return rid;
-        }
-        return null;
-    }
+//    public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
+//            InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
+//
+//        SmallMapPage dataPage = getNewDataPage();
+//        pinPage(rid.pageNo, dataPage, false);
+//        dataPage.updateRecord(new RID(rid.pageNo, rid.slotNo), new SmallMap(newtuple, this.primaryKey).getMapByteArray());
+//        unpinPage(rid.pageNo, true);
+//
+//        return rid;
+//    }
 
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {
-        return deleteRecord(new RID(rid.pageNo, rid.slotNo));
+
+        SmallMapPage dataPage = getNewDataPage();
+        pinPage(rid.pageNo, dataPage, false);
+        dataPage.deleteRecord(new RID(rid.pageNo, rid.slotNo));
+        unpinPage(rid.pageNo, true);
+
+        // This is assuming we have only one record in dirpage
+        // Must change this later when we have a record for every primary
+        PageId dirPageId = new PageId(_firstDirPageId.pid);
+        SmallDirpage dirpage = new SmallDirpage();
+        pinPage(dirPageId, dirpage, false);
+        SmallDataPageInfo dpinfo;
+
+        RID currentDataPageRid = dirpage.firstRecord();
+        dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
+
+        dpinfo.recct--;
+        dpinfo.flushToTuple();
+        unpinPage(dirPageId, true);
+
+        return true;
     }
 
     public MID insertMap(Map tuple) throws InvalidSlotNumberException, InvalidTupleSizeException,

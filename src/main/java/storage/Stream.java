@@ -86,6 +86,8 @@ public class Stream {
         }
 
         Map map = this.currentDataPage.getMap(this.nextMapId, file.primaryKey);
+        rid.slotNo = this.nextMapId.slotNo;
+        rid.pageNo.pid = this.nextMapId.pageNo.pid;
 
         if (this.sorted)
             this.nextMapId = this.currentDataPage.nextSorted(this.nextMapId);

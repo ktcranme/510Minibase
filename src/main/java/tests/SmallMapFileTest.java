@@ -9,13 +9,15 @@ import java.util.stream.Collectors;
 import BigT.Map;
 import diskmgr.Page;
 import global.*;
+import heap.HFBufMgrException;
 import storage.SmallMap;
 import storage.SmallMapPage;
 import storage.Stream;
 import storage.SmallMapFile;
 
 class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
-    public Integer[] randoms = new Integer[100];
+    int numRec = 1500;
+    public Integer[] randoms = new Integer[numRec];
 
     public SmallMapFileTestDriver() {
         super("Small Map File Test");
@@ -25,8 +27,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         return "Small Map File";
     }
 
-    protected boolean test2() {
-        System.out.println ("\n  Test 2: Insert and sort within a page\n");
+    protected boolean test4() {
+        System.out.println ("\n  Test 4: Insert and sort within a page\n");
         Integer numRecsInPage = 25;
 
         Integer[] randoms = new Integer[numRecsInPage];
@@ -83,15 +85,13 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
-        System.out.println ("  Test 2 completed successfully.\n");
+        System.out.println ("  Test 4 completed successfully.\n");
         return true;
     }
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-        int numRec = 1500;
         Random rand = new Random();
-        Integer[] randoms = new Integer[numRec];
 
         for (int i = 0; i < numRec; i++) {
             randoms[i] = rand.nextInt(5000);
@@ -177,101 +177,116 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         System.out.println ("  Test 1 completed successfully.\n");
         return true;
     }
-//
-//    protected boolean test2 () {
-//        System.out.println ("\n  Test 2: Delete fixed-size records\n");
-//        Stream stream = null;
-//        MID rid = new MID();
-//        SmallMapFile f = null;
-//        int rec_cnt = 0;
-//
-//        System.out.println ("  - Open the same heap file as test 1\n");
-//        try {
-//            f = new SmallMapFile("file_1", "row1", 1);
-//        } catch (Exception e) {
-//            System.err.println ("*** Could not create heap file\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        Map map = null;
-//        System.out.println ("  - Delete half the records\n");
-//        try {
-//            stream = f.openStream();
-//            map = stream.getNext(rid);
-//        }
-//        catch (Exception e) {
-//            System.err.println ("*** Error opening scan\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//
-//        int count = 0;
-//        while (map != null) {
-//            try {
-//                count++;
-//
-//                if (count % 2 != 0) {
-//                    f.deleteMap(rid);
-//                }
-//
-//                map = stream.getNext(rid);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                stream.closestream();
-//                return false;
-//            }
-//        }
-//
-//        stream.closestream();
-//        assert count == 100 : "*** Record count before deletion does not match!!! Found " + count + " records!";
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
-//
-//        System.out.println ("  - Scan the remaining records\n");
-//        try {
-//            stream = f.openStream();
-//            map = stream.getNext(rid);
-//        }
-//        catch (Exception e) {
-//            System.err.println ("*** Error opening scan\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        count = 0;
-//        while (map != null) {
-//            try {
-//                count += 2;
-//
-//                assert map.getRowLabel().equals("row1") : "Got row label " + map.getRowLabel() + " but expected row1";
-//                assert map.getColumnLabel().equals("col" + randoms[count]) : "Got row label " + map.getColumnLabel() + " but expected col" + randoms[count];
-//                assert map.getTimeStamp() == randoms[count] : "Got row label " + map.getTimeStamp() + " but expected " + randoms[count];
-//                assert Integer.parseInt(map.getValue()) == randoms[count] : "Got value " + map.getValue() + " but expected " + randoms[count];
-//
-//                map = stream.getNext(rid);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                stream.closestream();
-//                return false;
-//            }
-//        }
-//
-//        stream.closestream();
-//
-//        try {
-//            f.test();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        assert count == 100 : "*** Record count before deletion does not match!!! Found " + count + " records!";
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
-//
-//        System.out.println ("  Test 2 completed successfully.\n");
-//        return true;
-//    }
+
+    protected boolean test2 () {
+        System.out.println ("\n  Test 2: Delete fixed-size records\n");
+        Stream stream = null;
+        MID rid = new MID();
+        SmallMapFile f = null;
+
+        System.out.println ("  - Open the same heap file as test 1\n");
+        try {
+            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
+        } catch (Exception e) {
+            System.err.println ("*** Could not create heap file\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        Map map = null;
+        System.out.println ("  - Delete half the records\n");
+        try {
+            stream = f.openSortedStream();
+            map = stream.getNext(rid);
+        }
+        catch (Exception e) {
+            System.err.println ("*** Error opening scan\n");
+            e.printStackTrace();
+            return false;
+        }
+
+
+        int count = 0;
+        while (map != null) {
+            try {
+                count++;
+
+                if (count % 2 != 0) {
+                    f.deleteMap(rid);
+                }
+
+                map = stream.getNext(rid);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        try {
+            stream.closestream();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        assert count == numRec : "*** Record count before deletion does not match!!! Found " + count + " records!";
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
+
+        System.out.println ("  - Scan the remaining records\n");
+        try {
+            stream = f.openSortedStream();
+            map = stream.getNext(rid);
+        }
+        catch (Exception e) {
+            System.err.println ("*** Error opening scan\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+
+        count = 1;
+        int numRecordsAfterDel = 0;
+        while (map != null) {
+            try {
+
+                assert map.getRowLabel().equals("row1")
+                        : "Got row label " + map.getRowLabel() + " but expected row1";
+                assert map.getColumnLabel().equals("col" + sorted.get(count))
+                        : "Got row label " + map.getColumnLabel() + " but expected col" + sorted.get(count);
+                assert map.getTimeStamp() == sorted.get(count)
+                        : "Got row label " + map.getTimeStamp() + " but expected " + sorted.get(count);
+                assert Integer.parseInt(map.getValue()) == sorted.get(count)
+                        : "Got value " + map.getValue() + " but expected " + sorted.get(count);
+//                map.print();
+                count += 2;
+                numRecordsAfterDel++;
+                map = stream.getNext(rid);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        try {
+            stream.closestream();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        assert numRecordsAfterDel == numRec / 2 : "*** Record count before deletion does not match!!! Iterated over " + numRecordsAfterDel  + " records!";
+        try {
+            assert f.getMapCnt() == numRec / 2 : "*** Record count before deletion does not match!!! File reports " + f.getMapCnt()  + " records!";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
+
+        System.out.println ("  Test 2 completed successfully.\n");
+        return true;
+    }
 //
 //    protected boolean test3 () {
 //
