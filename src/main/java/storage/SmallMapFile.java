@@ -12,11 +12,17 @@ import java.io.IOException;
 public class SmallMapFile extends Heapfile {
     String ignoredLabel;
     Integer ignoredPos;
+    Integer secondaryKey;
 
-    public SmallMapFile(String name, String ignoredLabel, Integer ignoredPos) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+    public Integer getSecondaryKey() {
+        return this.secondaryKey;
+    }
+
+    public SmallMapFile(String name, String ignoredLabel, Integer ignoredPos, Integer secondaryKey) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
         this.ignoredLabel = ignoredLabel;
         this.ignoredPos = ignoredPos;
+        this.secondaryKey = secondaryKey;
     }
 
     public SmallMapPage getNewDataPage() {
@@ -183,7 +189,7 @@ public class SmallMapFile extends Heapfile {
             pinPage(nextDataPageId, nextDataPage, false);
 
             // We can probably insert into nextDataPage
-            if (nextDataPage.getMinVal().compareTo(map.getValue()) < 0) {
+            if (nextDataPage.getMinVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) < 0) {
                 unpinPage(curDataPageId, false);
                 curDataPage = nextDataPage;
                 curDataPageId.pid = nextDataPageId.pid;
@@ -202,10 +208,10 @@ public class SmallMapFile extends Heapfile {
                 // his work is done here
                 unpinPage(nextDataPageId, true);
                 // move data from curDatapage to split
-                curDataPage.migrateHalf(split);
+                curDataPage.migrateHalf(split, this.secondaryKey);
                 // Choose where the new record must go - split or curDataPage
                 RID rid;
-                if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+                if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                     rid = curDataPage.insertRecord(map.getMapByteArray());
                 } else {
                     rid = split.insertRecord(map.getMapByteArray());
@@ -220,17 +226,17 @@ public class SmallMapFile extends Heapfile {
                 return rid;
             } else if (!pageHasSpace(curDataPage)) {
 
-                if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+                if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
 
                     // split current page
                     SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
                     // his work is done here
                     unpinPage(nextDataPageId, true);
                     // move data from curDatapage to split
-                    curDataPage.migrateHalf(split);
+                    curDataPage.migrateHalf(split, this.secondaryKey);
                     // Choose where the new record must go - split or curDataPage
                     RID rid;
-                    if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+                    if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                         rid = curDataPage.insertRecord(map.getMapByteArray());
                     } else {
                         rid = split.insertRecord(map.getMapByteArray());
@@ -262,11 +268,11 @@ public class SmallMapFile extends Heapfile {
         // We may have to make a new datapage
         if (!pageHasSpace(curDataPage)) {
 
-            if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+            if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                 // Split
                 nextDataPage = makeNextDataPage(curDataPage, curDataPageId);
-                curDataPage.migrateHalf(nextDataPage);
-                if (curDataPage.getMaxVal().compareTo(map.getValue()) > 0) {
+                curDataPage.migrateHalf(nextDataPage, this.secondaryKey);
+                if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                     unpinPage(nextDataPage.getCurPage(), true);
                 } else {
                     unpinPage(curDataPageId, true);

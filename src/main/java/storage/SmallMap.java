@@ -27,6 +27,19 @@ public class SmallMap implements GlobalConst {
         new AttrType(AttrType.attrString)
     };
 
+    public String getKey(Integer pos) throws IOException {
+        switch (pos) {
+            case 1:
+                return getLabel();
+            case 2:
+                return String.format("%04d", getTimeStamp());
+            case 3:
+                return getValue();
+        }
+
+        throw new IOException("Invalid Key");
+    }
+
     private short[] getFldOffsetArray()
     {
         return new short[] {

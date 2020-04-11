@@ -49,7 +49,7 @@ public class SmallMapPage extends HFPage implements Mapview {
     }
 
     // Expects all the elements to be tightly packed
-    public void sort() throws IOException {
+    public void sort(Integer secondarykey) throws IOException {
         short start = MAX_SPACE;
         short totalSlots = Convert.getShortValue(SLOT_CNT, data);
         short usedPtr = Convert.getShortValue(USED_PTR, data);
@@ -67,10 +67,10 @@ public class SmallMapPage extends HFPage implements Mapview {
 
         for (short i = 1; i < slotCnt; i++) {
             SmallMap map = new SmallMap(data, start - (i + 1) * SmallMap.map_size);
-            String key = map.getValue();
+            String key = map.getKey(secondarykey);
             int j = i - 1;
 
-            while (j >= 0 && new SmallMap(data, start - (j + 1) * SmallMap.map_size).getValue().compareTo(key) > 0) {
+            while (j >= 0 && new SmallMap(data, start - (j + 1) * SmallMap.map_size).getKey(secondarykey).compareTo(key) > 0) {
                 byte[] temp = new byte[SmallMap.map_size];
                 short slotOffsetDest = (short) (start - (j + 2) * SmallMap.map_size);
                 short slotOffsetSrc  = (short) (start - (j + 1) * SmallMap.map_size);
@@ -103,14 +103,14 @@ public class SmallMapPage extends HFPage implements Mapview {
         }
     }
 
-    public String getMaxVal() throws IOException, InvalidSlotNumberException {
+    public String getMaxVal(int key) throws IOException, InvalidSlotNumberException {
         String maxVal = "";
         MID mid = firstMap();
         SmallMap map = null;
         while (mid != null) {
             map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
-            if (map.getValue().compareTo(maxVal) > 0) {
-                maxVal = map.getValue();
+            if (map.getKey(key).compareTo(maxVal) > 0) {
+                maxVal = map.getKey(key);
             }
 
             mid = nextMap(mid);
@@ -119,7 +119,7 @@ public class SmallMapPage extends HFPage implements Mapview {
         return maxVal;
     }
 
-    public String getMinVal() throws IOException, InvalidSlotNumberException {
+    public String getMinVal(int key) throws IOException, InvalidSlotNumberException {
         String minVal = "";
         MID mid = firstMap();
 
@@ -128,13 +128,13 @@ public class SmallMapPage extends HFPage implements Mapview {
 
         SmallMap map = null;
         map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
-        minVal = map.getValue();
+        minVal = map.getKey(key);
         mid = nextMap(mid);
 
         while (mid != null) {
             map = new SmallMap(getRecord(new RID(mid.pageNo, mid.slotNo)), 0);
-            if (map.getValue().compareTo(minVal) < 0) {
-                minVal = map.getValue();
+            if (map.getKey(key).compareTo(minVal) < 0) {
+                minVal = map.getKey(key);
             }
             mid = nextMap(mid);
         }
@@ -152,8 +152,8 @@ public class SmallMapPage extends HFPage implements Mapview {
         }
     }
 
-    public void migrateHalf(SmallMapPage page) throws IOException, InvalidSlotNumberException {
-        sort();
+    public void migrateHalf(SmallMapPage page, Integer key) throws IOException, InvalidSlotNumberException {
+        sort(key);
         short start = MAX_SPACE;
         short usedPtr = Convert.getShortValue(USED_PTR, data);
         int recs = (start - usedPtr) / SmallMap.map_size;

@@ -63,7 +63,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
 
         try {
-            page.sort();
+            page.sort(3);
             MID mid = page.firstSorted();
             int count = 0;
 
@@ -87,7 +87,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-        int numRec = 1000;
+        int numRec = 100;
         Random rand = new Random();
         Integer[] randoms = new Integer[numRec];
 
@@ -100,7 +100,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         System.out.println ("  - Create a heap file\n");
         try {
-            f = new SmallMapFile("file_1", "row1", 1);
+            f = new SmallMapFile("file_1", "row1", 1, 3);
         } catch (Exception e) {
             System.err.println ("*** Could not create heap file\n");
             e.printStackTrace();
@@ -150,7 +150,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 map = stream.getNext(rid);
                 if (map == null)
                     break;
-//                map.print();
+                map.print();
                 assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Did not match!";
                 count++;
             } catch (Exception e) {

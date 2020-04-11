@@ -44,7 +44,7 @@ public class Stream {
             unpinPage(currentDirPageId, false);
 
             if (this.sorted) {
-                this.currentDataPage.sort();
+                this.currentDataPage.sort(file.secondaryKey);
                 this.nextMapId = this.currentDataPage.firstSorted();
             } else {
                 this.nextMapId = this.currentDataPage.firstMap();
@@ -86,7 +86,7 @@ public class Stream {
             if (nextPage.pid != -1) {
                 pinPage(nextPage, this.currentDataPage, false);
                 if (this.sorted) {
-                    this.currentDataPage.sort();
+                    this.currentDataPage.sort(file.secondaryKey);
                     this.nextMapId = this.currentDataPage.firstSorted();
                 } else {
                     this.nextMapId = this.currentDataPage.firstMap();
