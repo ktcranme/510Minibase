@@ -41,8 +41,8 @@ public class SmallDataPageInfo implements GlobalConst {
         offset = 0;
     }
 
-    public SmallDataPageInfo(byte[] array, String primaryKey, Integer lengthOfKey) throws InvalidTupleSizeException, IOException {
-        init(primaryKey, lengthOfKey);
+    public SmallDataPageInfo(byte[] array, Integer lengthOfKey) throws InvalidTupleSizeException, IOException {
+        init(null, lengthOfKey);
         // need check _atuple size == this.size ?otherwise, throw new exception
         if (array.length != size){
             throw new InvalidTupleSizeException(null, "HEAPFILE: TUPLE SIZE ERROR");
@@ -57,17 +57,14 @@ public class SmallDataPageInfo implements GlobalConst {
         this.primaryKey = Convert.getStrValue(this.offset + this.offsets[2], data, lengthOfKey);
     }
 
-    public SmallDataPageInfo(byte[] array, int offset, String primaryKey, Integer lengthOfKey) throws IOException {
-        init(primaryKey, lengthOfKey);
+    public SmallDataPageInfo(byte[] array, int offset, Integer lengthOfKey) throws IOException {
+        init(null, lengthOfKey);
         data = array;
         this.offset = offset;
 
         recct = Convert.getIntValue(this.offset + offsets[0], data);
         pageId = new PageId();
         pageId.pid = Convert.getIntValue(this.offset + offsets[1], data);
-        if (pageId.pid == 1) {
-            System.out.println("TEST");
-        }
         this.primaryKey = Convert.getStrValue(this.offset + this.offsets[2], data, lengthOfKey);
     }
 

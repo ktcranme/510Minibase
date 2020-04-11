@@ -10,32 +10,32 @@ import heap.*;
 import java.io.IOException;
 
 public class SmallMapFile extends Heapfile {
-    String ignoredLabel;
-    Integer ignoredPos;
+    Integer primaryKey;
+    Integer pkLength;
     Integer secondaryKey;
 
     public Integer getSecondaryKey() {
         return this.secondaryKey;
     }
 
-    public SmallMapFile(String name, String ignoredLabel, Integer ignoredPos, Integer secondaryKey) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+    public SmallMapFile(String name, Integer primaryKey, Integer secondaryKey, Integer pkLength) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
-        this.ignoredLabel = ignoredLabel;
-        this.ignoredPos = ignoredPos;
+        this.primaryKey = primaryKey;
         this.secondaryKey = secondaryKey;
+        this.pkLength = pkLength;
     }
 
     public SmallMapPage getNewDataPage() {
-        return new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+        return new SmallMapPage(this.pkLength);
     }
 
     public SmallMapPage getNewDataPage(Page page) {
-        return new SmallMapPage(page, this.ignoredLabel, this.ignoredPos);
+        return new SmallMapPage(page, this.pkLength);
     }
 
-    public SmallMapPage getNewDataPage(Page page, PageId pid) throws IOException {
-        SmallMapPage hfp = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
-        hfp.init(pid, page, this.ignoredLabel, this.ignoredPos);
+    public SmallMapPage getNewDataPage(Page page, PageId pid, String primary) throws IOException {
+        SmallMapPage hfp = new SmallMapPage(this.pkLength);
+        hfp.init(pid, page, this.pkLength, primary);
         return hfp;
     }
 
@@ -46,13 +46,20 @@ public class SmallMapFile extends Heapfile {
 
     public Map getMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFDiskMgrException, HFBufMgrException, Exception {
-        byte[] rec = getRecord(new RID(rid.pageNo, rid.slotNo));
-        return new SmallMap(rec, 0).toMap(this.ignoredLabel, this.ignoredPos);
+
+        SmallMapPage dataPage = getNewDataPage();
+        pinPage(rid.pageNo, dataPage, false);
+        byte[] rec = dataPage.getRecord(new RID(rid.pageNo, rid.slotNo));
+
+        SmallMap map = new SmallMap(rec, 0);
+        Map bigMap = map.toMap(dataPage.getPrimaryKey(), this.primaryKey);
+        unpinPage(rid.pageNo, false);
+        return bigMap;
     }
 
     public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
             InvalidTupleSizeException, HFException, HFDiskMgrException, HFBufMgrException, Exception {
-        if (updateRecord(new RID(rid.pageNo, rid.slotNo), new SmallMap(newtuple, this.ignoredPos).getMapByteArray())) {
+        if (updateRecord(new RID(rid.pageNo, rid.slotNo), new SmallMap(newtuple, this.primaryKey).getMapByteArray())) {
             return rid;
         }
         return null;
@@ -65,6 +72,8 @@ public class SmallMapFile extends Heapfile {
 
     public MID insertMap(Map tuple) throws InvalidSlotNumberException, InvalidTupleSizeException,
             HFException, HFBufMgrException, HFDiskMgrException, IOException {
+        String primary = tuple.getKey(this.primaryKey);
+
         PageId dirPageId = new PageId(_firstDirPageId.pid);
         SmallDirpage dirpage = new SmallDirpage();
         pinPage(dirPageId, dirpage, false);
@@ -76,18 +85,18 @@ public class SmallMapFile extends Heapfile {
 
         RID currentDataPageRid = dirpage.firstRecord();
         if (currentDataPageRid == null) {
-            curDataPage = makeFirstDataPage(dirpage);
+            curDataPage = makeFirstDataPage(dirpage, primary);
             curDataPageId.pid = curDataPage.getCurPage().pid;
             currentDataPageRid = dirpage.firstRecord();
-            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
         } else {
-            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+            dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
             pinPage(dpinfo.getPageId(), curDataPage, false);
             curDataPageId.pid = dpinfo.getPageId().pid;
         }
 
         // This will unpin curDataPage
-        RID rid = insertMap(new SmallMap(tuple, this.ignoredPos), curDataPage);
+        RID rid = insertMap(new SmallMap(tuple, this.primaryKey), curDataPage, primary);
 
         dpinfo.recct++;
         dpinfo.flushToTuple();
@@ -107,18 +116,18 @@ public class SmallMapFile extends Heapfile {
     * dirpage must be pinned.
     * Returns a new SmallMapPage which is already pinned and must be unpinned by the caller.
     * */
-    private SmallMapPage makeFirstDataPage(Dirpage dirpage) throws IOException, HFException, HFBufMgrException {
+    private SmallMapPage makeFirstDataPage(Dirpage dirpage, String primary) throws IOException, HFException, HFBufMgrException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
-        SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+        SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
+        newPage.init(newPageId, apage, this.pkLength, primary);
 
         newPage.setCurPage(newPageId);
         newPage.setPrevPage(new PageId(-1));
         newPage.setNextPage(new PageId(-1));
 
-        SmallDataPageInfo dpinfo = new SmallDataPageInfo(this.ignoredLabel, this.ignoredLabel.length() * 2);
+        SmallDataPageInfo dpinfo = new SmallDataPageInfo(primary, this.pkLength);
         dpinfo.getPageId().pid = newPageId.pid;
         dpinfo.recct = 0;
 
@@ -139,12 +148,12 @@ public class SmallMapFile extends Heapfile {
     * currentPage is expected to be pinned.
     * returns a SmallMapPage that is already pinned and must be unpinned by the caller.
     * */
-    private SmallMapPage makeNextDataPage(SmallMapPage currentPage, PageId currentPageId) throws HFBufMgrException, HFException, IOException {
+    private SmallMapPage makeNextDataPage(SmallMapPage currentPage, PageId currentPageId, String primary) throws HFBufMgrException, HFException, IOException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
-        SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+        SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
+        newPage.init(newPageId, apage, this.pkLength, primary);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);
@@ -154,12 +163,12 @@ public class SmallMapFile extends Heapfile {
         return newPage;
     }
 
-    private SmallMapPage makeDataPageInBetween(SmallMapPage currentPage, PageId currentPageId, SmallMapPage nextPage, PageId nextPageId) throws HFBufMgrException, HFException, IOException {
+    private SmallMapPage makeDataPageInBetween(SmallMapPage currentPage, PageId currentPageId, SmallMapPage nextPage, PageId nextPageId, String primary) throws HFBufMgrException, HFException, IOException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
-        SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
+        SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
+        newPage.init(newPageId, apage, this.pkLength, primary);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);
@@ -174,7 +183,7 @@ public class SmallMapFile extends Heapfile {
         return page.available_space() > HFPage.SIZE_OF_SLOT + SmallMap.map_size;
     }
 
-    private RID insertMap(SmallMap map, SmallMapPage startingDatapage) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
+    private RID insertMap(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
         PageId curDataPageId = new PageId(startingDatapage.getCurPage().pid);
         SmallMapPage curDataPage = startingDatapage;
 
@@ -203,7 +212,7 @@ public class SmallMapFile extends Heapfile {
             // Or we insert into next page, with a possible split
             if (!pageHasSpace(curDataPage) && !pageHasSpace(nextDataPage)) {
                 // split current page
-                SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
+                SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary);
                 // his work is done here
                 unpinPage(nextDataPageId, true);
                 // move data from curDatapage to split
@@ -228,7 +237,7 @@ public class SmallMapFile extends Heapfile {
                 if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
 
                     // split current page
-                    SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId);
+                    SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary);
                     // his work is done here
                     unpinPage(nextDataPageId, true);
                     // move data from curDatapage to split
@@ -269,7 +278,7 @@ public class SmallMapFile extends Heapfile {
 
             if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                 // Split
-                nextDataPage = makeNextDataPage(curDataPage, curDataPageId);
+                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary);
                 curDataPage.migrateHalf(nextDataPage, this.secondaryKey);
                 if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                     unpinPage(nextDataPage.getCurPage(), true);
@@ -282,7 +291,7 @@ public class SmallMapFile extends Heapfile {
 
             } else {
                 // create new datapage
-                nextDataPage = makeNextDataPage(curDataPage, curDataPageId);
+                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary);
                 unpinPage(curDataPageId, true);
                 curDataPageId.pid = nextDataPage.getCurPage().pid;
                 curDataPage = nextDataPage;
@@ -314,7 +323,7 @@ public class SmallMapFile extends Heapfile {
             Tuple atuple;
             for (rid = currentDirPage.firstRecord(); rid != null; // rid==NULL means no more record
                  rid = currentDirPage.nextRecord(rid)) {
-                SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(rid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+                SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(rid, this.pkLength);
 
                 answer += dpinfo.recct;
             }
@@ -347,7 +356,7 @@ public class SmallMapFile extends Heapfile {
         if (currentDataPageRid == null) {
             return null;
         } else {
-            SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid, this.ignoredLabel, this.ignoredLabel.length() * 2);
+            SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(currentDataPageRid, this.pkLength);
             PageId currentDatapageId = dpinfo.getPageId();
 
             currentDataPage = getNewDataPage();

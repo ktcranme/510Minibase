@@ -85,7 +85,7 @@ public class Stream {
             }
         }
 
-        Map map = this.currentDataPage.getMap(this.nextMapId);
+        Map map = this.currentDataPage.getMap(this.nextMapId, file.primaryKey);
 
         if (this.sorted)
             this.nextMapId = this.currentDataPage.nextSorted(this.nextMapId);

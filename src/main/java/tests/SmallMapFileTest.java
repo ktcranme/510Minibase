@@ -30,10 +30,10 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         Integer[] randoms = new Integer[26];
         Random rand = new Random();
-        SmallMapPage page = new SmallMapPage("row1", 1);
+        SmallMapPage page = new SmallMapPage(1);
         try {
             System.out.println ("  - Create a page\n");
-            page.init(new PageId(1), new Page(), "row1", 1);
+            page.init(new PageId(1), new Page(), 1, "row1");
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -68,7 +68,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             int count = 0;
 
             while (mid != null) {
-                Map map = page.getMap(mid);
+                Map map = page.getMap(mid, 1);
                 assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Unexpected value found!";
                 mid = page.nextSorted(mid);
                 count++;
@@ -100,7 +100,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         System.out.println ("  - Create a heap file\n");
         try {
-            f = new SmallMapFile("file_1", "row1", 1, 3);
+            f = new SmallMapFile("file_1", 1, 1, MAXROWLABELSIZE);
         } catch (Exception e) {
             System.err.println ("*** Could not create heap file\n");
             e.printStackTrace();

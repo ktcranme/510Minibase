@@ -16,32 +16,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SmallMapPage extends HFPage implements Mapview {
-    String ignoredLabel;
-    Integer ignoredPos;
+public class SmallMapPage extends HFPage {
+    Integer pkLength;
 
     public int DPFIXED = 4 * 2 + 3 * 4;
     public static int IGNORED_LABEL = 20;
-
-    public SmallMapPage(Page page, String ignoredLabel, Integer ignoredPos) {
+    
+    public SmallMapPage(Page page, Integer pkLength) {
         super(page);
-        this.ignoredPos = ignoredPos;
-        this.ignoredLabel = ignoredLabel;
-        this.DPFIXED += ignoredLabel.length() * 2;
+        this.pkLength = pkLength;
+        this.DPFIXED += pkLength;
     }
 
-    public SmallMapPage(String ignoredLabel, Integer ignoredPos) {
+    public SmallMapPage(Integer pkLength) {
         super();
-        this.ignoredPos = ignoredPos;
-        this.ignoredLabel = ignoredLabel;
-        this.DPFIXED += ignoredLabel.length() * 2;
+        this.pkLength = pkLength;
+        this.DPFIXED += pkLength;
     }
 
-    public void init(PageId pageNo, Page apage, String ignoredLabel, Integer ignoredPos) throws IOException {
+    public String getPrimaryKey() throws IOException {
+        return Convert.getStrValue(IGNORED_LABEL, data, this.pkLength);
+    }
+
+    public void init(PageId pageNo, Page apage, Integer pkLength, String primary) throws IOException {
         super.init(pageNo, apage);
-        this.ignoredLabel = ignoredLabel;
-        this.ignoredPos = ignoredPos;
-        Convert.setStrValue (ignoredLabel, IGNORED_LABEL, data);
+        this.pkLength = pkLength;
+        Convert.setStrValue (primary, IGNORED_LABEL, data);
         short freeSpace = (short) (MAX_SPACE - this.DPFIXED);
         Convert.setShortValue(freeSpace, FREE_SPACE, data);
     }
@@ -191,18 +191,18 @@ public class SmallMapPage extends HFPage implements Mapview {
         Convert.setShortValue((short) (recs / 2), SLOT_CNT, page.data);
     }
 
-    public BigT.Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
+    public BigT.Map getMap(MID mid, Integer primaryKey) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo));
-        return (new SmallMap(rec, 0)).toMap(this.ignoredLabel, this.ignoredPos);
+        return (new SmallMap(rec, 0)).toMap(getPrimaryKey(), primaryKey);
     }
 
-    public MID updateMap(MID mid, BigT.Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
-        if (updateRecord(
-                new RID(mid.pageNo, mid.slotNo),
-               (new SmallMap(map, this.ignoredPos)).getMapByteArray())
-        ) return mid;
-        return null;
-    }
+//    public MID updateMap(MID mid, BigT.Map map) throws IOException, InvalidSlotNumberException, InvalidUpdateException {
+//        if (updateRecord(
+//                new RID(mid.pageNo, mid.slotNo),
+//               (new SmallMap(map, this.ignoredPos)).getMapByteArray())
+//        ) return mid;
+//        return null;
+//    }
 
     public MID firstMap() throws IOException {
         MID mid = new MID();

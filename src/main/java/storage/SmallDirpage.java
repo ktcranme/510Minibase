@@ -3,20 +3,17 @@ package storage;
 import global.Convert;
 import global.PageId;
 import global.RID;
-import heap.DataPageInfo;
-import heap.Dirpage;
-import heap.InvalidSlotNumberException;
-import heap.InvalidTupleSizeException;
+import heap.*;
 
 import java.io.IOException;
 
 public class SmallDirpage extends Dirpage {
-    public SmallDataPageInfo getDatapageInfo(RID rid, String primaryKey, Integer lengthOfKey) throws InvalidSlotNumberException, IOException,
+    public SmallDataPageInfo getDatapageInfo(RID rid, Integer lengthOfKey) throws InvalidSlotNumberException, IOException,
             InvalidTupleSizeException {
-        return new SmallDataPageInfo(getRecord(rid), primaryKey, lengthOfKey);
+        return new SmallDataPageInfo(getRecord(rid), lengthOfKey);
     }
 
-    public SmallDataPageInfo returnDatapageInfo(RID rid, String primaryKey, Integer lengthOfKey) throws IOException, InvalidSlotNumberException,
+    public SmallDataPageInfo returnDatapageInfo(RID rid, Integer lengthOfKey) throws IOException, InvalidSlotNumberException,
             InvalidTupleSizeException {
         short recLen;
         short offset;
@@ -33,7 +30,7 @@ public class SmallDirpage extends Dirpage {
         if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0) && (pageNo.pid == curPage.pid)) {
 
             offset = getSlotOffset(slotNo);
-            return new SmallDataPageInfo(data, offset, primaryKey, lengthOfKey);
+            return new SmallDataPageInfo(data, offset, lengthOfKey);
         }
 
         else {
