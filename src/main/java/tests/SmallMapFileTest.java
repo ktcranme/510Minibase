@@ -129,14 +129,6 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             }
         }
 
-//        try {
-//            assert f.getRecCnt() == 100 : "*** File reports " + f.getRecCnt() + " records, not " + 100;
-//        } catch (Exception e) {
-//            System.err.println ("*** Could not create heap file\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-
         Stream stream = null;
         System.out.println ("  - Verify Sorted Stream\n");
 
@@ -165,6 +157,14 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 e.printStackTrace();
                 return false;
             }
+        }
+
+        try {
+            assert f.getRecCnt() == numRec : "*** File reports " + f.getRecCnt() + " records, not " + numRec;
+        } catch (Exception e) {
+            System.err.println ("*** Could not invoke getRecCnt on file\n");
+            e.printStackTrace();
+            return false;
         }
 
         assert count == numRec : "Returned records from stream doesnt match insert count!";
