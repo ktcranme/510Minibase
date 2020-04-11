@@ -70,7 +70,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
             while (mid != null) {
                 Map map = page.getMap(mid, 1);
-                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Unexpected value found!";
+                assert Integer.parseInt(map.getValue()) == sorted.get(count)
+                        : "Expected " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
+                assert map.getRowLabel().equals("row1");
                 mid = page.nextSorted(mid);
                 count++;
             }
@@ -82,7 +84,6 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
 
         System.out.println ("  Test 2 completed successfully.\n");
-
         return true;
     }
 
@@ -151,12 +152,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 map = stream.getNext(rid);
                 if (map == null)
                     break;
-                map.print();
+//                map.print();
 
-                if (Integer.parseInt(map.getValue()) != sorted.get(count)) {
-                    System.out.println("TEST");
-                }
-
+                assert map.getRowLabel().equals("row1");
                 assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Expected value " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
                 count++;
             } catch (Exception e) {
