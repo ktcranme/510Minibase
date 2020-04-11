@@ -87,12 +87,12 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-        int numRec = 1758;
+        int numRec = 1000;
         Random rand = new Random();
         Integer[] randoms = new Integer[numRec];
 
         for (int i = 0; i < numRec; i++) {
-            randoms[i] = rand.nextInt(1000);
+            randoms[i] = rand.nextInt(5000);
         }
 
         MID rid = new MID();
@@ -158,12 +158,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 map = stream.getNext(rid);
                 if (map == null)
                     break;
-
 //                map.print();
-                if (Integer.parseInt(map.getValue()) != sorted.get(count)) {
-                    throw new Exception("Did not match!");
-                }
-
+                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Did not match!";
                 count++;
             } catch (Exception e) {
                 e.printStackTrace();

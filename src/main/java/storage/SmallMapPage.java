@@ -153,26 +153,34 @@ public class SmallMapPage extends HFPage implements Mapview {
     }
 
     public void migrateHalf(SmallMapPage page) throws IOException, InvalidSlotNumberException {
-        HashMap<RID, Integer> hmap = new HashMap<RID, Integer>();
-        List<RID> rids = new ArrayList<>();
-        MID mid = firstMap();
-        SmallMap map = null;
-        while (mid != null) {
-            RID rid = new RID(mid.pageNo, mid.slotNo);
-            map = new SmallMap(getRecord(rid), 0);
-            hmap.put(rid, Integer.parseInt(map.getValue()));
-            rids.add(rid);
-            mid = nextMap(mid);
-        }
+        sort();
+        short start = MAX_SPACE;
+        short usedPtr = Convert.getShortValue(USED_PTR, data);
+        int recs = (start - usedPtr) / SmallMap.map_size;
+        int lenToBeCopied = (recs / 2) * SmallMap.map_size;
+        System.arraycopy(data, usedPtr, page.data, start - lenToBeCopied, lenToBeCopied);
 
-        List<RID> ridList = rids.stream().sorted((rid1, rid2) -> {
-            return hmap.get(rid2).compareTo(hmap.get(rid1));
-        }).limit(rids.size() / 2).collect(Collectors.toList());
-
-        for (RID rid : ridList) {
-            page.insertRecord(getRecord(rid));
-            deleteRecord(rid);
+        int slotCnt = Convert.getShortValue(SLOT_CNT, data);
+        usedPtr += lenToBeCopied;
+        for (int i = 0; i < slotCnt; i++) {
+            int offset = getSlotOffset(i);
+            if (offset < usedPtr) {
+                setSlot(i, EMPTY_SLOT, 0); // mark slot free
+            }
         }
+        short freeSpace = Convert.getShortValue(FREE_SPACE, data);
+        freeSpace += lenToBeCopied;
+        Convert.setShortValue(usedPtr, USED_PTR, data);
+        Convert.setShortValue(freeSpace, FREE_SPACE, data);
+
+        for (int i = 0; i < recs / 2; i++) {
+            page.setSlot(i, SmallMap.map_size, start - ((i + 1) * SmallMap.map_size));
+        }
+        freeSpace = Convert.getShortValue(FREE_SPACE, page.data);
+        freeSpace -= lenToBeCopied + (recs / 2) * HFPage.SIZE_OF_SLOT;
+        Convert.setShortValue(freeSpace, FREE_SPACE, page.data);
+        Convert.setShortValue((short) (start - lenToBeCopied), USED_PTR, page.data);
+        Convert.setShortValue((short) (recs / 2), SLOT_CNT, page.data);
     }
 
     public BigT.Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
