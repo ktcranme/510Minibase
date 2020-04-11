@@ -112,7 +112,7 @@ public class SmallMapFile extends Heapfile {
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
 
-        newPage.init(newPageId, apage);
+        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
 
         newPage.setCurPage(newPageId);
         newPage.setPrevPage(new PageId(-1));
@@ -145,7 +145,7 @@ public class SmallMapFile extends Heapfile {
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
 
-        newPage.init(newPageId, apage);
+        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);
@@ -160,7 +160,7 @@ public class SmallMapFile extends Heapfile {
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.ignoredLabel, this.ignoredPos);
 
-        newPage.init(newPageId, apage);
+        newPage.init(newPageId, apage, this.ignoredLabel, this.ignoredPos);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);

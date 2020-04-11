@@ -20,22 +20,30 @@ public class SmallMapPage extends HFPage implements Mapview {
     String ignoredLabel;
     Integer ignoredPos;
 
+    public int DPFIXED = 4 * 2 + 3 * 4;
+    public static int IGNORED_LABEL = 20;
+
     public SmallMapPage(Page page, String ignoredLabel, Integer ignoredPos) {
         super(page);
         this.ignoredPos = ignoredPos;
         this.ignoredLabel = ignoredLabel;
+        this.DPFIXED += ignoredLabel.length() * 2;
     }
 
     public SmallMapPage(String ignoredLabel, Integer ignoredPos) {
         super();
         this.ignoredPos = ignoredPos;
         this.ignoredLabel = ignoredLabel;
+        this.DPFIXED += ignoredLabel.length() * 2;
     }
 
     public void init(PageId pageNo, Page apage, String ignoredLabel, Integer ignoredPos) throws IOException {
         super.init(pageNo, apage);
         this.ignoredLabel = ignoredLabel;
         this.ignoredPos = ignoredPos;
+        Convert.setStrValue (ignoredLabel, IGNORED_LABEL, data);
+        short freeSpace = (short) (MAX_SPACE - this.DPFIXED);
+        Convert.setShortValue(freeSpace, FREE_SPACE, data);
     }
 
     public void printSeq() throws IOException {
