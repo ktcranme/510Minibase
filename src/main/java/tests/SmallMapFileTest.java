@@ -1,15 +1,16 @@
 package tests;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import BigT.Map;
+import bufmgr.*;
 import diskmgr.Page;
 import global.*;
 import heap.HFBufMgrException;
+import heap.InvalidSlotNumberException;
+import heap.InvalidTupleSizeException;
 import storage.SmallMap;
 import storage.SmallMapPage;
 import storage.Stream;
@@ -295,6 +296,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         Stream stream = null;
         MID rid = new MID();
         SmallMapFile f = null;
+        HashMap<String, List<Integer>> groups = new HashMap<>();
 
         System.out.println ("  - Open the same heap file as tests 1 and 2\n");
         try {
@@ -309,11 +311,16 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             //fixed length record
             Map m1 = new Map();
             try {
-                // Create 10 different primaries
-                m1.setRowLabel("row" + randoms[i] % 10);
+                // Create 9 different primaries (row1 already exists)
+                m1.setRowLabel("row" + (randoms[i] % 8 * 2));
                 m1.setColumnLabel("col" + randoms[i]);
                 m1.setTimeStamp(randoms[i]);
                 m1.setValue(Integer.toString(randoms[i]));
+
+                if (!groups.containsKey("row" + (randoms[i] % 8 * 2))) {
+                    groups.put("row" + (randoms[i] % 8 * 2), new ArrayList<>());
+                }
+                groups.get("row" + (randoms[i] % 8 * 2)).add(randoms[i]);
 
                 f.insertMap(m1);
 
@@ -347,19 +354,38 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         List<Integer> sorted = Arrays.stream(randoms).sorted().collect(Collectors.toList());
 
-        Map map = new Map();
+        Map map;
+        try {
+            map = stream.getNext(rid);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         int count = 0;
         while (map != null) {
             try {
                 assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has not pinned any pages";
-                map = stream.getNext(rid);
-                if (map == null)
-                    break;
-                map.print();
 
-//                assert map.getRowLabel().equals("row1");
-//                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Expected value " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
-                count++;
+                if (map.getRowLabel().equals("row1")) {
+                    for (int i = 0; i < numRec / 2; i++) {
+                        assert Integer.parseInt(map.getValue()) == sorted.get(i * 2 + 1) : "Expected value " + sorted.get(i * 2 + 1) + ", got " + Integer.parseInt(map.getValue());
+                        map = stream.getNext(rid);
+                        count++;
+                    }
+                } else {
+                    String primary = map.getRowLabel();
+                    List<Integer> groupSorted = groups.get(primary).stream().sorted().collect(Collectors.toList());
+                    for (int i = 0; i < groupSorted.size(); i++) {
+                        assert map.getRowLabel().equals(primary)
+                                : "Expected Row label " + primary + ", got " + map.getRowLabel();
+                        assert Integer.parseInt(map.getValue()) == groupSorted.get(i)
+                                : "Expected value " + groupSorted.get(i) + ", got value " + Integer.parseInt(map.getValue());
+
+                        map = stream.getNext(rid);
+                        count++;
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
