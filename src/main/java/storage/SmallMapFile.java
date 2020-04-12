@@ -93,24 +93,82 @@ public class SmallMapFile extends Heapfile {
         return true;
     }
 
+    private SmallDirpage findPrimaryDataPage(String primary, RID datapageRid, Boolean create) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException, HFException {
+        PageId dirPageId = new PageId(_firstDirPageId.pid);
+        SmallDirpage dirpage = new SmallDirpage();
+        SmallDataPageInfo dpinfo = new SmallDataPageInfo("", this.pkLength);
+
+        while (dirPageId.pid != INVALID_PAGE) {
+            pinPage(dirPageId, dirpage, false);
+
+            for (RID currentDataPageRid = dirpage.firstRecord();
+                 currentDataPageRid != null;
+                 currentDataPageRid = dirpage.nextRecord(currentDataPageRid)) {
+
+                dpinfo = dirpage.getDatapageInfo(currentDataPageRid, this.pkLength);
+                if (dpinfo.primaryKey.equals(primary)) {
+                    datapageRid.pageNo.pid = currentDataPageRid.pageNo.pid;
+                    datapageRid.slotNo = currentDataPageRid.slotNo;
+                    return dirpage;
+                }
+
+            }
+
+            dirPageId = dirpage.getNextPage();
+            if (dirPageId.pid != INVALID_PAGE)
+                unpinPage(dirPageId, false);
+        }
+
+        if (!create) {
+            unpinPage(dirpage.getCurPage(), false);
+            return null;
+        }
+
+        // Did not find?
+        if (dirpage.available_space() < dpinfo.size + HFPage.SIZE_OF_SLOT) {
+            // Add new dirpage
+            Page pageinbuffer = new Page();
+            PageId nextDirPageId = newPage(pageinbuffer, 1);
+            SmallDirpage nextDirPage = new SmallDirpage();
+            // need check error!
+            if (nextDirPageId == null)
+                throw new HFException(null, "can't new pae");
+
+            // initialize new directory page
+            nextDirPage.init(nextDirPageId, pageinbuffer);
+            PageId temppid = new PageId(INVALID_PAGE);
+            nextDirPage.setNextPage(temppid);
+            nextDirPage.setPrevPage(dirpage.getCurPage());
+
+            // update current directory page and unpin it
+            // currentDirPage is already locked in the Exclusive mode
+            dirpage.setNextPage(nextDirPageId);
+            unpinPage(dirpage.getCurPage(), true);
+
+            dirPageId.pid = nextDirPageId.pid;
+            dirpage = nextDirPage;
+        }
+
+        datapageRid.pageNo.pid = INVALID_PAGE;
+        datapageRid.slotNo = INVALID_PAGE;
+        return dirpage;
+    }
+
     public MID insertMap(Map tuple) throws InvalidSlotNumberException, InvalidTupleSizeException,
             HFException, HFBufMgrException, HFDiskMgrException, IOException {
         String primary = tuple.getKey(this.primaryKey);
 
-        PageId dirPageId = new PageId(_firstDirPageId.pid);
-        SmallDirpage dirpage = new SmallDirpage();
-        pinPage(dirPageId, dirpage, false);
-
         PageId curDataPageId = new PageId();
         SmallMapPage curDataPage = getNewDataPage();
 
-        SmallDataPageInfo dpinfo;
+        RID currentDataPageRid = new RID();
+        SmallDirpage dirpage = findPrimaryDataPage(primary, currentDataPageRid, true);
+        PageId dirPageId = dirpage.getCurPage();
 
-        RID currentDataPageRid = dirpage.firstRecord();
-        if (currentDataPageRid == null) {
-            curDataPage = makeFirstDataPage(dirpage, primary);
+        SmallDataPageInfo dpinfo;
+        if (currentDataPageRid.pageNo.pid == INVALID_PAGE) {
+            curDataPage = makeNewPrimaryDataPage(dirpage, primary, currentDataPageRid);
             curDataPageId.pid = curDataPage.getCurPage().pid;
-            currentDataPageRid = dirpage.firstRecord();
             dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
         } else {
             dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
@@ -136,10 +194,10 @@ public class SmallMapFile extends Heapfile {
     }
 
     /*
-    * dirpage must be pinned.
-    * Returns a new SmallMapPage which is already pinned and must be unpinned by the caller.
-    * */
-    private SmallMapPage makeFirstDataPage(Dirpage dirpage, String primary) throws IOException, HFException, HFBufMgrException {
+     * dirpage must be pinned.
+     * Returns a new SmallMapPage which is already pinned and must be unpinned by the caller.
+     * */
+    private SmallMapPage makeNewPrimaryDataPage(Dirpage dirpage, String primary, RID primaryPageRID) throws IOException, HFBufMgrException, HFException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.pkLength);
@@ -158,6 +216,8 @@ public class SmallMapFile extends Heapfile {
 
         byte[] tmpData = atuple.getTupleByteArray();
         RID currentDataPageRid = dirpage.insertRecord(tmpData);
+        primaryPageRID.pageNo.pid = currentDataPageRid.pageNo.pid;
+        primaryPageRID.slotNo = currentDataPageRid.slotNo;
 
         // need catch error here!
         if (currentDataPageRid == null)

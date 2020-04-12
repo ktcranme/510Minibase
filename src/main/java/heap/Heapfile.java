@@ -910,7 +910,7 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	} // end of freePage
 
-	private PageId newPage(Page page, int num) throws HFBufMgrException {
+	protected PageId newPage(Page page, int num) throws HFBufMgrException {
 
 		PageId tmpId = new PageId();
 

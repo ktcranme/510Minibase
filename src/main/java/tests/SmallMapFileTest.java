@@ -16,7 +16,7 @@ import storage.Stream;
 import storage.SmallMapFile;
 
 class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
-    int numRec = 1500;
+    int numRec = 500;
     public Integer[] randoms = new Integer[numRec];
 
     public SmallMapFileTestDriver() {
@@ -211,6 +211,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             try {
                 count++;
 
+                // Basically deleting all even records :D
                 if (count % 2 != 0) {
                     f.deleteMap(rid);
                 }
@@ -287,102 +288,58 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         System.out.println ("  Test 2 completed successfully.\n");
         return true;
     }
+
+    protected boolean test3 () {
+
+        System.out.println ("\n  Test 3: Update fixed-size records\n");
+        Stream stream = null;
+        MID rid = new MID();
+        SmallMapFile f = null;
+
+        System.out.println ("  - Open the same heap file as tests 1 and 2\n");
+        try {
+            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
+        } catch (Exception e) {
+            System.err.println ("*** Could not create heap file\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        for (int i = 0; i < numRec; i += 2) {
+            //fixed length record
+            Map m1 = new Map();
+            try {
+                // Create 10 different primaries
+                m1.setRowLabel("row" + randoms[i] % 10);
+                m1.setColumnLabel("col" + randoms[i]);
+                m1.setTimeStamp(randoms[i]);
+                m1.setValue(Integer.toString(randoms[i]));
+
+                f.insertMap(m1);
+
+                m1.print();
+            } catch (Exception e) {
+                System.err.println ("*** Could not make map");
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+//        int numRecords = 0;
 //
-//    protected boolean test3 () {
-//
-//        System.out.println ("\n  Test 3: Update fixed-size records\n");
-//        Stream stream = null;
-//        MID rid = new MID();
-//        SmallMapFile f = null;
-//
-//        System.out.println ("  - Open the same heap file as tests 1 and 2\n");
-//        try {
-//            f = new SmallMapFile("file_1", "row1", 1);
-//        } catch (Exception e) {
-//            System.err.println ("*** Could not create heap file\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        System.out.println ("  - Change the records\n");
-//        Map map = null;
-//        try {
-//            stream = f.openStream();
-//            map = stream.getNext(rid);
-//        }
-//        catch (Exception e) {
-//            System.err.println ("*** Error opening scan\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//
-//        int count = 0;
-//        while (map != null) {
-//            try {
-//                count += 2;
-//
-//                Integer newVal = Integer.parseInt(map.getValue()) * 10;
-//                map.setValue(newVal.toString());
-//                f.updateMap(rid, map);
-//
-//                map = stream.getNext(rid);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                stream.closestream();
-//                return false;
-//            }
-//        }
-//
-//        stream.closestream();
-//        assert count == 100 : "*** Record count before updating does not match!!! Found " + count / 2 + " records!";
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
-//
-//
-//        System.out.println ("  - Check that the updates are really there\n");
-//        try {
-//            stream = f.openStream();
-//            map = stream.getNext(rid);
-//        }
-//        catch (Exception e) {
-//            System.err.println ("*** Error opening scan\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        count = 0;
-//        while (map != null) {
-//            try {
-//                count += 2;
-//
-//                assert map.getRowLabel().equals("row1") : "Got row label " + map.getRowLabel() + " but expected row1";
-//                assert map.getColumnLabel().equals("col" + randoms[count]) : "Got row label " + map.getColumnLabel() + " but expected col" + randoms[count];
-//                assert map.getTimeStamp() == randoms[count] : "Got row label " + map.getTimeStamp() + " but expected " + randoms[count];
-//                assert Integer.parseInt(map.getValue()) == randoms[count] * 10 : "Got value " + map.getValue() + " but expected " + randoms[count];
-//
-//                map = stream.getNext(rid);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                stream.closestream();
-//                return false;
-//            }
-//        }
-//
-//        stream.closestream();
-//
-//        try {
-//            f.test();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        assert count == 100 : "*** Record count after updating does not match!!! Found " + count / 2 + " records!";
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
-//
-//        System.out.println ("  Test 3 completed successfully.\n");
-//        return true;
-//    }
+//        assert numRecords == numRec : "*** Record count after insertion does not match!!! Iterated over " + numRecordsAfterDel  + " records!";
+        try {
+            assert f.getMapCnt() == numRec : "*** Record count after insertion does not match!!! File reports " + f.getMapCnt()  + " records!";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
+
+
+        System.out.println ("  Test 3 completed successfully.\n");
+        return true;
+    }
 
 //    protected boolean test1() {
 //        System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
