@@ -19,7 +19,7 @@ public class Stream {
     private SmallMapPage currentDataPage;
     private SmallMapFile file;
     private Boolean sorted;
-    DataPageIterator itr;
+    private DataPageIterator itr;
 
     public Stream(SmallMapFile file, Boolean sorted) throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException {
         this.sorted = sorted;
@@ -28,7 +28,7 @@ public class Stream {
 
     private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, PagePinnedException, PageUnpinnedException, HashOperationException, ReplacerException, BufferPoolExceededException, BufMgrException, PageNotReadException, InvalidFrameNumberException, HashEntryNotFoundException {
         this.file = file;
-        itr = new DataPageIterator(file.getFirstDirPageId(), file.pkLength);
+        this.itr = file.getDataPageIterator();
         this.currentDataPage = itr.getNext();
         if (this.currentDataPage == null) {
             this.nextMapId = null;

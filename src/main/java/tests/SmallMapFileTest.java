@@ -291,7 +291,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test3 () {
 
-        System.out.println ("\n  Test 3: Update fixed-size records\n");
+        System.out.println ("\n  Test 3: Insert and read multiple primary records\n");
         Stream stream = null;
         MID rid = new MID();
         SmallMapFile f = null;
@@ -325,9 +325,6 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             }
         }
 
-//        int numRecords = 0;
-//
-//        assert numRecords == numRec : "*** Record count after insertion does not match!!! Iterated over " + numRecordsAfterDel  + " records!";
         try {
             assert f.getMapCnt() == numRec : "*** Record count after insertion does not match!!! File reports " + f.getMapCnt()  + " records!";
         } catch (Exception e) {
@@ -368,6 +365,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 return false;
             }
         }
+        assert count == numRec : "*** Record count after insertion does not match!!! Iterated over " + count  + " records!";
 
         try {
             stream.closestream();
