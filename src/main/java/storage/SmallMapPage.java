@@ -114,7 +114,7 @@ public class SmallMapPage extends HFPage {
         Convert.setShortValue((short) offset, position + 2, data);
     }
 
-    public void init(PageId pageNo, Page apage, Integer pkLength, String primary, Short primaryPage) throws IOException {
+    public void init(PageId pageNo, Page apage, Integer pkLength, String primary) throws IOException {
         data = apage.getpage();
         Convert.setShortValue((short) 0, SLOT_CNT, data);
 
@@ -130,8 +130,6 @@ public class SmallMapPage extends HFPage {
         Convert.setShortValue((short) MAX_SPACE, USED_PTR, data);
 
         Convert.setShortValue((short) (MAX_SPACE - this.DPFIXED), FREE_SPACE, data);
-
-        setType(primaryPage);
     }
 
     public boolean isEmpty() throws IOException {
