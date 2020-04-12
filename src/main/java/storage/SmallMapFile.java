@@ -104,6 +104,36 @@ public class SmallMapFile extends Heapfile {
         return null;
     }
 
+    private SmallDirpage findPrimaryLocationInDirectory(String primary, RID datapageRid) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+        PageId dirPageId = new PageId(_firstDirPageId.pid);
+        SmallDirpage dirpage = new SmallDirpage();
+        SmallDataPageInfo dpinfo;
+
+        while (dirPageId.pid != INVALID_PAGE) {
+            pinPage(dirPageId, dirpage, false);
+
+            for (RID currentDataPageRid = dirpage.firstRecord();
+                 currentDataPageRid != null;
+                 currentDataPageRid = dirpage.nextRecord(currentDataPageRid)) {
+
+                dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
+                if (dpinfo.primaryKey.equals(primary)) {
+                    datapageRid.pageNo.pid = currentDataPageRid.pageNo.pid;
+                    datapageRid.slotNo = currentDataPageRid.slotNo;
+                    return dirpage;
+                }
+            }
+
+            PageId nextPage = new PageId(dirpage.getNextPage().pid);
+            unpinPage(dirPageId, false);
+            dirPageId.pid = nextPage.pid;
+        }
+
+        datapageRid.pageNo.pid = -1;
+        datapageRid.slotNo = -1;
+        return null;
+    }
+
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {
 
@@ -114,28 +144,21 @@ public class SmallMapFile extends Heapfile {
             return false;
         }
 
+        RID recRid = new RID(rid.pageNo, rid.slotNo);
         RID datapageRid = new RID();
-        SmallDirpage dirpage = findPrimaryLocationInDirectory(new PageId(dataPage.getType()), datapageRid);
+        SmallDirpage dirpage = findPrimaryLocationInDirectory(dataPage.getPrimaryKey(), datapageRid);
 
         if (dirpage == null)
             throw new HFException(null, "This shouldnt happen!");
 
-        dataPage.deleteRecord(new RID(rid.pageNo, rid.slotNo));
+        dataPage.deleteRecord(recRid);
+        // Still need to update dpinfo and unpin this datapage and dirpage
+
+        SmallDataPageInfo dpinfo = dirpage.returnDatapageInfo(datapageRid, this.pkLength);
+        dpinfo.recct--;
+        dpinfo.flushToTuple();
 
         if (dataPage.isEmpty()) {
-            /*
-            if prev and next(may be -1, doesnt matter) are valid
-                pin prev and next pages
-                link them together
-
-             if prev is -1 and next is valid?
-                replace this page with next page and delete next page
-
-             if prev is -1 and next is -1?
-                  delete entry from dirpage
-                  if dirpage is also empty?
-                      if dirpage is not first, delete this, link prev and next
-            */
             PageId prevPageId = new PageId(dataPage.getPrevPage().pid);
             PageId nextPageId = new PageId(dataPage.getNextPage().pid);
 
@@ -153,21 +176,24 @@ public class SmallMapFile extends Heapfile {
                 prevPage.setNextPage(nextPageId);
                 unpinPage(prevPageId, true);
 
+                // Unpin and delete dataPage
                 unpinPage(rid.pageNo, false);
                 freePage(rid.pageNo);
 
+                // Still have to unpin dirpage
+
             } else if (nextPageId.pid != INVALID_PAGE) {
+                dpinfo.pageId.pid = nextPageId.pid;
+                dpinfo.flushToTuple();
+                unpinPage(rid.pageNo, true);
+                freePage(rid.pageNo);
 
                 SmallMapPage nextPage = getNewDataPage();
                 pinPage(nextPageId, nextPage, false);
+                nextPage.setPrevPage(prevPageId);
+                unpinPage(nextPageId, true);
 
-                nextPage.migrateAll(dataPage);
-                dataPage.setNextPage(nextPage.getNextPage());
-                unpinPage(rid.pageNo, true);
-
-                unpinPage(nextPageId, false);
-                freePage(nextPageId);
-
+                // Still have to unpin dirpage
             } else {
 
                 unpinPage(rid.pageNo, false);
@@ -190,19 +216,22 @@ public class SmallMapFile extends Heapfile {
                     }
                     prevDirPage.setNextPage(nextDirPageId);
                     unpinPage(prevDirPageId, true);
-                }
-            }
 
-            return true;
+                    unpinPage(dirpage.getCurPage(), false);
+                    freePage(dirpage.getCurPage());
+
+                    // Got rid of the entire dirpage, so return
+                    return true;
+                }
+
+                // Still have to unpin dirpage
+            }
+        } else {
+            // dataPage not empty. We modified it, so lets flush it
+            unpinPage(rid.pageNo, true);
         }
 
-        unpinPage(rid.pageNo, true);
-        
-        SmallDataPageInfo dpinfo = dirpage.returnDatapageInfo(datapageRid, this.pkLength);
-        dpinfo.recct--;
-        dpinfo.flushToTuple();
         unpinPage(dirpage.getCurPage(), true);
-
         return true;
     }
 

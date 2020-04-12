@@ -65,7 +65,12 @@ public class Stream {
 
     public Map getNext(MID rid) throws IOException, InvalidSlotNumberException, HFBufMgrException, PageNotReadException, PageUnpinnedException, HashOperationException, PagePinnedException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, InvalidTupleSizeException, ReplacerException, HashEntryNotFoundException {
         if (this.nextMapId == null) {
-            unpinPage(this.currentDataPage.getCurPage(), false);
+            try {
+                unpinPage(this.currentDataPage.getCurPage(), false);
+            } catch (HFBufMgrException e) {
+                // do nothing
+                // Maybe someone's calling delete and delete has unpinned and freed the page
+            }
             this.currentDataPage = itr.getNext();
             if (this.currentDataPage == null)
                 return null;
