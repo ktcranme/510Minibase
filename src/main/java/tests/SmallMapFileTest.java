@@ -312,15 +312,16 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             Map m1 = new Map();
             try {
                 // Create 9 different primaries (row1 already exists)
-                m1.setRowLabel("row" + (randoms[i] % 8 * 2));
+                String row = "row" + Integer.toString(randoms[i] % 50 * 2);
+                m1.setRowLabel(row);
                 m1.setColumnLabel("col" + randoms[i]);
                 m1.setTimeStamp(randoms[i]);
                 m1.setValue(Integer.toString(randoms[i]));
 
-                if (!groups.containsKey("row" + (randoms[i] % 8 * 2))) {
-                    groups.put("row" + (randoms[i] % 8 * 2), new ArrayList<>());
+                if (!groups.containsKey(row)) {
+                    groups.put(row, new ArrayList<>());
                 }
-                groups.get("row" + (randoms[i] % 8 * 2)).add(randoms[i]);
+                groups.get(row).add(randoms[i]);
 
                 f.insertMap(m1);
 
@@ -340,8 +341,6 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
-
-        stream = null;
         System.out.println ("  - Verify Sorted Stream\n");
 
         try {
@@ -400,6 +399,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
 
         System.out.println ("  Test 3 completed successfully.\n");
         return true;
@@ -421,7 +421,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
 
         Map map = null;
-        System.out.println ("  - Delete half the records\n");
+        System.out.println ("  - Delete all the records\n");
         try {
             stream = f.openSortedStream();
             map = stream.getNext(rid);
@@ -444,72 +444,28 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             }
         }
 
+        System.out.println ("  - Verify record count\n");
+        assert count == numRec
+                : "Iterated over " + count + " records, but expected " + numRec + " records";
+
+        try {
+            assert f.getMapCnt() == 0 :
+                    "Expected 0 records in file, got " + f.getMapCnt() + " records remaining";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         try {
             stream.closestream();
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-
+        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
         return true;
     }
 
-//    protected boolean test1() {
-//        System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
-//        Random rand = new Random();
-//        for (int i = 0; i < 100; i++) {
-//            randoms[i] = rand.nextInt(1000);
-//        }
-//
-//        MID rid = new MID();
-//        SmallMapFile f = null;
-//
-//        System.out.println ("  - Create a heap file\n");
-//        try {
-//            f = new SmallMapFile("file_1", "row1", 1);
-//        } catch (Exception e) {
-//            System.err.println ("*** Could not create heap file\n");
-//            e.printStackTrace();
-//            return false;
-//        }
-//
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers();
-//
-//        for (int i = 0; i < 100; i++) {
-//            //fixed length record
-//            Map m1 = new Map();
-//            try {
-//                m1.setRowLabel("row1");
-//                m1.setColumnLabel("col" + randoms[i]);
-//                m1.setTimeStamp(randoms[i]);
-//                m1.setValue(Integer.toString(randoms[i]));
-//
-//                f.insertMap(m1);
-//            } catch (Exception e) {
-//                System.err.println ("*** Could not make map");
-//                e.printStackTrace();
-//                return false;
-//            }
-//        }
-//
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers();
-//
-//        try {
-//            f.test();
-//        } catch (HFBufMgrException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (InvalidSlotNumberException e) {
-//            e.printStackTrace();
-//        } catch (InvalidTupleSizeException e) {
-//            e.printStackTrace();
-//        }
-//
-//        assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages " + SystemDefs.JavabaseBM.getNumUnpinnedBuffers() + "/" + SystemDefs.JavabaseBM.getNumBuffers();
-//
-//        return true;
-//    }
 }
 
 public class SmallMapFileTest {

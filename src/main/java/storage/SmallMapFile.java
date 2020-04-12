@@ -256,9 +256,10 @@ public class SmallMapFile extends Heapfile {
 
             }
 
-            dirPageId = dirpage.getNextPage();
-            if (dirPageId.pid != INVALID_PAGE)
+            // Keep current dirpage pinned if next page is invalid
+            if (dirpage.getNextPage().pid != INVALID_PAGE)
                 unpinPage(dirPageId, false);
+            dirPageId = dirpage.getNextPage();
         }
 
         if (!create) {

@@ -39,8 +39,14 @@ public class DataPageIterator {
 
     public void close() throws IOException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
         if (closed) return;
-        if (dirpage.getCurPage().pid != -1)
-            SystemDefs.JavabaseBM.unpinPage(dirpage.getCurPage(), false);
+        if (dirpage.getCurPage().pid != -1) {
+            try {
+                SystemDefs.JavabaseBM.unpinPage(dirpage.getCurPage(), false);
+            } catch (HashEntryNotFoundException e) {
+                // do nothing
+                // maybe this dirpage has been freed due to delete
+            }
+        }
         closed = true;
     }
 
