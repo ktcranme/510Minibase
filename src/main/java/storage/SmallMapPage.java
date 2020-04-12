@@ -134,6 +134,11 @@ public class SmallMapPage extends HFPage {
         setType(primaryPage);
     }
 
+    public boolean isEmpty() throws IOException {
+        short usedPtr = Convert.getShortValue(USED_PTR, data);
+        return usedPtr == MAX_SPACE;
+    }
+
     public void printSeq() throws IOException {
         short start = MAX_SPACE;
         short slotCnt = Convert.getShortValue(SLOT_CNT, data);
@@ -246,6 +251,10 @@ public class SmallMapPage extends HFPage {
             map.print();
             mid = nextMap(mid);
         }
+    }
+
+    public void migrateAll(SmallMapPage page) {
+        System.arraycopy(data, this.DPFIXED, page.data, this.DPFIXED, MAX_SPACE - this.DPFIXED);
     }
 
     public void migrateHalf(SmallMapPage page, Integer key) throws IOException, InvalidSlotNumberException {

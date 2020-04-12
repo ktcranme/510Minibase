@@ -13,6 +13,11 @@ public class SmallDirpage extends Dirpage {
         return new SmallDataPageInfo(getRecord(rid), lengthOfKey);
     }
 
+    public boolean isEmpty() throws IOException {
+        short usedPtr = Convert.getShortValue(USED_PTR, data);
+        return usedPtr == MAX_SPACE;
+    }
+
     public SmallDataPageInfo returnDatapageInfo(RID rid, Integer lengthOfKey) throws IOException, InvalidSlotNumberException,
             InvalidTupleSizeException {
         short recLen;

@@ -74,27 +74,134 @@ public class SmallMapFile extends Heapfile {
 //        return rid;
 //    }
 
+    private SmallDirpage findPrimaryLocationInDirectory(PageId primaryPageId, RID datapageRid) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+        PageId dirPageId = new PageId(_firstDirPageId.pid);
+        SmallDirpage dirpage = new SmallDirpage();
+        SmallDataPageInfo dpinfo;
+
+        while (dirPageId.pid != INVALID_PAGE) {
+            pinPage(dirPageId, dirpage, false);
+
+            for (RID currentDataPageRid = dirpage.firstRecord();
+                 currentDataPageRid != null;
+                 currentDataPageRid = dirpage.nextRecord(currentDataPageRid)) {
+
+                dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
+                if (dpinfo.pageId.pid == primaryPageId.pid) {
+                    datapageRid.pageNo.pid = currentDataPageRid.pageNo.pid;
+                    datapageRid.slotNo = currentDataPageRid.slotNo;
+                    return dirpage;
+                }
+            }
+
+            PageId nextPage = new PageId(dirpage.getNextPage().pid);
+            unpinPage(dirPageId, false);
+            dirPageId.pid = nextPage.pid;
+        }
+
+        datapageRid.pageNo.pid = -1;
+        datapageRid.slotNo = -1;
+        return null;
+    }
+
     public boolean deleteMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
             HFBufMgrException, HFDiskMgrException, Exception {
 
         SmallMapPage dataPage = getNewDataPage();
-        pinPage(rid.pageNo, dataPage, false);
+        try {
+            pinPage(rid.pageNo, dataPage, false);
+        } catch (Exception e) {
+            return false;
+        }
+
+        RID datapageRid = new RID();
+        SmallDirpage dirpage = findPrimaryLocationInDirectory(new PageId(dataPage.getType()), datapageRid);
+
+        if (dirpage == null)
+            throw new HFException(null, "This shouldnt happen!");
+
         dataPage.deleteRecord(new RID(rid.pageNo, rid.slotNo));
+
+        if (dataPage.isEmpty()) {
+            /*
+            if prev and next(may be -1, doesnt matter) are valid
+                pin prev and next pages
+                link them together
+
+             if prev is -1 and next is valid?
+                replace this page with next page and delete next page
+
+             if prev is -1 and next is -1?
+                  delete entry from dirpage
+                  if dirpage is also empty?
+                      if dirpage is not first, delete this, link prev and next
+            */
+            PageId prevPageId = new PageId(dataPage.getPrevPage().pid);
+            PageId nextPageId = new PageId(dataPage.getNextPage().pid);
+
+            if (prevPageId.pid != INVALID_PAGE) {
+
+                SmallMapPage prevPage = getNewDataPage();
+                pinPage(prevPageId, prevPage, false);
+                SmallMapPage nextPage;
+                if (nextPageId.pid != INVALID_PAGE) {
+                    nextPage = getNewDataPage();
+                    pinPage(nextPageId, nextPage, false);
+                    nextPage.setPrevPage(prevPageId);
+                    unpinPage(nextPageId, true);
+                }
+                prevPage.setNextPage(nextPageId);
+                unpinPage(prevPageId, true);
+
+                unpinPage(rid.pageNo, false);
+                freePage(rid.pageNo);
+
+            } else if (nextPageId.pid != INVALID_PAGE) {
+
+                SmallMapPage nextPage = getNewDataPage();
+                pinPage(nextPageId, nextPage, false);
+
+                nextPage.migrateAll(dataPage);
+                dataPage.setNextPage(nextPage.getNextPage());
+                unpinPage(rid.pageNo, true);
+
+                unpinPage(nextPageId, false);
+                freePage(nextPageId);
+
+            } else {
+
+                unpinPage(rid.pageNo, false);
+                freePage(rid.pageNo);
+                dirpage.deleteRecord(datapageRid);
+
+                if (dirpage.isEmpty() && dirpage.getCurPage().pid != _firstDirPageId.pid) {
+                    PageId prevDirPageId = new PageId(dirpage.getPrevPage().pid);
+                    PageId nextDirPageId = new PageId(dirpage.getNextPage().pid);
+
+                    SmallDirpage prevDirPage = new SmallDirpage();
+                    pinPage(prevDirPageId, prevDirPage, false);
+                    SmallDirpage nextDirPage;
+
+                    if (nextDirPageId.pid != INVALID_PAGE) {
+                        nextDirPage = new SmallDirpage();
+                        pinPage(nextDirPageId, nextDirPage, false);
+                        nextDirPage.setPrevPage(prevDirPageId);
+                        unpinPage(nextDirPageId, true);
+                    }
+                    prevDirPage.setNextPage(nextDirPageId);
+                    unpinPage(prevDirPageId, true);
+                }
+            }
+
+            return true;
+        }
+
         unpinPage(rid.pageNo, true);
-
-        // This is assuming we have only one record in dirpage
-        // Must change this later when we have a record for every primary
-        PageId dirPageId = new PageId(_firstDirPageId.pid);
-        SmallDirpage dirpage = new SmallDirpage();
-        pinPage(dirPageId, dirpage, false);
-        SmallDataPageInfo dpinfo;
-
-        RID currentDataPageRid = dirpage.firstRecord();
-        dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
-
+        
+        SmallDataPageInfo dpinfo = dirpage.returnDatapageInfo(datapageRid, this.pkLength);
         dpinfo.recct--;
         dpinfo.flushToTuple();
-        unpinPage(dirPageId, true);
+        unpinPage(dirpage.getCurPage(), true);
 
         return true;
     }

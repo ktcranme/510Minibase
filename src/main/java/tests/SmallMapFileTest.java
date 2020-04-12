@@ -28,8 +28,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         return "Small Map File";
     }
 
-    protected boolean test4() {
-        System.out.println ("\n  Test 4: Insert and sort within a page\n");
+    protected boolean test5() {
+        System.out.println ("\n  Test 5: Insert and sort within a page\n");
         Integer numRecsInPage = 25;
 
         Integer[] randoms = new Integer[numRecsInPage];
@@ -86,7 +86,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
-        System.out.println ("  Test 4 completed successfully.\n");
+        System.out.println ("  Test 5 completed successfully.\n");
         return true;
     }
 
@@ -402,6 +402,55 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
 
         System.out.println ("  Test 3 completed successfully.\n");
+        return true;
+    }
+
+    protected boolean test4 () {
+        System.out.println ("\n  Test 4: Delete all records\n");
+        Stream stream = null;
+        MID rid = new MID();
+        SmallMapFile f = null;
+
+        System.out.println ("  - Open the same heap file as tests 1 and 2\n");
+        try {
+            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
+        } catch (Exception e) {
+            System.err.println ("*** Could not create heap file\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        Map map = null;
+        System.out.println ("  - Delete half the records\n");
+        try {
+            stream = f.openSortedStream();
+            map = stream.getNext(rid);
+        }
+        catch (Exception e) {
+            System.err.println ("*** Error opening scan\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        int count = 0;
+        while (map != null) {
+            try {
+                f.deleteMap(rid);
+                map = stream.getNext(rid);
+                count++;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        try {
+            stream.closestream();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         return true;
     }
 
