@@ -317,7 +317,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
                 f.insertMap(m1);
 
-                m1.print();
+//                m1.print();
             } catch (Exception e) {
                 System.err.println ("*** Could not make map");
                 e.printStackTrace();
@@ -335,6 +335,46 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
+
+
+        stream = null;
+        System.out.println ("  - Verify Sorted Stream\n");
+
+        try {
+            stream = f.openSortedStream();
+        } catch (Exception e) {
+            System.err.println ("*** Error opening scan\n");
+            e.printStackTrace();
+            return false;
+        }
+
+        List<Integer> sorted = Arrays.stream(randoms).sorted().collect(Collectors.toList());
+
+        Map map = new Map();
+        int count = 0;
+        while (map != null) {
+            try {
+                assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has not pinned any pages";
+                map = stream.getNext(rid);
+                if (map == null)
+                    break;
+                map.print();
+
+//                assert map.getRowLabel().equals("row1");
+//                assert Integer.parseInt(map.getValue()) == sorted.get(count) : "Expected value " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
+                count++;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        try {
+            stream.closestream();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
 
 
         System.out.println ("  Test 3 completed successfully.\n");

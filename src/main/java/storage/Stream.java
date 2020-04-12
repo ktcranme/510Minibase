@@ -2,7 +2,7 @@ package storage;
 
 import BigT.Iterator;
 import BigT.Map;
-import bufmgr.PageNotReadException;
+import bufmgr.*;
 import diskmgr.Page;
 import global.MID;
 import global.PageId;
@@ -19,15 +19,17 @@ public class Stream {
     private SmallMapPage currentDataPage;
     private SmallMapFile file;
     private Boolean sorted;
+    DataPageIterator itr;
 
-    public Stream(SmallMapFile file, Boolean sorted) throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException {
+    public Stream(SmallMapFile file, Boolean sorted) throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException {
         this.sorted = sorted;
         init(file);
     }
 
-    private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
+    private void init(SmallMapFile file) throws IOException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, PagePinnedException, PageUnpinnedException, HashOperationException, ReplacerException, BufferPoolExceededException, BufMgrException, PageNotReadException, InvalidFrameNumberException, HashEntryNotFoundException {
         this.file = file;
-        this.currentDataPage = file.getFirstDataPage();
+        itr = new DataPageIterator(file.getFirstDirPageId(), file.pkLength);
+        this.currentDataPage = itr.getNext();
         if (this.currentDataPage == null) {
             this.nextMapId = null;
         } else {
@@ -40,7 +42,7 @@ public class Stream {
         }
     }
 
-    public Stream(SmallMapFile file) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException {
+    public Stream(SmallMapFile file) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException {
         init(file);
     }
 
@@ -61,27 +63,18 @@ public class Stream {
         }
     }
 
-    public Map getNext(MID rid) throws IOException, InvalidSlotNumberException, HFBufMgrException {
+    public Map getNext(MID rid) throws IOException, InvalidSlotNumberException, HFBufMgrException, PageNotReadException, PageUnpinnedException, HashOperationException, PagePinnedException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, InvalidTupleSizeException, ReplacerException, HashEntryNotFoundException {
         if (this.nextMapId == null) {
-            if (this.currentDataPage == null) {
-                return null;
-            }
-
-            PageId nextPage = this.currentDataPage.getNextPage();
             unpinPage(this.currentDataPage.getCurPage(), false);
-            this.currentDataPage = file.getNewDataPage();
-
-            if (nextPage.pid != -1) {
-                pinPage(nextPage, this.currentDataPage, false);
-                if (this.sorted) {
-                    this.currentDataPage.sort(file.secondaryKey);
-                    this.nextMapId = this.currentDataPage.firstSorted();
-                } else {
-                    this.nextMapId = this.currentDataPage.firstMap();
-                }
-            } else {
-                this.currentDataPage = null;
+            this.currentDataPage = itr.getNext();
+            if (this.currentDataPage == null)
                 return null;
+
+            if (this.sorted) {
+                this.currentDataPage.sort(file.secondaryKey);
+                this.nextMapId = this.currentDataPage.firstSorted();
+            } else {
+                this.nextMapId = this.currentDataPage.firstMap();
             }
         }
 
