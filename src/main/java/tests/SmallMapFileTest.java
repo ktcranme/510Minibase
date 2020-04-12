@@ -37,7 +37,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         SmallMapPage page = new SmallMapPage(MAXROWLABELSIZE);
         try {
             System.out.println ("  - Create a page\n");
-            page.init(new PageId(1), new Page(), MAXROWLABELSIZE, "row1");
+            page.init(new PageId(1), new Page(), MAXROWLABELSIZE, "row1", (short) 1);
         } catch (IOException e) {
             e.printStackTrace();
             return false;

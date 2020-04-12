@@ -39,9 +39,9 @@ public class SmallMapFile extends Heapfile {
         return new SmallMapPage(page, this.pkLength);
     }
 
-    public SmallMapPage getNewDataPage(Page page, PageId pid, String primary) throws IOException {
+    public SmallMapPage getNewDataPage(Page page, PageId pid, String primary, Short primaryPage) throws IOException {
         SmallMapPage hfp = new SmallMapPage(this.pkLength);
-        hfp.init(pid, page, this.pkLength, primary);
+        hfp.init(pid, page, this.pkLength, primary, primaryPage);
         return hfp;
     }
 
@@ -208,7 +208,7 @@ public class SmallMapFile extends Heapfile {
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.pkLength, primary);
+        newPage.init(newPageId, apage, this.pkLength, primary, (short) newPageId.pid);
 
         newPage.setCurPage(newPageId);
         newPage.setPrevPage(new PageId(-1));
@@ -237,12 +237,12 @@ public class SmallMapFile extends Heapfile {
     * currentPage is expected to be pinned.
     * returns a SmallMapPage that is already pinned and must be unpinned by the caller.
     * */
-    private SmallMapPage makeNextDataPage(SmallMapPage currentPage, PageId currentPageId, String primary) throws HFBufMgrException, HFException, IOException {
+    private SmallMapPage makeNextDataPage(SmallMapPage currentPage, PageId currentPageId, String primary, Short primaryPage) throws HFBufMgrException, HFException, IOException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.pkLength, primary);
+        newPage.init(newPageId, apage, this.pkLength, primary, primaryPage);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);
@@ -252,12 +252,12 @@ public class SmallMapFile extends Heapfile {
         return newPage;
     }
 
-    private SmallMapPage makeDataPageInBetween(SmallMapPage currentPage, PageId currentPageId, SmallMapPage nextPage, PageId nextPageId, String primary) throws HFBufMgrException, HFException, IOException {
+    private SmallMapPage makeDataPageInBetween(SmallMapPage currentPage, PageId currentPageId, SmallMapPage nextPage, PageId nextPageId, String primary, Short primaryPage) throws HFBufMgrException, HFException, IOException {
         PageId newPageId = new PageId();
         Page apage = _newDatapage(newPageId);
         SmallMapPage newPage = new SmallMapPage(this.pkLength);
 
-        newPage.init(newPageId, apage, this.pkLength, primary);
+        newPage.init(newPageId, apage, this.pkLength, primary, primaryPage);
 
         currentPage.setNextPage(newPageId);
         newPage.setPrevPage(currentPageId);
@@ -301,7 +301,7 @@ public class SmallMapFile extends Heapfile {
             // Or we insert into next page, with a possible split
             if (!pageHasSpace(curDataPage) && !pageHasSpace(nextDataPage)) {
                 // split current page
-                SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary);
+                SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary, (short) startingDatapage.getCurPage().pid);
                 // his work is done here
                 unpinPage(nextDataPageId, true);
                 // move data from curDatapage to split
@@ -326,7 +326,7 @@ public class SmallMapFile extends Heapfile {
                 if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
 
                     // split current page
-                    SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary);
+                    SmallMapPage split = makeDataPageInBetween(curDataPage, curDataPageId, nextDataPage, nextDataPageId, primary, (short) startingDatapage.getCurPage().pid);
                     // his work is done here
                     unpinPage(nextDataPageId, true);
                     // move data from curDatapage to split
@@ -367,7 +367,7 @@ public class SmallMapFile extends Heapfile {
 
             if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                 // Split
-                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary);
+                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary, (short) startingDatapage.getCurPage().pid);
                 curDataPage.migrateHalf(nextDataPage, this.secondaryKey);
                 if (curDataPage.getMaxVal(this.secondaryKey).compareTo(map.getKey(this.secondaryKey)) > 0) {
                     unpinPage(nextDataPage.getCurPage(), true);
@@ -380,7 +380,7 @@ public class SmallMapFile extends Heapfile {
 
             } else {
                 // create new datapage
-                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary);
+                nextDataPage = makeNextDataPage(curDataPage, curDataPageId, primary, (short) startingDatapage.getCurPage().pid);
                 unpinPage(curDataPageId, true);
                 curDataPageId.pid = nextDataPage.getCurPage().pid;
                 curDataPage = nextDataPage;
