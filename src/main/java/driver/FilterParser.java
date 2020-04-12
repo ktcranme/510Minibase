@@ -45,6 +45,18 @@ public class FilterParser {
         return flatAllFilters.toArray(new CondExpr[flatAllFilters.size()]);
     }
 
+    public static CondExpr[] parseNegation(String filterString, int field_off, int type) {
+        CondExpr[] cr = new CondExpr[1];
+        cr[0] = new CondExpr();
+        cr[0] .type1 = new AttrType(AttrType.attrSymbol);
+        cr[0] .operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), field_off);
+        cr[0] .op = new AttrOperator(AttrOperator.aopNE);
+        cr[0] .type2 = new AttrType(type);
+        cr[0] .operand2.string = filterString;
+        cr[0] .next = null;
+        return cr;
+    }
+
     public static List<CondExpr> fieldFilterGen(String s, int off, int type){
         List<CondExpr> fFilters = new ArrayList<>();
         CondExpr temp = null;
