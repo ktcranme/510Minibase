@@ -11,6 +11,10 @@ import global.*;
 import heap.HFBufMgrException;
 import heap.InvalidSlotNumberException;
 import heap.InvalidTupleSizeException;
+import heap.Tuple;
+import iterator.Iterator;
+import iterator.Sort;
+import iterator.SortException;
 import storage.SmallMap;
 import storage.SmallMapPage;
 import storage.Stream;
@@ -563,6 +567,36 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
         assert count == numRec : "Returned records from stream doesnt match insert count!";
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has left pinned pages";
+
+        AttrType[] attrType = {
+                new AttrType(AttrType.attrInteger),
+                new AttrType(AttrType.attrInteger),
+                new AttrType(AttrType.attrString)
+        };
+        short[] attrSize = { MAXROWLABELSIZE };
+        TupleOrder[] order = {
+                new TupleOrder(TupleOrder.Ascending),
+                new TupleOrder(TupleOrder.Descending)
+        };
+
+        Iterator itr;
+        try {
+            itr = f.getDirRecItr();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        try {
+            Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], MAXROWLABELSIZE, 5);
+            Tuple tup = sort.get_next();
+            while (tup != null) {
+                tup = sort.get_next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
 
         System.out.println ("  Test 6 completed successfully.\n");
         return true;

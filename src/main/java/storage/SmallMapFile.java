@@ -31,6 +31,10 @@ public class SmallMapFile extends Heapfile {
         this.pkLength = pkLength;
     }
 
+    public SmallDirPageInfoIterator getDirRecItr() throws IOException, PagePinnedException, HashOperationException, PageUnpinnedException, InvalidFrameNumberException, BufferPoolExceededException, BufMgrException, PageNotReadException, ReplacerException {
+        return new SmallDirPageInfoIterator(_firstDirPageId, pkLength);
+    }
+
     public SmallMapPage getNewDataPage() {
         return new SmallMapPage(this.pkLength);
     }
