@@ -60,12 +60,6 @@ testvstream: db
 testsort: db
 	cd tests; make runsorttest
 
-testsmallmap: db
-	cd tests; make runsmallmap
-
-testsmallmapfile: db
-	cd tests; make runsmallmapfile
-
 filestream: db
 	cd tests; make filestream
 

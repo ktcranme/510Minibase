@@ -33,13 +33,7 @@ run: all
 	$(JAVA) tests.bigtTest
 	$(JAVA) tests.VStreamTest
 	$(JAVA) tests.FileStreamTest
-    $(JAVA) -ea tests.SmallMapTest
-    $(JAVA) -ea tests.SmallMapFileTest
-
-runsmallmap: $(CURDIR)/SmallMapTest.class
 	$(JAVA) -ea tests.SmallMapTest
-
-runsmallmapfile: $(CURDIR)/SmallMapFileTest.class
 	$(JAVA) -ea tests.SmallMapFileTest
 
 runstream: $(CURDIR)/StreamTest.class
@@ -56,6 +50,12 @@ runsorttest: $(CURDIR)/SortTest.class
 
 filestream: $(CURDIR)/FileStreamTest.class
 	$(JAVA) tests.FileStreamTest
+
+smallmap: $(CURDIR)/SmallMapTest.class
+	$(JAVA) tests.SmallMapTest
+
+smallmapfile: $(CURDIR)/SmallMapFileTest.class
+	$(JAVA) tests.SmallMapFileTest
 
 clean:
 	\rm -f $(CURDIR)/*.class *~ \#* core $(JARFILES) TRACE
