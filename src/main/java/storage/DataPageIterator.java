@@ -31,10 +31,12 @@ public class DataPageIterator {
         dirpage = new SmallDirpage();
         SystemDefs.JavabaseBM.pinPage(dirpageId, dirpage, false);
         datapageRid = dirpage.firstRecord();
-        if (datapageRid == null)
+        if (datapageRid == null) {
             close();
-        SmallDataPageInfo dataPageInfo = dirpage.getDatapageInfo(datapageRid, pkLength);
-        datapageId = new PageId(dataPageInfo.pageId.pid);
+        } else {
+            SmallDataPageInfo dataPageInfo = dirpage.getDatapageInfo(datapageRid, pkLength);
+            datapageId = new PageId(dataPageInfo.pageId.pid);
+        }
     }
 
     public void close() throws IOException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {

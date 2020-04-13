@@ -22,6 +22,12 @@ import storage.SmallMapFile;
 
 class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
     int numRec = 500;
+
+    public void setNumRec(Integer numRec) {
+        this.numRec = numRec;
+        randoms = new Integer[numRec];
+    }
+
     public Integer[] randoms = new Integer[numRec];
 
     public SmallMapFileTestDriver() {
@@ -147,13 +153,24 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
-        List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+        List<Integer> sorted;
+        if (numRec != 0) {
+            sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+        } else {
+            sorted = new ArrayList<>();
+        }
 
         Map map = new Map();
         int count = 0;
         while (map != null) {
             try {
-                assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers() : "*** The heap-file scan has not pinned any pages";
+                if (numRec > 0)
+                    assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() != SystemDefs.JavabaseBM.getNumBuffers()
+                            : "*** The heap-file scan has not pinned any pages";
+                else
+                    assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers()
+                            : "*** The heap-file scan has left pages pinned despite having 0 records";
+
                 map = stream.getNext(rid);
                 if (map == null)
                     break;
@@ -614,11 +631,19 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 public class SmallMapFileTest {
     public static void main(String[] args) {
         SmallMapFileTestDriver fs = new SmallMapFileTestDriver();
+
+        Integer[] lengths = {0, 50, 100, 480, 179, 366, 29, 520};
         boolean status = false;
-        try {
-            status = fs.runTests();
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Integer length : lengths) {
+            System.out.println("Running SmallMapFile tests with data size: " + length + "\n");
+            try {
+                fs.setNumRec(length);
+                status = fs.runTests();
+            } catch (IOException e) {
+                System.out.println("Error occured running SmallMapFile tests with data size: " + length);
+                e.printStackTrace();
+                break;
+            }
         }
 
         if (!status) {

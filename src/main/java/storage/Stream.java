@@ -21,6 +21,8 @@ public class Stream {
     private Boolean sorted;
     private DataPageIterator itr;
 
+    Boolean closed;
+
     public Stream(SmallMapFile file, Boolean sorted) throws InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, IOException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException {
         this.sorted = sorted;
         init(file);
@@ -30,8 +32,10 @@ public class Stream {
         this.file = file;
         this.itr = file.getDataPageIterator();
         this.currentDataPage = itr.getNext();
+        closed = false;
         if (this.currentDataPage == null) {
             this.nextMapId = null;
+            closestream();
         } else {
             if (this.sorted) {
                 this.currentDataPage.sort(file.secondaryKey);
@@ -64,6 +68,8 @@ public class Stream {
     }
 
     public Map getNext(MID rid) throws IOException, InvalidSlotNumberException, HFBufMgrException, PageNotReadException, PageUnpinnedException, HashOperationException, PagePinnedException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, InvalidTupleSizeException, ReplacerException, HashEntryNotFoundException {
+        if (closed) return null;
+
         if (this.nextMapId == null) {
             try {
                 unpinPage(this.currentDataPage.getCurPage(), false);
@@ -96,9 +102,16 @@ public class Stream {
     }
 
     public void closestream() throws IOException, HFBufMgrException {
+        if (closed) return;
         if (this.currentDataPage != null && this.currentDataPage.getCurPage().pid != -1) {
             unpinPage(this.currentDataPage.getCurPage(), false);
             this.currentDataPage = null;
         }
+        try {
+            this.itr.close();
+        } catch (Exception e) {
+            // Pass
+        }
+        closed = true;
     }
 }
