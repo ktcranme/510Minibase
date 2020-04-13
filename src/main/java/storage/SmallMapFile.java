@@ -59,6 +59,8 @@ public class SmallMapFile extends Heapfile {
     }
 
     public void sortPrimary() throws Exception {
+        if (sortedPrimary) return;
+
         List<SmallDirpage> dirpageList = new ArrayList<>();
         AttrType[] attrType = {
                 new AttrType(AttrType.attrInteger),
