@@ -3,18 +3,22 @@ package storage;
 import BigT.*;
 import bufmgr.*;
 import diskmgr.Page;
-import global.MID;
-import global.PageId;
-import global.RID;
-import global.SystemDefs;
+import global.*;
 import heap.*;
+import iterator.Iterator;
+import iterator.Sort;
+import iterator.SortException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SmallMapFile extends Heapfile {
     Integer primaryKey;
     Integer pkLength;
     Integer secondaryKey;
+
+    Boolean sortedPrimary;
 
     public Integer getSecondaryKey() {
         return this.secondaryKey;
@@ -29,6 +33,92 @@ public class SmallMapFile extends Heapfile {
         this.primaryKey = primaryKey;
         this.secondaryKey = secondaryKey;
         this.pkLength = pkLength;
+        sortedPrimary = false;
+    }
+
+    private SmallDirpage nextDirPage(SmallDirpage currentDirPage) throws HFBufMgrException, HFException, IOException {
+        Page pageinbuffer = new Page();
+        PageId nextDirPageId = newPage(pageinbuffer, 1);
+        SmallDirpage nextDirPage = new SmallDirpage();
+        // need check error!
+        if (nextDirPageId == null)
+            throw new HFException(null, "can't new pae");
+
+        // initialize new directory page
+        nextDirPage.init(nextDirPageId, pageinbuffer);
+        PageId temppid = new PageId(INVALID_PAGE);
+        nextDirPage.setNextPage(temppid);
+
+        if (currentDirPage != null) {
+            temppid.pid = currentDirPage.getCurPage().pid;
+            currentDirPage.setNextPage(nextDirPageId);
+        }
+        nextDirPage.setPrevPage(temppid);
+
+        return nextDirPage;
+    }
+
+    public void sortPrimary() throws Exception {
+        List<SmallDirpage> dirpageList = new ArrayList<>();
+        AttrType[] attrType = {
+                new AttrType(AttrType.attrInteger),
+                new AttrType(AttrType.attrInteger),
+                new AttrType(AttrType.attrString)
+        };
+        short[] attrSize = { MAXROWLABELSIZE };
+        TupleOrder[] order = {
+                new TupleOrder(TupleOrder.Ascending),
+                new TupleOrder(TupleOrder.Descending)
+        };
+
+        Iterator itr = getDirRecItr();
+        iterator.Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], MAXROWLABELSIZE, 5);
+
+        SmallDirpage dirpage = nextDirPage(null);
+        dirpageList.add(dirpage);
+        Tuple primaryInfo = sort.get_next();
+        SmallDataPageInfo info = new SmallDataPageInfo("", pkLength);
+
+        while (primaryInfo != null) {
+            if (dirpage.available_space() < HFPage.SIZE_OF_SLOT + info.size) {
+                dirpage = nextDirPage(dirpage);
+                if (dirpageList.size() == 1)
+                    dirpage.setPrevPage(new PageId(_firstDirPageId.pid));
+                if (dirpageList.size() > 1)
+                    unpinPage(dirpage.getPrevPage(), true);
+                dirpageList.add(dirpage);
+            }
+
+            byte[] data = new byte[info.size];
+            System.arraycopy(primaryInfo.returnTupleByteArray(), 2 + (primaryInfo.noOfFlds() + 1) * 2, data, 0, info.size);
+            dirpage.insertRecord(data);
+
+            primaryInfo = sort.get_next();
+        }
+        sort.close();
+        itr.close();
+        if (dirpageList.size() > 1)
+            unpinPage(dirpageList.get(dirpageList.size() - 1).getCurPage(), true);
+
+        dirpage = new SmallDirpage();
+        pinPage(_firstDirPageId, dirpage, false);
+        PageId curPageId = new PageId(dirpage.getNextPage().pid);
+        PageId nextPageId;
+        dirpage.replaceData(dirpageList.get(0));
+        dirpage.setNextPage(dirpageList.get(0).getNextPage());
+        unpinPage(_firstDirPageId, true);
+        unpinPage(dirpageList.get(0).getCurPage(), false);
+        freePage(dirpageList.get(0).getCurPage());
+
+        while (curPageId.pid != INVALID_PAGE) {
+            pinPage(curPageId, dirpage, false);
+            nextPageId = new PageId(dirpage.getNextPage().pid);
+            unpinPage(curPageId, false);
+            freePage(curPageId);
+            curPageId.pid = nextPageId.pid;
+        }
+
+        sortedPrimary = true;
     }
 
     public SmallDirPageInfoIterator getDirRecItr() throws IOException, PagePinnedException, HashOperationException, PageUnpinnedException, InvalidFrameNumberException, BufferPoolExceededException, BufMgrException, PageNotReadException, ReplacerException {
@@ -314,6 +404,7 @@ public class SmallMapFile extends Heapfile {
 
         SmallDataPageInfo dpinfo;
         if (currentDataPageRid.pageNo.pid == INVALID_PAGE) {
+            sortedPrimary = false;
             curDataPage = makeNewPrimaryDataPage(dirpage, primary, currentDataPageRid);
             curDataPageId.pid = curDataPage.getCurPage().pid;
             dpinfo = dirpage.returnDatapageInfo(currentDataPageRid, this.pkLength);
@@ -341,7 +432,8 @@ public class SmallMapFile extends Heapfile {
         return new Stream(this);
     }
 
-    public Stream openSortedStream() throws IOException, HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, PagePinnedException, PageUnpinnedException, HashOperationException, ReplacerException, BufferPoolExceededException, BufMgrException, PageNotReadException, InvalidFrameNumberException, HashEntryNotFoundException {
+    public Stream openSortedStream() throws Exception {
+        sortPrimary();
         return new Stream(this, this.secondaryKey != null);
     }
 

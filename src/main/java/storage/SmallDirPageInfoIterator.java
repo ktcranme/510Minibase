@@ -68,7 +68,7 @@ public class SmallDirPageInfoIterator extends Iterator {
     @Override
     public void close() throws IOException, JoinsException, SortException, IndexException {
         if (closed) return;
-        if (page != null && page.getCurPage().pid == -1) {
+        if (page != null && page.getCurPage().pid != -1) {
             try {
                 SystemDefs.JavabaseBM.unpinPage(page.getCurPage(), false);
             } catch (Exception e) {
@@ -76,5 +76,6 @@ public class SmallDirPageInfoIterator extends Iterator {
                 throw new IOException();
             }
         }
+        closed = true;
     }
 }

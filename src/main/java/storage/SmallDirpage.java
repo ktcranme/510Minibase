@@ -13,6 +13,14 @@ public class SmallDirpage extends Dirpage {
         return new SmallDataPageInfo(getRecord(rid), lengthOfKey);
     }
 
+    public void replaceData(SmallDirpage anotherDir) throws IOException {
+        PageId curPageId = new PageId(getCurPage().pid);
+        PageId nextPageId = new PageId(getNextPage().pid);
+        System.arraycopy(anotherDir.getpage(), 0, data, 0, MINIBASE_PAGESIZE);
+        setCurPage(curPageId);
+        setNextPage(nextPageId);
+    }
+
     public boolean isEmpty() throws IOException {
         short usedPtr = Convert.getShortValue(USED_PTR, data);
         return usedPtr == MAX_SPACE;
