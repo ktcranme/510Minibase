@@ -149,6 +149,9 @@ public class SmallMapPage extends HFPage {
 
     // Expects all the elements to be tightly packed
     public void sort(Integer secondarykey) throws IOException {
+        if (secondarykey == null)
+            return;
+
         short start = MAX_SPACE;
         short totalSlots = Convert.getShortValue(SLOT_CNT, data);
         short usedPtr = Convert.getShortValue(USED_PTR, data);

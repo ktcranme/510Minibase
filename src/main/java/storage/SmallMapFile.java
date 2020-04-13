@@ -320,7 +320,12 @@ public class SmallMapFile extends Heapfile {
         }
 
         // This will unpin curDataPage
-        RID rid = insertMap(new SmallMap(tuple, this.primaryKey), curDataPage, primary);
+        RID rid;
+        if (this.secondaryKey == null) {
+            rid = insertMapUnsorted(new SmallMap(tuple, this.primaryKey), curDataPage, primary);
+        } else {
+            rid = insertMap(new SmallMap(tuple, this.primaryKey), curDataPage, primary);
+        }
 
         dpinfo.recct++;
         dpinfo.flushToTuple();
@@ -333,7 +338,7 @@ public class SmallMapFile extends Heapfile {
     }
 
     public Stream openSortedStream() throws IOException, HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, PagePinnedException, PageUnpinnedException, HashOperationException, ReplacerException, BufferPoolExceededException, BufMgrException, PageNotReadException, InvalidFrameNumberException, HashEntryNotFoundException {
-        return new Stream(this, true);
+        return new Stream(this, this.secondaryKey != null);
     }
 
     /*
@@ -409,7 +414,44 @@ public class SmallMapFile extends Heapfile {
         return page.available_space() > HFPage.SIZE_OF_SLOT + SmallMap.map_size;
     }
 
+    private RID insertMapUnsorted(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
+        if (this.secondaryKey != null)
+            throw new HFException(null, "Must sort on secondary!");
+
+        PageId curDataPageId = new PageId(startingDatapage.getCurPage().pid);
+        SmallMapPage curDataPage = startingDatapage;
+        PageId nextDataPageId = new PageId();
+
+        while (curDataPageId.pid != INVALID_PAGE) {
+            if (pageHasSpace(curDataPage)) {
+                RID rid = curDataPage.insertRecord(map.getMapByteArray());
+                unpinPage(curDataPageId, true);
+                return rid;
+            }
+
+            nextDataPageId = new PageId(curDataPage.getNextPage().pid);
+            if (nextDataPageId.pid != INVALID_PAGE) {
+                unpinPage(curDataPageId, false);
+                pinPage(nextDataPageId, curDataPage, false);
+            }
+            curDataPageId.pid = nextDataPageId.pid;
+        }
+
+        // Update curDataPage with the next page ID and flush it
+        PageId pageId = new PageId(curDataPage.getCurPage().pid);
+        curDataPage = makeNextDataPage(curDataPage, curDataPageId, primary);
+        unpinPage(pageId, true);
+        // Insert record into the newly created page
+        RID rid = curDataPage.insertRecord(map.getMapByteArray());
+        unpinPage(curDataPage.getCurPage(), true);
+
+        return rid;
+    }
+
     private RID insertMap(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
+        if (this.secondaryKey == null)
+            throw new HFException(null, "Must not sort on secondary!");
+
         PageId curDataPageId = new PageId(startingDatapage.getCurPage().pid);
         SmallMapPage curDataPage = startingDatapage;
 
