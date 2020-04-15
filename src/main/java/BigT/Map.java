@@ -38,7 +38,22 @@ public class Map implements GlobalConst{
 		new AttrType(AttrType.attrInteger),
 		new AttrType(AttrType.attrString)
 	};
-	
+
+	public String getKey(Integer pos) throws IOException {
+		switch (pos) {
+			case 1:
+				return getRowLabel();
+			case 2:
+				return getColumnLabel();
+			case 3:
+				return String.format("%04d", getTimeStamp());
+			case 4:
+				return getValue();
+		}
+
+		throw new IOException("Invalid Key");
+	}
+
 	private short[] getFldOffsetArray()
 	{
 		return new short[] {(short) map_offset, (short) (map_offset + MAXROWLABELSIZE), 

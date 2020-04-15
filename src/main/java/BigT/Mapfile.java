@@ -42,7 +42,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
     }
 
     public Map getMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
-            HFDiskMgrException, HFBufMgrException, Exception {
+			HFDiskMgrException, HFBufMgrException, IOException {
         byte[] rec = getRecord(new RID(rid.pageNo, rid.slotNo / 3));
         return PhysicalMap.physicalMapToMap(rec, rid.slotNo % 3);
     }

@@ -16,6 +16,8 @@ import heap.Dirpage;
 import heap.HFBufMgrException;
 import heap.DataPageInfo;
 import heap.Tuple;
+import storage.SmallMapFile;
+import storage.SmallMapPage;
 
 
 interface PageView {
