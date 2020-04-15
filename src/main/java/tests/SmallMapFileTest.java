@@ -40,9 +40,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
 
     protected boolean test5() {
         System.out.println ("\n  Test 5: Insert and sort within a page\n");
-        Integer numRecsInPage = 25;
 
-        Integer[] randoms = new Integer[numRecsInPage];
+        List<Integer> randoms = new ArrayList<>();
         Random rand = new Random();
         SmallMapPage page = new SmallMapPage(MAXROWLABELSIZE);
         try {
@@ -53,19 +52,20 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
-        System.out.println ("  - Insert " + numRecsInPage + " records\n");
-        for (int i = 0; i < numRecsInPage; i++) {
-            randoms[i] = rand.nextInt(1000);
+        System.out.println ("  - Insert records into page\n");
+        RID rid = new RID();
+        while (rid != null) {
+            int in = rand.nextInt(1000);
             try {
                 SmallMap map = new SmallMap();
-                map.setValue(Integer.toString(randoms[i]));
-                map.setTimeStamp(randoms[i]);
-                map.setLabel("col" + randoms[i]);
-                RID rid = page.insertRecord(map.getMapByteArray());
+                map.setValue(Integer.toString(in));
+                map.setTimeStamp(in);
+                map.setLabel("col" + in);
+                rid = page.insertRecord(map.getMapByteArray());
 
                 // Because we cant insert more than numRecsInPage records in a page
-                if (rid == null)
-                    break;
+                if (rid != null)
+                    randoms.add(in);
 //                map.print();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -74,7 +74,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         }
 
         System.out.println ("  - Verify the sorted order\n");
-        List<Integer> sorted = Arrays.asList(randoms).stream().sorted().collect(Collectors.toList());
+        List<Integer> sorted = randoms.stream().sorted().collect(Collectors.toList());
 
         try {
             page.sort(3);
@@ -90,7 +90,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 count++;
             }
 
-            assert count == numRecsInPage : "Count of records did not match insert count!";
+            assert count == randoms.size() : "Count of records did not match insert count!";
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -632,13 +632,15 @@ public class SmallMapFileTest {
     public static void main(String[] args) {
         SmallMapFileTestDriver fs = new SmallMapFileTestDriver();
 
-        Integer[] lengths = {0, 50, 100, 480, 179, 366, 29, 520};
+        Integer[] lengths = {0, 50, 100, 179, 200, 29};
         boolean status = false;
         for (Integer length : lengths) {
             System.out.println("Running SmallMapFile tests with data size: " + length + "\n");
             try {
                 fs.setNumRec(length);
                 status = fs.runTests();
+                if (!status)
+                    break;
             } catch (IOException e) {
                 System.out.println("Error occured running SmallMapFile tests with data size: " + length);
                 e.printStackTrace();

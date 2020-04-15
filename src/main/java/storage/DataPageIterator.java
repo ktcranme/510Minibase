@@ -47,6 +47,7 @@ public class DataPageIterator {
             } catch (HashEntryNotFoundException e) {
                 // do nothing
                 // maybe this dirpage has been freed due to delete
+                System.out.println("Please dont delete while a stream is open!");
             }
         }
         closed = true;
@@ -60,7 +61,12 @@ public class DataPageIterator {
             return;
         }
 
-        SystemDefs.JavabaseBM.unpinPage(dirpageId, false);
+        try {
+            SystemDefs.JavabaseBM.unpinPage(dirpageId, false);
+        } catch (HashEntryNotFoundException e) {
+            System.out.println("Please dont delete while a stream is open!");
+        }
+
         SystemDefs.JavabaseBM.pinPage(nextPage, dirpage, false);
         dirpageId.pid = nextPage.pid;
         datapageRid = dirpage.firstRecord();

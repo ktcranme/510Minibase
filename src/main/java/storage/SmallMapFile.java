@@ -67,14 +67,14 @@ public class SmallMapFile extends Heapfile {
                 new AttrType(AttrType.attrInteger),
                 new AttrType(AttrType.attrString)
         };
-        short[] attrSize = { MAXROWLABELSIZE };
+        short[] attrSize = { pkLength.shortValue() };
         TupleOrder[] order = {
                 new TupleOrder(TupleOrder.Ascending),
                 new TupleOrder(TupleOrder.Descending)
         };
 
         Iterator itr = getDirRecItr();
-        iterator.Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], MAXROWLABELSIZE, 5);
+        iterator.Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], pkLength, 10);
 
         SmallDirpage dirpage = nextDirPage(null);
         dirpageList.add(dirpage);
@@ -355,7 +355,7 @@ public class SmallMapFile extends Heapfile {
             // Keep current dirpage pinned if next page is invalid
             if (dirpage.getNextPage().pid != INVALID_PAGE)
                 unpinPage(dirPageId, false);
-            dirPageId = dirpage.getNextPage();
+            dirPageId = new PageId(dirpage.getNextPage().pid);
         }
 
         if (!create) {
