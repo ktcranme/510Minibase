@@ -55,7 +55,12 @@ public class SmallDirPageInfoIterator extends Iterator {
         }
 
         SmallDataPageInfo info = page.getDatapageInfo(recid, pkLength);
-        byte[] data = new byte[42];
+        // Why 42?
+        // 10 bytes to store length + offsets of the 3 fields (including the end)
+        // Then the actual 8 + pklength of data + 2 because for some reason tuple
+        // allocates 2 bytes for string. Also we enforce primary key to be of
+        // type string, so this is okay here
+        byte[] data = new byte[10 + 8 + pkLength + 2];
         System.arraycopy(info.returnByteArray(), 0, data, 10, info.size);
         Tuple tuple = new Tuple(data, 0, data.length);
         tuple.setHdr((short) 3, attrType, new short[] { pkLength.shortValue() });

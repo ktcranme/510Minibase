@@ -76,6 +76,7 @@ public class Stream {
             } catch (HFBufMgrException e) {
                 // do nothing
                 // Maybe someone's calling delete and delete has unpinned and freed the page
+                System.out.println("Please dont delete while a stream is open!");
             }
             this.currentDataPage = itr.getNext();
             if (this.currentDataPage == null)
