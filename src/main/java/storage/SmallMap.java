@@ -64,7 +64,7 @@ public class SmallMap implements GlobalConst {
         fldOffset = getFldOffsetArray();
     }
 
-    public SmallMap(BigT.Map fromMap, Integer ignorePos) {
+    public SmallMap(Map fromMap, Integer ignorePos) {
         byte[] temparray = fromMap.getMapByteArray();
         data = new byte[map_size];
         System.arraycopy(temparray, MAXROWLABELSIZE + MAXCOLUMNLABELSIZE, data, MAXROWLABELSIZE, 4 + MAXVALUESIZE);
