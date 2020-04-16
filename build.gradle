@@ -10,6 +10,58 @@ repositories {
     mavenCentral()
 }
 
+task SmallMapTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.SmallMapTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task SmallMapFileTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.SmallMapFileTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task SmallMapFilePrimeTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.SmallMapFilePrimeTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task StreamTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.StreamTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task VStreamTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.VStreamTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task FileStreamTest (type: JavaExec, dependsOn: classes) {
+    dependsOn build
+    jvmArgs "-ea"
+    main="tests.FileStreamTest"
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task testAll(){
+    dependsOn clean
+    dependsOn SmallMapTest
+    dependsOn SmallMapFileTest
+    dependsOn SmallMapFilePrimeTest
+    dependsOn StreamTest
+    dependsOn VStreamTest
+    dependsOn FileStreamTest
+}
+
 dependencies {
     compile group: 'org.apache.commons', name: 'commons-csv', version: '1.5'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'

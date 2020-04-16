@@ -20,6 +20,16 @@ public class SmallMapFile extends Heapfile {
 
     Boolean sortedPrimary;
 
+    Double pageUtilization;
+
+    public Double getPageUtilization() {
+        return pageUtilization;
+    }
+
+    public void setPageUtilization(Double pageUtilization) {
+        this.pageUtilization = pageUtilization;
+    }
+
     public Integer getSecondaryKey() {
         return this.secondaryKey;
     }
@@ -34,6 +44,7 @@ public class SmallMapFile extends Heapfile {
         this.secondaryKey = secondaryKey;
         this.pkLength = pkLength;
         sortedPrimary = false;
+        pageUtilization = 1.0;
     }
 
     private SmallDirpage nextDirPage(SmallDirpage currentDirPage) throws HFBufMgrException, HFException, IOException {
@@ -509,7 +520,7 @@ public class SmallMapFile extends Heapfile {
     }
 
     private boolean pageHasSpace(SmallMapPage page) throws IOException {
-        return page.available_space() > HFPage.SIZE_OF_SLOT + SmallMap.map_size;
+        return page.available_space() * this.pageUtilization > HFPage.SIZE_OF_SLOT + SmallMap.map_size;
     }
 
     private RID insertMapUnsorted(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
