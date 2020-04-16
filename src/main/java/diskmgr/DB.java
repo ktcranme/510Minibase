@@ -556,6 +556,77 @@ public class DB implements GlobalConst {
     unpinPage(hpid, true /*dirty*/);
     
   }
+
+
+    public void update_file_entry(String fname, String newName)
+            throws FileEntryNotFoundException,
+            IOException,
+            DiskMgrException {
+
+        Page apage = new Page();
+        boolean found = false;
+        int slot = 0;
+        PageId hpid = new PageId();
+        PageId nexthpid = new PageId(0);
+        PageId tmppid = new PageId();
+        DBHeaderPage dp;
+
+        do
+        { // startDO01
+            hpid.pid = nexthpid.pid;
+
+            // Pin the header page.
+            pinPage(hpid, apage, false/*read disk*/);
+
+            // This complication is because the first page has a different
+            // structure from that of subsequent pages.
+            if(hpid.pid==0)
+            {
+                dp = new DBFirstPage();
+                ((DBFirstPage)dp).openPage(apage);
+            }
+            else
+            {
+                dp = new DBDirectoryPage();
+                ((DBDirectoryPage) dp).openPage(apage);
+            }
+            nexthpid = dp.getNextPage();
+
+            int entry = 0;
+
+            String tmpname;
+            while(entry < dp.getNumOfEntries())
+            {
+                tmpname = dp.getFileEntry(tmppid, entry);
+
+                if((tmppid.pid != INVALID_PAGE)&&
+                        (tmpname.compareTo(fname) == 0)) break;
+                entry ++;
+            }
+
+            if(entry < dp.getNumOfEntries())
+            {
+                slot = entry;
+                found = true;
+            }
+            else
+            {
+                unpinPage(hpid, false /*undirty*/);
+            }
+
+        } while((nexthpid.pid != INVALID_PAGE) && (!found)); // EndDO01
+
+        if(!found)  // Entry not found - nothing deleted
+            throw new FileEntryNotFoundException(null, "DB file not found");
+
+        // Have to delete record at hpnum:slot
+//        tmppid.pid = INVALID_PAGE;
+        dp.setFileEntry(tmppid, newName, slot);
+
+        unpinPage(hpid, true /*dirty*/);
+
+    }
+
   
   /** Get the entry corresponding to the given file.
    *

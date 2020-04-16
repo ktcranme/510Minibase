@@ -5,13 +5,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import BigT.Map;
-import bufmgr.*;
 import diskmgr.Page;
 import global.*;
-import heap.*;
-import iterator.Iterator;
-import iterator.Sort;
-import iterator.SortException;
 import storage.SmallMap;
 import storage.SmallMapPage;
 import storage.Stream;
@@ -590,19 +585,39 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers()
                 : "*** The heap-file scan has left pinned pages";
 
+        System.out.println ("  Test 6 completed successfully.\n");
+        return true;
+    }
+
+    protected boolean test7() {
+        SmallMapFile f;
+        System.out.println ("  - Verify that DB.update_file_entry() actually renames the data file.\n");
+        try {
+            SystemDefs.JavabaseDB.update_file_entry("file_1", "file_new");
+            f = new SmallMapFile("file_new", 1, 3, MAXROWLABELSIZE);
+            assert f.getRecCnt() == numRec : "*** File reports " + f.getRecCnt() + " records, not " + numRec + " after rename";
+
+            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
+            assert f.getRecCnt() == 0 : "*** File reports " + f.getRecCnt() + " records, not 0 after rename";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         System.out.println ("  - Verify that file.deleteFile() actually deletes the entire file and frees all the pages.\n");
         try {
+            f = new SmallMapFile("file_new", 1, 3, MAXROWLABELSIZE);
             f.deleteFile();
             assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers()
                     : "*** The heap-file scan has left pinned pages";
-            f = new SmallMapFile("file_1", 1, 3, MAXROWLABELSIZE);
+            f = new SmallMapFile("file_new", 1, 3, MAXROWLABELSIZE);
             assert f.getRecCnt() == 0 : "*** File reports " + f.getRecCnt() + " records, not 0 after deletion";
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
 
-        System.out.println ("  Test 6 completed successfully.\n");
         return true;
     }
 }

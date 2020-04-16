@@ -97,6 +97,11 @@ public class TestDriver {
    */
   protected boolean test6 () { return true; }
 
+  /**
+   * @return whether the test has completely successfully
+   */
+  protected boolean test7 () { return true; }
+
   /** 
    * @return <code>String</code> object which contains the name of the test
    */
@@ -198,6 +203,7 @@ public class TestDriver {
     if (_passAll && !test4()) { _passAll = FAIL; }
     if (_passAll && !test5()) { _passAll = FAIL; }
     if (_passAll && !test6()) { _passAll = FAIL; }
+    if (_passAll && !test7()) { _passAll = FAIL; }
 
     return _passAll;
   }

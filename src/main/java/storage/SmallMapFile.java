@@ -678,7 +678,7 @@ public class SmallMapFile extends Heapfile {
         int answer = 0;
         PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 
-        PageId nextDirPageId = new PageId(0);
+        PageId nextDirPageId = new PageId(-1);
 
         SmallDirpage currentDirPage = new SmallDirpage();
 
@@ -698,7 +698,7 @@ public class SmallMapFile extends Heapfile {
             // - we have read all datapage records on
             // the current directory page.
 
-            nextDirPageId = currentDirPage.getNextPage();
+            nextDirPageId.pid = currentDirPage.getNextPage().pid;
             unpinPage(currentDirPageId, false /* undirty */);
             currentDirPageId.pid = nextDirPageId.pid;
         }
