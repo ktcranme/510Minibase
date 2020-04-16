@@ -44,8 +44,8 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	protected PageId _firstDirPageId; // page number of header page
 	int _ftype;
-	private boolean _file_deleted;
-	private String _fileName;
+	protected boolean _file_deleted;
+	protected String _fileName;
 	private static int tempfilecount = 0;
 
 	protected HFPage getNewDataPage() {
@@ -948,7 +948,7 @@ public class Heapfile implements Filetype, GlobalConst {
 
 	} // end of add_file_entry
 
-	private void delete_file_entry(String filename) throws HFDiskMgrException {
+	protected void delete_file_entry(String filename) throws HFDiskMgrException {
 
 		try {
 			SystemDefs.JavabaseDB.delete_file_entry(filename);

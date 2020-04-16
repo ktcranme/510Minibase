@@ -732,4 +732,60 @@ public class SmallMapFile extends Heapfile {
 
         return currentDataPage;
     }
+
+    public void deleteFile() throws InvalidSlotNumberException, FileAlreadyDeletedException, InvalidTupleSizeException,
+            HFBufMgrException, HFDiskMgrException, IOException {
+        if (_file_deleted)
+            throw new FileAlreadyDeletedException(null, "file alread deleted");
+
+        // Mark the deleted flag (even if it doesn't get all the way done).
+        _file_deleted = true;
+
+        // Deallocate all data pages
+        PageId currentDirPageId = new PageId();
+        currentDirPageId.pid = _firstDirPageId.pid;
+        PageId nextDirPageId = new PageId();
+        nextDirPageId.pid = 0;
+        Page pageinbuffer = new Page();
+        SmallDirpage currentDirPage = new SmallDirpage();
+        Tuple atuple;
+
+        pinPage(currentDirPageId, currentDirPage, false);
+        // currentDirPage.openHFpage(pageinbuffer);
+
+        RID rid = new RID();
+        while (currentDirPageId.pid != INVALID_PAGE) {
+            for (rid = currentDirPage.firstRecord(); rid != null; rid = currentDirPage.nextRecord(rid)) {
+                SmallDataPageInfo dpinfo = currentDirPage.getDatapageInfo(rid, pkLength);
+                PageId datapage = new PageId(dpinfo.pageId.pid);
+                SmallMapPage page = new SmallMapPage(pkLength);
+                pinPage(datapage, page, false);
+                datapage.pid = page.getNextPage().pid;
+                unpinPage(page.getCurPage(), false);
+
+                while (datapage.pid != INVALID_PAGE) {
+                    pinPage(datapage, page, false);
+                    PageId purge = new PageId(datapage.pid);
+                    datapage.pid = page.getNextPage().pid;
+                    unpinPage(purge, false);
+                    freePage(purge);
+                }
+                freePage(dpinfo.pageId);
+            }
+            // ASSERTIONS:
+            // - we have freePage()'d all data pages referenced by
+            // the current directory page.
+
+            nextDirPageId = currentDirPage.getNextPage();
+            unpinPage(currentDirPageId, false);
+            freePage(currentDirPageId);
+
+            currentDirPageId.pid = nextDirPageId.pid;
+            if (nextDirPageId.pid != INVALID_PAGE) {
+                pinPage(currentDirPageId, currentDirPage, false);
+            }
+        }
+
+        delete_file_entry(_fileName);
+    }
 }

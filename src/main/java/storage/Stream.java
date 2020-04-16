@@ -1,5 +1,6 @@
 package storage;
 
+import BigT.DatafileIterator;
 import BigT.Iterator;
 import BigT.Map;
 import bufmgr.*;
@@ -14,7 +15,7 @@ import iterator.*;
 
 import java.io.IOException;
 
-public class Stream {
+public class Stream implements DatafileIterator {
     private MID nextMapId;
     private SmallMapPage currentDataPage;
     private SmallMapFile file;

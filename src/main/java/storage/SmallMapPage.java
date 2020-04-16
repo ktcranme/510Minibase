@@ -8,7 +8,7 @@ import global.PageId;
 import global.RID;
 import heap.HFPage;
 import heap.InvalidSlotNumberException;
-import heap.InvalidUpdateException;
+import BigT.Map;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -289,7 +289,7 @@ public class SmallMapPage extends HFPage {
         Convert.setShortValue((short) (recs / 2), SLOT_CNT, page.data);
     }
 
-    public BigT.Map getMap(MID mid, Integer primaryKey) throws InvalidSlotNumberException, IOException {
+    public Map getMap(MID mid, Integer primaryKey) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo));
         return (new SmallMap(rec, 0)).toMap(getPrimaryKey(), primaryKey);
     }

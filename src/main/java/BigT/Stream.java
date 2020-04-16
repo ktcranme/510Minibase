@@ -25,7 +25,7 @@ interface PageView {
 }
 
 
-public class Stream {
+public class Stream implements DatafileIterator {
   private _Stream s;
 
   public Stream(VMapfile f) throws InvalidMapSizeException, InvalidTupleSizeException, HFBufMgrException,
