@@ -48,6 +48,7 @@ public class Stream implements DatafileIterator {
     }
 
     public Stream(SmallMapFile file) throws HFBufMgrException, IOException, InvalidTupleSizeException, InvalidSlotNumberException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException {
+        sorted = false;
         init(file);
     }
 
