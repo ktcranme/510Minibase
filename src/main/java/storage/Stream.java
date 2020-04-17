@@ -80,9 +80,12 @@ public class Stream implements DatafileIterator {
                 // Maybe someone's calling delete and delete has unpinned and freed the page
                 System.out.println("Please dont delete while a stream is open!");
             }
+
             this.currentDataPage = itr.getNext();
-            if (this.currentDataPage == null)
+            if (this.currentDataPage == null) {
+                closestream();
                 return null;
+            }
 
             if (this.sorted) {
                 this.currentDataPage.sort(file.secondaryKey);
