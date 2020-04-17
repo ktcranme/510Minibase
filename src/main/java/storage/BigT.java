@@ -217,10 +217,10 @@ public class BigT {
                         //delete
                         if(candidate.getType() == StorageType.TYPE_0) {
                             VMapfile storageThatNeedsADeletion = (VMapfile)storageTypes.get(candidate.getType());
-                            storageThatNeedsADeletion.deleteRecord(new RID(candidate.getMID()));
+                            storageThatNeedsADeletion.deleteMap(candidate.getMID());
                         } else {
                             SmallMapFile storageThatNeedsADeletion = (SmallMapFile) storageTypes.get(candidate.getType());
-                            storageThatNeedsADeletion.deleteRecord(new RID(candidate.getMID()));
+                            storageThatNeedsADeletion.deleteMap(candidate.getMID());
                         }
 
                         System.out.print("deleting from type " + type + ": ");
