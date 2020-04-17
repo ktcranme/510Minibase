@@ -251,7 +251,7 @@ public class BigT {
 
         //if its type 5 - we have to resort to get in row,value order
         if(type == StorageType.TYPE_4) {
-            tempIterator = new Sort(attrType, (short) 4, attrSize, i, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
+            tempIterator = new Sort(attrType, (short) 4, attrSize, tempIterator, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
         }
 
         //insert everything
