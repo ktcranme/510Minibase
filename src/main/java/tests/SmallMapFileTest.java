@@ -12,10 +12,7 @@ import heap.*;
 import iterator.Iterator;
 import iterator.Sort;
 import iterator.SortException;
-import storage.SmallMap;
-import storage.SmallMapPage;
-import storage.Stream;
-import storage.SmallMapFile;
+import storage.*;
 
 class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
     int numRec = 500;
@@ -550,6 +547,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
+        HashMap<String, List<Integer>> newGroups = (HashMap<String, List<Integer>>) groups.clone();
+
         int count = 0;
         while (map != null) {
             try {
@@ -589,6 +588,34 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         assert count == numRec : "Returned records from stream doesnt match insert count!";
         assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers()
                 : "*** The heap-file scan has left pinned pages";
+
+        System.out.println ("  - Verify Primary Streams \n");
+        for (String group : newGroups.keySet()) {
+            PrimaryIterator itr;
+            try {
+                itr = f.getPrimaryStream(group, true);
+                assert itr != null : "Exepected an iterator, got null!";
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+
+            for (Integer integer : newGroups.get(group).stream().sorted().collect(Collectors.toList())) {
+                try {
+                    map = itr.getNext(rid);
+                    assert map != null : "Exepected a map, got null!";
+
+                    assert map.getRowLabel().equals(group)
+                            : "Expected Row label " + group + ", got " + map.getRowLabel();
+                    assert Integer.parseInt(map.getValue()) == integer
+                            : "Expected value " + integer + ", got value " + Integer.parseInt(map.getValue());
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        }
 
         System.out.println ("  - Verify that file.deleteFile() actually deletes the entire file and frees all the pages.\n");
         try {
