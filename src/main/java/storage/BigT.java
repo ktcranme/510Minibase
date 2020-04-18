@@ -303,24 +303,122 @@ public class BigT {
     }
 
     //this one should check for versions
-    public MID mapInsert(Map map, StorageType type) throws HFDiskMgrException, InvalidTupleSizeException, HFException, IOException, InvalidSlotNumberException, HFBufMgrException, SpaceNotAvailableException, ConstructPageException, GetFileEntryException, AddFileEntryException {
-        if (!storageTypes.containsKey(type)) {
-            // Create
-            createStorageOfType(type);
+    public MID mapInsert(Map map, StorageType type) throws HFDiskMgrException, InvalidTupleSizeException, Exception, IOException, InvalidSlotNumberException, HFBufMgrException, SpaceNotAvailableException, ConstructPageException, GetFileEntryException, AddFileEntryException, FileScanException, InvalidRelation, InvalidMapSizeException {
+
+        //put a list of all the versions - we should only find 3
+        ArrayList<CandidateForDeletion> allVersions = new ArrayList<CandidateForDeletion>();
+
+        //search for other versions of the map and add them to list
+        for(StorageType t : StorageType.values()) {
+            CondExpr[] filter = FilterParser.parseCombine(String.join("##", map.getRowLabel(), map.getColumnLabel(), "*"));
+            DatafileIterator fileToBeSearched;
+            if(t==StorageType.TYPE_0) {
+                fileToBeSearched = ((VMapfile)storageTypes.get(t)).openStream();
+            } else {
+                fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).openStream();
+            }
+            DatafileIterator searchIterator = new FileStreamIterator(fileToBeSearched, filter);
+
+            MID mid = new MID();
+            Map tempMapFromSearch = searchIterator.getNext(mid);
+            while(tempMapFromSearch != null) {
+                allVersions.add(new CandidateForDeletion(tempMapFromSearch, mid, t));
+
+                tempMapFromSearch = searchIterator.getNext(mid);
+            }
+
+            //cleanup
+            fileToBeSearched.closestream();
+            searchIterator.closestream();
         }
 
-        // Insert
-        if (type == StorageType.TYPE_0) {
-            VMapfile file = (VMapfile) storageTypes.get(type);
-            return file.insertMap(map);
+        //add in the new map to the allVersions array incase it has an old timestamp
+        allVersions.add(new CandidateForDeletion(map, null, null));
+
+        //AT THIS POINT we have the list of all versions of the map
+        //if there are more than 3 total versions - we will either have to delete some
+        //or ignore some from the input map
+        //loop through 3 times, selecting the highest timestamp values and set those not for deletion
+        if(allVersions.size() > 3) {
+            for (int k = 0; k < 3; k++) {
+                int maxTimeStamp = -1;
+                int indexOfMaxTimeStamp = -1;
+
+                for(int j = 0; j < allVersions.size(); j++){
+                    if(allVersions.get(j).getMap().getTimeStamp() > maxTimeStamp && allVersions.get(j).getDeleteMe()) {
+                        maxTimeStamp = allVersions.get(j).getMap().getTimeStamp();
+                        indexOfMaxTimeStamp = j;
+                    }
+                }
+
+                //mark this highest time stamp(that hasn't already been marked) to not be deleted
+                allVersions.get(indexOfMaxTimeStamp).setDeleteMe(false);
+            }
+        } else {
+            //none are going to be deleted
+            for(int k = 0; k < allVersions.size(); k++) {
+                allVersions.get(k).setDeleteMe(false);
+            }
         }
 
+        //AT THIS POINT we have the same array of candidates but now 3 are set to not be deleted
+        //loop through and delete any that have DeleteMe == true (or if type = null just ignore it and return)
+        //insert all that have type = null and DeleteMe == false
+        MID mid = null;
+        for(int k = 0; k < allVersions.size(); k++) {
+            CandidateForDeletion candidate = allVersions.get(k);
+            if(candidate.getType() == null) {
+                //this is the version from the input map
+                if(!candidate.getDeleteMe()) {
+                    //insert
+                    if(type == StorageType.TYPE_0) {
+                        mid = ((VMapfile)storageTypes.get(type)).insertMap(candidate.getMap());
+                    } else {
+                        mid = ((SmallMapFile)storageTypes.get(type)).insertMap(candidate.getMap());
+                        //TODO THIS IS WHERE WE WOULD NEED TO HANDLE STUFF FOR THE INDEX
+                        //TODO I LEAVE THIS FOR SOMEONE ELSE TO DO
 
 
-        // Probably use index here?
-        // Maybe you should just let the file handle the sorting
-        SmallMapFile file = (SmallMapFile) storageTypes.get(type);
-        return file.insertMap(map);
+
+
+                    }
+                } else {
+                    return null;
+                }
+            } else {
+                //these are the versions from the other storages in this BigT
+                if(candidate.getDeleteMe()) {
+                    //delete
+                    if(candidate.getType() == StorageType.TYPE_0) {
+                        VMapfile storageThatNeedsADeletion = (VMapfile)storageTypes.get(candidate.getType());
+                        storageThatNeedsADeletion.deleteMap(candidate.getMID());
+                    } else {
+                        SmallMapFile storageThatNeedsADeletion = (SmallMapFile) storageTypes.get(candidate.getType());
+                        BTreeFile indexThatNeedsADeletion = indexTypes.get(candidate.getType());
+                        storageThatNeedsADeletion.deleteMap(candidate.getMID());
+                        KeyClass key;
+                        switch (candidate.getType()){
+                            case TYPE_1: key = new StringKey(candidate.getMap().getRowLabel());
+                                break;
+                            case TYPE_2: key = new StringKey(candidate.getMap().getColumnLabel());
+                                break;
+                            case TYPE_3: key = new StringKey(String.join(DELIMITER, candidate.getMap().getColumnLabel(), candidate.getMap().getRowLabel()));
+                                break;
+                            case TYPE_4: key = new StringKey(String.join(DELIMITER, candidate.getMap().getRowLabel(), candidate.getMap().getValue()));
+                                break;
+                            default:
+                                throw new HFException(null, "Invalid Storage Type!");
+                        }
+                        indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
+                    }
+
+                    System.out.print("deleting from type " + type + ": ");
+                    candidate.getMap().print();
+                }
+            }
+        }
+
+        return mid;
     }
 
     public Iterator query(int orderType, String rowFilter, String columnFilter, String valueFilter, int num_pages) throws FileScanException, IOException, InvalidRelation, SortException, HFBufMgrException {

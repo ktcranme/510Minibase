@@ -219,7 +219,7 @@ public class Driver {
         }
     }
 
-    public static void handleMapInsert(String[] tokens) throws IOException {
+    public static void handleMapInsert(String[] tokens) throws IOException, HFDiskMgrException, HFException, ConstructPageException, AddFileEntryException, GetFileEntryException, HFBufMgrException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException {
         if (!isInteger(tokens[4]) || !isInteger(tokens[5]) || !isInteger(tokens[7])) {
             System.out.println("ERROR: The TS, TYPE, and NUMBUF parameter must be integers.");
         } else {
@@ -239,8 +239,22 @@ public class Driver {
                 temp.setColumnLabel(columnLabel);
                 temp.setTimeStamp(timeStamp);
                 temp.setValue(value);
+
                 // insert into the bigtName table
-                System.out.println("Eventually mapinsert will happen here");
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+                BigT bigt = new BigT(bigtName);
+                bigt.insertMap(temp);
+                bigt.close();
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+                next_time = System.currentTimeMillis();
+                rnext_count = PCounter.rcounter;
+                wnext_count = PCounter.wcounter;
+                rcount = rnext_count-rprev_count;
+                wcount = wnext_count-wprev_count;
+                System.out.println("Write Count : "+wcount);
+                System.out.println("Read Count : "+rcount);
+                System.out.println("Time Taken : "+(next_time-prev_time));
+
             }
 
         }
