@@ -146,8 +146,7 @@ public class SmallMapFile extends Heapfile {
         return getRecCnt();
     }
 
-    public Map getMap(MID rid) throws InvalidSlotNumberException, InvalidTupleSizeException, HFException,
-            HFDiskMgrException, HFBufMgrException, Exception {
+    public Map getMap(MID rid) throws InvalidSlotNumberException, HFBufMgrException, IOException {
 
         SmallMapPage dataPage = getNewDataPage();
         pinPage(rid.pageNo, dataPage, false);
@@ -157,6 +156,20 @@ public class SmallMapFile extends Heapfile {
         Map bigMap = map.toMap(dataPage.getPrimaryKey(), this.primaryKey);
         unpinPage(rid.pageNo, false);
         return bigMap;
+    }
+
+    public PrimaryIterator getPrimaryStream(String primary, Boolean sort) throws IOException, HFBufMgrException, InvalidTupleSizeException, InvalidSlotNumberException, PageUnpinnedException, BufMgrException, BufferPoolExceededException, PagePinnedException, PageNotReadException, HashOperationException, InvalidFrameNumberException, ReplacerException {
+        RID datapageRid = new RID();
+        SmallDirpage dirpage = findPrimaryLocationInDirectory(primary, datapageRid);
+
+        if (dirpage == null) {
+            return null;
+        }
+
+        SmallDataPageInfo dpinfo = dirpage.getDatapageInfo(datapageRid, this.pkLength);
+        unpinPage(dirpage.getCurPage(), false);
+
+        return new PrimaryIterator(dpinfo.pageId, primaryKey, pkLength, sort ? secondaryKey : null);
     }
 
 //    public MID updateMap(MID rid, Map newtuple) throws InvalidSlotNumberException, InvalidUpdateException,
@@ -462,12 +475,13 @@ public class SmallMapFile extends Heapfile {
 
         byte[] tmpData = atuple.getTupleByteArray();
         RID currentDataPageRid = dirpage.insertRecord(tmpData);
-        primaryPageRID.pageNo.pid = currentDataPageRid.pageNo.pid;
-        primaryPageRID.slotNo = currentDataPageRid.slotNo;
 
         // need catch error here!
         if (currentDataPageRid == null)
             throw new HFException(null, "no space to insert rec.");
+
+        primaryPageRID.pageNo.pid = currentDataPageRid.pageNo.pid;
+        primaryPageRID.slotNo = currentDataPageRid.slotNo;
 
         return newPage;
     }
