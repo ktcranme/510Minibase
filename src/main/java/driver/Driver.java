@@ -121,19 +121,22 @@ public class Driver {
                 prev_time = System.currentTimeMillis();
 
 
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 //sysdef here????
                 BigT bigt = new BigT(bigtName);
                 CSVIterator csvItr = new CSVIterator(fileName);
-                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 bigt.batchInsert(csvItr, get_storage_type(type), numbuf);
+                bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-
 
                 next_time = System.currentTimeMillis();
                 rnext_count = PCounter.rcounter;
                 wnext_count = PCounter.wcounter;
                 rcount = rnext_count - rprev_count;
                 wcount = wnext_count - wprev_count;
+                System.out.println("Write Count : "+wcount);
+                System.out.println("Read Count : "+rcount);
+                System.out.println("Time Taken : "+(next_time-prev_time));
             }
         }
     }
@@ -157,9 +160,9 @@ public class Driver {
             int orderType = Integer.parseInt(orderTypeStr);
             int numbuf = Integer.parseInt(numbufStr);
             //check that orderType is between 1 - 5
-            if( orderType < 1 || orderType > 5 )
+            if( orderType < 1 || orderType > 6 )
             {
-                System.out.println("ERROR: The order type must be an integer between 1 and 5");
+                System.out.println("ERROR: The order type must be an integer between 1 and 6");
             }
             //check that filters are valid
             else if( !isValidFilter(rowFilter) || !isValidFilter(columnFilter) || !isValidFilter(valueFilter))
@@ -183,6 +186,7 @@ public class Driver {
                     m.print();
                 }
                 it.close();
+                bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
                 rnext_count = PCounter.rcounter;
@@ -207,6 +211,7 @@ public class Driver {
                 mapCnt = bigt.getMapCount();
                 rowCnt =  bigt.getRowCount();
                 columnCnt = bigt.getColumnCount();
+                bigt.close();
                 System.out.println("Map Count : " + mapCnt);
                 System.out.println("Row Count : " + rowCnt);
                 System.out.println("Column Count : " + columnCnt);
@@ -261,7 +266,9 @@ public class Driver {
             BigT bigt1 = new BigT(bigTName1);
             BigT bigt2 = new BigT(bigTName2);
             BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
-
+            bigt1.close();
+            bigt2.close();
+            newBigT.close();
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
             rnext_count = PCounter.rcounter;
@@ -291,8 +298,15 @@ public class Driver {
 
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             BigT bigt1 = new BigT(inBigT);
-            //BigT newBigT = rowSort(bigt1,outBigT,columnName,numbuf);
-
+            BigT newBigT = rowSort(bigt1,outBigT,columnName,numbuf);
+            /*MultiTypeFileStream ms = new MultiTypeFileStream(newBigT,null);
+            Map tmp;
+            while((tmp=ms.get_next())!=null){
+                tmp.print();
+            }
+            ms.close();*/
+            newBigT.close();
+            bigt1.close();
             //maybe iterate through to prove it worked
 
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());

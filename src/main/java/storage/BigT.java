@@ -281,6 +281,7 @@ public class BigT {
         i.close();
         itr.close();
         tempIterator.close();
+        inputFile.close();
     }
 
     //this one should check for versions
@@ -306,6 +307,10 @@ public class BigT {
 
     public Iterator query(int orderType, String rowFilter, String columnFilter, String valueFilter, int num_pages) throws FileScanException, IOException, InvalidRelation, SortException, HFBufMgrException {
         // Could use indexes, or filescan with filterstream or whatever
+        if(orderType == 6){
+            MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
+            return ms;
+        }
         SortTypeMap.init();
         MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
         return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages * 0.8));
