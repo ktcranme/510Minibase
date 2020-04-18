@@ -15,6 +15,8 @@ import iterator.PredEvalException;
 import iterator.SortException;
 import iterator.UnknowAttrType;
 import iterator.UnknownKeyTypeException;
+import storage.BigT;
+import storage.StorageType;
 
 import java.io.*;
 import java.util.HashMap;
@@ -110,8 +112,14 @@ public class Driver {
                 wprev_count = PCounter.wcounter;
                 prev_time = System.currentTimeMillis();
 
-                BatchInsert.batchinsert(fileName, type, bigtName, numbuf);
 
+                //sysdef here????
+
+                BigT bigt = new BigT(bigtName);
+                CSVIterator csvItr = new CSVIterator(fileName);
+                bigt.batchInsert(csvItr, get_storage_type(type), numbuf);
+
+                /*
                 next_time = System.currentTimeMillis();
                 rnext_count = PCounter.rcounter;
                 wnext_count = PCounter.wcounter;
@@ -129,9 +137,12 @@ public class Driver {
                 System.out.println("Write Count : " + wcount);
                 System.out.println("Read Count : " + rcount);
                 System.out.println("Time Taken : " + (next_time - prev_time));
+
+                 */
             }
         }
     }
+
 
     public static void handleQuery(String[] tokens) throws Exception {
         String bigtName = tokens[1];
@@ -326,6 +337,22 @@ public class Driver {
         {
             return valFilter;
         }
+    }
+
+    private static StorageType get_storage_type(int type){
+        switch (type){
+            case 1:
+                return StorageType.TYPE_0;
+            case 2:
+                return StorageType.TYPE_1;
+            case 3:
+                return StorageType.TYPE_2;
+            case 4:
+                return StorageType.TYPE_3;
+            case 5:
+                return StorageType.TYPE_4;
+        }
+        return null;
     }
 
     //pad with 0's
