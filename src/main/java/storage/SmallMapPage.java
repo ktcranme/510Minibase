@@ -239,8 +239,10 @@ public class SmallMapPage extends HFPage {
                 short slotOffsetDest = (short) (start - (j + 2) * SmallMap.map_size);
                 short slotOffsetSrc  = (short) (start - (j + 1) * SmallMap.map_size);
 
-                if (!offsetToSlot.containsKey(slotOffsetSrc) || offsetToSlot.get(slotOffsetSrc) == -1)
+                if (!offsetToSlot.containsKey(slotOffsetSrc) || offsetToSlot.get(slotOffsetSrc) == -1) {
+                    j -= 1;
                     continue;
+                }
 
                 if (!offsetToSlot.containsKey(slotOffsetDest) ||!offsetToSlot.containsKey(slotOffsetSrc) ) {
                     System.out.println("TEST");
@@ -341,6 +343,9 @@ public class SmallMapPage extends HFPage {
             int offset = getSlotOffset(i);
             if (offset < usedPtr) {
                 setSlot(i, EMPTY_SLOT, 0); // mark slot free
+                page.setSlot(i, SmallMap.map_size, offset + lenToBeCopied);
+            } else {
+                page.setSlot(i, EMPTY_SLOT, 0);
             }
         }
         short freeSpace = Convert.getShortValue(FREE_SPACE, data);
@@ -348,14 +353,15 @@ public class SmallMapPage extends HFPage {
         Convert.setShortValue(usedPtr, USED_PTR, data);
         Convert.setShortValue(freeSpace, FREE_SPACE, data);
 
-        for (int i = 0; i < recs / 2; i++) {
-            page.setSlot(i, SmallMap.map_size, start - ((i + 1) * SmallMap.map_size));
-        }
+//        for (int i = 0; i < recs / 2; i++) {
+//            page.setSlot(i, SmallMap.map_size, start - ((i + 1) * SmallMap.map_size));
+//        }
         freeSpace = Convert.getShortValue(FREE_SPACE, page.data);
-        freeSpace -= lenToBeCopied + (recs / 2) * HFPage.SIZE_OF_SLOT;
+//        freeSpace -= lenToBeCopied + (recs) * HFPage.SIZE_OF_SLOT;
+        freeSpace -= lenToBeCopied;
         Convert.setShortValue(freeSpace, FREE_SPACE, page.data);
         Convert.setShortValue((short) (start - lenToBeCopied), USED_PTR, page.data);
-        Convert.setShortValue((short) (recs / 2), SLOT_CNT, page.data);
+        Convert.setShortValue((short) (recs), SLOT_CNT, page.data);
     }
 
     public Map getMap(MID mid, Integer primaryKey) throws InvalidSlotNumberException, IOException {
