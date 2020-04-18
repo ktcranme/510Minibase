@@ -3,12 +3,15 @@ package driver;
 import BigT.Iterator;
 import BigT.Map;
 import BigT.bigT;
+import btree.AddFileEntryException;
+import btree.ConstructPageException;
+import btree.GetFileEntryException;
 import bufmgr.PageNotReadException;
 import diskmgr.BigDB;
 import diskmgr.PCounter;
 import global.GlobalConst;
 import global.SystemDefs;
-import heap.InvalidTypeException;
+import heap.*;
 import index.IndexException;
 import iterator.LowMemException;
 import iterator.PredEvalException;
@@ -32,11 +35,12 @@ public class Driver {
             columnCnt = 0;
     public static long prev_time, next_time;
     public static boolean countsUpToDate = false;
+    public static SystemDefs sysdef;
 
     public static void main(String[] args) throws Exception {
         usedDbMap = new HashMap<>();
         String dbpath = "D:\\minibase_db\\" + "hf" + System.getProperty("user.name") + ".minibase-db";
-        SystemDefs sysdef = new SystemDefs(dbpath, 100000, 500, "Clock");
+        sysdef = new SystemDefs(dbpath, 100000, 1000, "Clock");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have 6 options: BatchInsert and Query. Their structures follow:");
@@ -52,11 +56,11 @@ public class Driver {
                 handleBatchInsert(tokens);
             }
             // query
-            else if (tokens[0].toLowerCase().equals("query") && tokens.length == 8) {
+            else if (tokens[0].toLowerCase().equals("query") && tokens.length == 7) {
                 handleQuery(tokens);
             } 
             // get counts
-            else if (tokens[0].toLowerCase().equals("getcounts") && tokens.length == 2) {
+            else if (tokens[0].toLowerCase().equals("getcounts") && tokens.length == 3) {
                 handleGetCount(tokens);
             } 
             // mapinsert
@@ -114,12 +118,13 @@ public class Driver {
 
 
                 //sysdef here????
-
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
                 CSVIterator csvItr = new CSVIterator(fileName);
                 bigt.batchInsert(csvItr, get_storage_type(type), numbuf);
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
-                /*
+
                 next_time = System.currentTimeMillis();
                 rnext_count = PCounter.rcounter;
                 wnext_count = PCounter.wcounter;
@@ -127,18 +132,12 @@ public class Driver {
                 wcount = wnext_count - wprev_count;
 
                 // THESE WILL NEED TO CHANGE TO GET ALL COUNTS
-                mapCnt = Driver.usedDbMap.get(bigtName + "_" + type).getMapCnt();
-                rowCnt = Driver.usedDbMap.get(bigtName + "_" + type).bigt.getRowCnt();
-                columnCnt = Driver.usedDbMap.get(bigtName + "_" + type).bigt.getColumnCnt();
-                countsUpToDate = true;
-                System.out.println("Map Count : " + mapCnt);
-                System.out.println("Row Count : " + rowCnt);
-                System.out.println("Column Count : " + columnCnt);
+                countsUpToDate = false;
                 System.out.println("Write Count : " + wcount);
                 System.out.println("Read Count : " + rcount);
                 System.out.println("Time Taken : " + (next_time - prev_time));
 
-                 */
+
             }
         }
     }
@@ -146,13 +145,22 @@ public class Driver {
 
     public static void handleQuery(String[] tokens) throws Exception {
         String bigtName = tokens[1];
-        String typeStr = tokens[2];
-        String orderTypeStr = tokens[3];
-        String rowFilter = tokens[4];
-        String columnFilter = tokens[5];
-        String valueFilter = tokens[6];
-        String numbufStr = tokens[7];
-        System.out.println(bigtName+"_"+Integer.parseInt(typeStr)+" "+ usedDbMap.size());
+        //String typeStr = tokens[2];
+        String orderTypeStr = tokens[2];
+        String rowFilter = tokens[3];
+        String columnFilter = tokens[4];
+        String valueFilter = tokens[5];
+        String numbufStr = tokens[6];
+        BigT bigt = new BigT(bigtName);
+        Iterator it = bigt.query(Integer.parseInt(orderTypeStr),rowFilter,columnFilter,valueFilter,Integer.parseInt(numbufStr));
+        Map m;
+        System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+        while((m=it.get_next())!=null){
+            m.print();
+        }
+        it.close();
+        System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+        /*System.out.println(bigtName+"_"+Integer.parseInt(typeStr)+" "+ usedDbMap.size());
         BigDB bDB = usedDbMap.get(bigtName+"_"+typeStr);
         if(bDB == null){
             System.out.println("No BigTable found to query");
@@ -209,25 +217,24 @@ public class Driver {
                 System.out.println("Read Count : "+rcount);
                 System.out.println("Time Taken : "+(next_time-prev_time));
             }
-        }
+        }*/
     }
 
-    public static void handleGetCount(String[] tokens) {
-        if (!isInteger(tokens[1])) {
+    public static void handleGetCount(String[] tokens) throws Exception {
+        if (!isInteger(tokens[2])) {
             System.out.println("ERROR: The NUMBUF parameter must be an integer.");
         } else {
-            int numbuf = Integer.parseInt(tokens[1]);
-
-            if (!countsUpToDate) {
-                // get counts
-                mapCnt = 0;
-                rowCnt = 0;
-                columnCnt = 0;
-                countsUpToDate = true;
-            }
-            System.out.println("Map Count : " + mapCnt);
-            System.out.println("Row Count : " + rowCnt);
-            System.out.println("Column Count : " + columnCnt);
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+                int numbuf = Integer.parseInt(tokens[2]);
+                String bigtName = tokens[1];
+                BigT bigt = new BigT(bigtName);
+                mapCnt = bigt.getMapCount();
+                rowCnt =  bigt.getRowCount();
+                columnCnt = bigt.getColumnCount();
+                System.out.println("Map Count : " + mapCnt);
+                System.out.println("Row Count : " + rowCnt);
+                System.out.println("Column Count : " + columnCnt);
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
         }
     }
 
@@ -373,7 +380,7 @@ public class Driver {
     {
         System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
         System.out.println("query BIGTABLENAME TYPE ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
-        System.out.println("getCounts NUMBUF");
+        System.out.println("getCounts BIGTABLENAME NUMBUF");
         System.out.println("mapinsert RL CL VAL TS TYPE BIGTABLENAME NUMBUF");
         System.out.println("rowjoin BTNAME1 BTNAME2 OUTBTNAME COLUMNFILTER NUMBUF");
         System.out.println("rowsort INBTNAME OUTBTNAME COLUMNNAME NUMBUF");
