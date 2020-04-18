@@ -48,6 +48,10 @@ public class BigT {
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
     private String generateBigTName(StorageType type) {
         return name + "_" + type.toString();
     }
@@ -304,7 +308,7 @@ public class BigT {
         // Could use indexes, or filescan with filterstream or whatever
         SortTypeMap.init();
         MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
-        return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages * 0.8));
     }
 
     public Integer getRowCount() throws Exception {
@@ -371,6 +375,11 @@ public class BigT {
         // Create a new BigT instance too and return it to BigDB. Then BigDB could invoke queryAll on this new BigT
 
         return null;
+    }
+
+    //This is for rowJoin and rowSort - they only insert into a type 1 storage
+    public void insertMap(Map map) throws HFDiskMgrException, InvalidTupleSizeException, HFException, IOException, InvalidSlotNumberException, SpaceNotAvailableException, HFBufMgrException {
+        ((VMapfile)storageTypes.get(StorageType.TYPE_0)).insertMap(map);
     }
 
     public void close() {
@@ -471,5 +480,15 @@ public class BigT {
                 break;
         }
         return sortOrder;
+    }
+
+    public void delete_all_files() throws HFDiskMgrException, InvalidTupleSizeException, IOException, InvalidSlotNumberException, FileAlreadyDeletedException, HFBufMgrException, DeleteFileEntryException, IteratorException, PinPageException, ConstructPageException, FreePageException, UnpinPageException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
+        for (StorageType type : StorageType.values()) {
+            storageTypes.get(type).deleteFile();
+            if(type != StorageType.TYPE_0) {
+                indexTypes.get(type).close();
+                indexTypes.get(type).destroyFile();
+            }
+        }
     }
 }

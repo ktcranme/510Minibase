@@ -3,6 +3,7 @@ package driver;
 import BigT.Iterator;
 import BigT.Map;
 import BigT.bigT;
+import BigT.MultiTypeFileStream;
 import btree.AddFileEntryException;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
@@ -28,6 +29,9 @@ import java.util.regex.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import static BigT.RowJoin.rowJoin;
+import static BigT.RowSort.rowSort;
 
 public class Driver {
     public static java.util.Map<String, BigDB> usedDbMap;
@@ -118,9 +122,9 @@ public class Driver {
 
 
                 //sysdef here????
-                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
                 CSVIterator csvItr = new CSVIterator(fileName);
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 bigt.batchInsert(csvItr, get_storage_type(type), numbuf);
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
@@ -130,14 +134,6 @@ public class Driver {
                 wnext_count = PCounter.wcounter;
                 rcount = rnext_count - rprev_count;
                 wcount = wnext_count - wprev_count;
-
-                // THESE WILL NEED TO CHANGE TO GET ALL COUNTS
-                countsUpToDate = false;
-                System.out.println("Write Count : " + wcount);
-                System.out.println("Read Count : " + rcount);
-                System.out.println("Time Taken : " + (next_time - prev_time));
-
-
             }
         }
     }
@@ -151,44 +147,24 @@ public class Driver {
         String columnFilter = tokens[4];
         String valueFilter = tokens[5];
         String numbufStr = tokens[6];
-        BigT bigt = new BigT(bigtName);
-        Iterator it = bigt.query(Integer.parseInt(orderTypeStr),rowFilter,columnFilter,valueFilter,Integer.parseInt(numbufStr));
-        Map m;
-        System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-        while((m=it.get_next())!=null){
-            m.print();
-        }
-        it.close();
-        System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-        /*System.out.println(bigtName+"_"+Integer.parseInt(typeStr)+" "+ usedDbMap.size());
-        BigDB bDB = usedDbMap.get(bigtName+"_"+typeStr);
-        if(bDB == null){
-            System.out.println("No BigTable found to query");
-        }else
         //check that the integers are actually integers
-        if(!isInteger(typeStr) || !isInteger(orderTypeStr) || !isInteger(numbufStr))
+        if(!isInteger(orderTypeStr) || !isInteger(numbufStr))
         {
-            System.out.println("ERROR: TYPE ORDERTYPE and NUMBUF all must be valid integers.");
+            System.out.println("ERROR: ORDERTYPE and NUMBUF must be valid integers.");
         }
         else
         {
-            int type = Integer.parseInt(typeStr);
             int orderType = Integer.parseInt(orderTypeStr);
             int numbuf = Integer.parseInt(numbufStr);
-            //check that typeStr is between 1-5
-            if( type < 1 || type > 5 )
-            {
-                System.out.println("ERROR: The type must be an integer between 1 and 5");
-            }
             //check that orderType is between 1 - 5
-            else if( orderType < 1 || orderType > 5 )
+            if( orderType < 1 || orderType > 5 )
             {
                 System.out.println("ERROR: The order type must be an integer between 1 and 5");
             }
             //check that filters are valid
             else if( !isValidFilter(rowFilter) || !isValidFilter(columnFilter) || !isValidFilter(valueFilter))
             {
-                System.out.println("ERROR: The filters must follow on of the 3 following patterns:");
+                System.out.println("ERROR: The filters must follow one of the 3 following patterns:");
                 System.out.println("1) *\t\t2) <single value>\t\t3) [<from value>,<to value>]");
             }
             else
@@ -199,15 +175,15 @@ public class Driver {
                 wprev_count = PCounter.wcounter;
                 prev_time = System.currentTimeMillis();
 
-                Iterator queryResults = bDB.bigt.openStream(orderType, rowFilter, columnFilter, valueFilter);
-
-                Map m = queryResults.get_next();
-                while(m != null)
-                {
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+                BigT bigt = new BigT(bigtName);
+                Iterator it = bigt.query(orderType,rowFilter,columnFilter,valueFilter,numbuf);
+                Map m;
+                while((m=it.get_next())!=null){
                     m.print();
-                    m = queryResults.get_next();
                 }
-                queryResults.close();
+                it.close();
+                System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
                 rnext_count = PCounter.rcounter;
                 wnext_count = PCounter.wcounter;
@@ -217,7 +193,7 @@ public class Driver {
                 System.out.println("Read Count : "+rcount);
                 System.out.println("Time Taken : "+(next_time-prev_time));
             }
-        }*/
+        }
     }
 
     public static void handleGetCount(String[] tokens) throws Exception {
@@ -265,7 +241,7 @@ public class Driver {
         }
     }
 
-    public static void handleRowJoin(String[] tokens) {
+    public static void handleRowJoin(String[] tokens) throws Exception {
         if (!isInteger(tokens[5])) {
             System.out.println("ERROR: The NUMBUF parameter must be an integer.");
         } else {
@@ -276,11 +252,29 @@ public class Driver {
             int numbuf = Integer.parseInt(tokens[5]);
 
             //do the RowJoin...
-            System.out.println("Eventually rowJoin will happen here");
+
+            rprev_count = PCounter.rcounter;
+            wprev_count = PCounter.wcounter;
+            prev_time = System.currentTimeMillis();
+
+            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+            BigT bigt1 = new BigT(bigTName1);
+            BigT bigt2 = new BigT(bigTName2);
+            BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
+
+            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+            next_time = System.currentTimeMillis();
+            rnext_count = PCounter.rcounter;
+            wnext_count = PCounter.wcounter;
+            rcount = rnext_count-rprev_count;
+            wcount = wnext_count-wprev_count;
+            System.out.println("Write Count : "+wcount);
+            System.out.println("Read Count : "+rcount);
+            System.out.println("Time Taken : "+(next_time-prev_time));
         }
     }
 
-    public static void handleRowSort(String[] tokens) {
+    public static void handleRowSort(String[] tokens) throws Exception {
         if (!isInteger(tokens[4])) {
             System.out.println("ERROR: The NUMBUF parameter must be an integer.");
         } else {
@@ -290,7 +284,26 @@ public class Driver {
             int numbuf = Integer.parseInt(tokens[4]);
 
             //do rowsort
-            System.out.println("Eventually rowSort will happen here");
+
+            rprev_count = PCounter.rcounter;
+            wprev_count = PCounter.wcounter;
+            prev_time = System.currentTimeMillis();
+
+            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+            BigT bigt1 = new BigT(inBigT);
+            //BigT newBigT = rowSort(bigt1,outBigT,columnName,numbuf);
+
+            //maybe iterate through to prove it worked
+
+            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+            next_time = System.currentTimeMillis();
+            rnext_count = PCounter.rcounter;
+            wnext_count = PCounter.wcounter;
+            rcount = rnext_count-rprev_count;
+            wcount = wnext_count-wprev_count;
+            System.out.println("Write Count : "+wcount);
+            System.out.println("Read Count : "+rcount);
+            System.out.println("Time Taken : "+(next_time-prev_time));
         }
     }
 
@@ -379,7 +392,7 @@ public class Driver {
     private static void printCommands()
     {
         System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
-        System.out.println("query BIGTABLENAME TYPE ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
+        System.out.println("query BIGTABLENAME ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
         System.out.println("getCounts BIGTABLENAME NUMBUF");
         System.out.println("mapinsert RL CL VAL TS TYPE BIGTABLENAME NUMBUF");
         System.out.println("rowjoin BTNAME1 BTNAME2 OUTBTNAME COLUMNFILTER NUMBUF");
