@@ -223,7 +223,7 @@ public class BigT {
                             storageThatNeedsADeletion.deleteMap(candidate.getMID());
                         }
 
-                        System.out.print("deleting from type " + type + ": ");
+                        System.out.print("deleting from type " + candidate.getType() + ": ");
                         candidate.getMap().print();
                     }
                 }
