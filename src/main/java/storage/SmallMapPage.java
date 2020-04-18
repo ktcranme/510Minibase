@@ -39,6 +39,68 @@ public class SmallMapPage extends HFPage {
     }
 
     @Override
+    public RID insertRecord(byte[] record) throws IOException {
+        RID rid = new RID();
+
+        int recLen = record.length;
+        int spaceNeeded = recLen + SIZE_OF_SLOT;
+
+        // Start by checking if sufficient space exists.
+        // This is an upper bound check. May not actually need a slot
+        // if we can find an empty one.
+
+        short freeSpace = Convert.getShortValue(FREE_SPACE, data);
+//        if (spaceNeeded > freeSpace) {
+//            return null;
+//
+//        } else {
+
+            // look for an empty slot
+            short slotCnt = Convert.getShortValue(SLOT_CNT, data);
+            int i;
+            short length;
+            for (i = 0; i < slotCnt; i++) {
+                length = getSlotLength(i);
+                if (length == EMPTY_SLOT)
+                    break;
+            }
+
+            if (i == slotCnt) // use a new slot
+            {
+                if (spaceNeeded > freeSpace)
+                    return null;
+                // adjust free space
+                freeSpace -= spaceNeeded;
+                Convert.setShortValue(freeSpace, FREE_SPACE, data);
+
+                slotCnt++;
+                Convert.setShortValue(slotCnt, SLOT_CNT, data);
+
+            } else {
+                if (recLen > freeSpace)
+                    return null;
+                // reusing an existing slot
+                freeSpace -= recLen;
+                Convert.setShortValue(freeSpace, FREE_SPACE, data);
+            }
+
+            short usedPtr = Convert.getShortValue(USED_PTR, data);
+            usedPtr -= recLen; // adjust usedPtr
+            Convert.setShortValue(usedPtr, USED_PTR, data);
+
+            // insert the slot info onto the data page
+            setSlot(i, recLen, usedPtr);
+
+            // insert data onto the data page
+            System.arraycopy(record, 0, data, usedPtr, recLen);
+            curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+            rid.pageNo.pid = curPage.pid;
+            rid.slotNo = i;
+            return rid;
+//        }
+    }
+
+    @Override
     public void deleteRecord(RID rid) throws IOException, InvalidSlotNumberException {
         int slotNo = rid.slotNo;
         short recLen = getSlotLength(slotNo);
@@ -256,6 +318,13 @@ public class SmallMapPage extends HFPage {
 
     public void migrateAll(SmallMapPage page) {
         System.arraycopy(data, this.DPFIXED, page.data, this.DPFIXED, MAX_SPACE - this.DPFIXED);
+    }
+
+    public int available_space() throws IOException {
+        int totalCapacity = (MAX_SPACE - this.DPFIXED) / (SmallMap.map_size + HFPage.SIZE_OF_SLOT);
+        short usedPtr = Convert.getShortValue(USED_PTR, data);
+        int availSpace = usedPtr - (this.DPFIXED + (totalCapacity * HFPage.SIZE_OF_SLOT));
+        return availSpace / SmallMap.map_size;
     }
 
     public void migrateHalf(SmallMapPage page, Integer key) throws IOException, InvalidSlotNumberException {

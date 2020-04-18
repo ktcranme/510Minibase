@@ -532,7 +532,7 @@ public class SmallMapFile extends Heapfile {
     }
 
     private boolean pageHasSpace(SmallMapPage page) throws IOException {
-        return page.available_space() > HFPage.SIZE_OF_SLOT + SmallMap.map_size;
+        return page.available_space() > 0;
     }
 
     private RID insertMapUnsorted(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
