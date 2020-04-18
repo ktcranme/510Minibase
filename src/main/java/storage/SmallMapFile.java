@@ -19,6 +19,7 @@ public class SmallMapFile extends Heapfile {
     Integer secondaryKey;
 
     Boolean sortedPrimary;
+    Boolean splitPage;
 
     public Integer getSecondaryKey() {
         return this.secondaryKey;
@@ -34,6 +35,13 @@ public class SmallMapFile extends Heapfile {
         this.secondaryKey = secondaryKey;
         this.pkLength = pkLength;
         sortedPrimary = false;
+        splitPage = false;
+    }
+
+    public Boolean hasSplitPage() {
+        Boolean res = splitPage;
+        splitPage = false;
+        return res;
     }
 
     private SmallDirpage nextDirPage(SmallDirpage currentDirPage) throws HFBufMgrException, HFException, IOException {
@@ -519,6 +527,7 @@ public class SmallMapFile extends Heapfile {
         newPage.setNextPage(nextPageId);
         nextPage.setPrevPage(newPageId);
 
+        splitPage = true;
         return newPage;
     }
 
