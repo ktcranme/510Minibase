@@ -32,68 +32,6 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         return "Small Map File";
     }
 
-    protected boolean test5() {
-        System.out.println ("\n  Test 5: Insert and sort within a page\n");
-
-        List<Integer> randoms = new ArrayList<>();
-        Random rand = new Random();
-        SmallMapPage page = new SmallMapPage(MAXROWLABELSIZE);
-        try {
-            System.out.println ("  - Create a page\n");
-            page.init(new PageId(1), new Page(), MAXROWLABELSIZE, "row1");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        System.out.println ("  - Insert records into page\n");
-        RID rid = new RID();
-        while (rid != null) {
-            int in = rand.nextInt(1000);
-            try {
-                SmallMap map = new SmallMap();
-                map.setValue(Integer.toString(in));
-                map.setTimeStamp(in);
-                map.setLabel("col" + in);
-                rid = page.insertRecord(map.getMapByteArray());
-
-                // Because we cant insert more than numRecsInPage records in a page
-                if (rid != null)
-                    randoms.add(in);
-//                map.print();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
-
-        System.out.println ("  - Verify the sorted order\n");
-        List<Integer> sorted = randoms.stream().sorted().collect(Collectors.toList());
-
-        try {
-            page.sort(3);
-            MID mid = page.firstSorted();
-            int count = 0;
-
-            while (mid != null) {
-                Map map = page.getMap(mid, 1);
-                assert Integer.parseInt(map.getValue()) == sorted.get(count)
-                        : "Expected " + sorted.get(count) + ", got " + Integer.parseInt(map.getValue());
-                assert map.getRowLabel().equals("row1");
-                mid = page.nextSorted(mid);
-                count++;
-            }
-
-            assert count == randoms.size() : "Count of records did not match insert count!";
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        System.out.println ("  Test 5 completed successfully.\n");
-        return true;
-    }
-
     protected boolean test1() {
         System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
         Random rand = new Random();
@@ -270,9 +208,9 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                 assert map.getRowLabel().equals("row1")
                         : "Got row label " + map.getRowLabel() + " but expected row1";
                 assert map.getColumnLabel().equals("col" + sorted.get(count))
-                        : "Got row label " + map.getColumnLabel() + " but expected col" + sorted.get(count);
+                        : "Got column label " + map.getColumnLabel() + " but expected col" + sorted.get(count);
                 assert map.getTimeStamp() == sorted.get(count)
-                        : "Got row label " + map.getTimeStamp() + " but expected " + sorted.get(count);
+                        : "Got timestamp " + map.getTimeStamp() + " but expected " + sorted.get(count);
                 assert Integer.parseInt(map.getValue()) == sorted.get(count)
                         : "Got value " + map.getValue() + " but expected " + sorted.get(count);
 //                map.print();
@@ -482,8 +420,8 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
         return true;
     }
 
-    protected boolean test6 () {
-        System.out.println ("\n  Test 6: Re-Insert and scan fixed-size records\n");
+    protected boolean test5 () {
+        System.out.println ("\n  Test 5: Re-Insert and scan fixed-size records\n");
 
         Stream stream = null;
         MID rid = new MID();
@@ -615,6 +553,15 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
                     return false;
                 }
             }
+
+            try {
+                itr.closestream();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+            assert SystemDefs.JavabaseBM.getNumUnpinnedBuffers() == SystemDefs.JavabaseBM.getNumBuffers()
+                    : "*** The heap-file scan has left pinned pages";
         }
 
         System.out.println ("  - Verify that file.deleteFile() actually deletes the entire file and frees all the pages.\n");
@@ -629,7 +576,7 @@ class SmallMapFileTestDriver extends TestDriver implements GlobalConst {
             return false;
         }
 
-        System.out.println ("  Test 6 completed successfully.\n");
+        System.out.println ("  Test 5 completed successfully.\n");
         return true;
     }
 }
