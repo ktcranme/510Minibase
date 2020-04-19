@@ -375,10 +375,12 @@ public class BigT {
                         mid = ((VMapfile)storageTypes.get(type)).insertMap(candidate.getMap());
                     } else {
                         mid = ((SmallMapFile)storageTypes.get(type)).insertMap(candidate.getMap());
-                        //TODO THIS IS WHERE WE WOULD NEED TO HANDLE STUFF FOR THE INDEX
-                        //TODO I LEAVE THIS FOR SOMEONE ELSE TO DO
 
-
+                        if(((SmallMapFile)storageTypes.get(type)).hasSplitPage()) {
+                            //reindex
+                            System.out.println("reindexing type " + type);
+                            reIndex(type);
+                        }
 
 
                     }
