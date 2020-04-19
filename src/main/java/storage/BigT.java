@@ -255,6 +255,9 @@ public class BigT {
         createFileOfType(type);
         Iterator tempIterator = new StreamIterator(((VMapfile)tempFile).openStream());
 
+        //close one sort so another can open
+        itr.close();
+
         //if its type 5 - we have to resort to get in row,value order
         if(type == StorageType.TYPE_4) {
             tempIterator = new Sort(attrType, (short) 4, attrSize, tempIterator, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
@@ -285,7 +288,6 @@ public class BigT {
         tempFile.deleteFile();
         //close all iterators used in this scope
         i.close();
-        itr.close();
         tempIterator.close();
         inputFile.close();
     }
