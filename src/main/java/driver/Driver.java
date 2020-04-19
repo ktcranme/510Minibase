@@ -40,11 +40,20 @@ public class Driver {
     public static long prev_time, next_time;
     public static boolean countsUpToDate = false;
     public static SystemDefs sysdef;
+    public static int bufSize;
 
     public static void main(String[] args) throws Exception {
         usedDbMap = new HashMap<>();
         String dbpath = "D:\\minibase_db\\" + "hf" + System.getProperty("user.name") + ".minibase-db";
+
+        //check if the database exists
+        if(new File(dbpath).isFile()) {
+            sysdef.MINIBASE_RESTART_FLAG = true;
+            System.out.println("Loading previous DB");
+        }
+
         sysdef = new SystemDefs(dbpath, 100000, 3000, "Clock");
+        bufSize = 3000;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have 6 options: BatchInsert and Query. Their structures follow:");
@@ -54,6 +63,16 @@ public class Driver {
         String command = br.readLine();
         while (!command.toLowerCase().equals("quit") && !command.toLowerCase().equals("q")) {
             String[] tokens = command.trim().split("\\s++");
+
+            //flush out the buffer
+            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1]) && bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
+                SystemDefs.JavabaseBM.flushAllPages();
+                bufSize = Integer.parseInt(tokens[tokens.length-1]);
+                sysdef.MINIBASE_RESTART_FLAG = true;
+                sysdef.init(dbpath, sysdef.JavabaseLogName, 100000, 300000, bufSize, "Clock");
+            } else {
+                System.out.println("Pages were left unpinned!!!!");
+            }
 
             // batchinsert
             if (tokens[0].toLowerCase().equals("batchinsert") && tokens.length == 5) {

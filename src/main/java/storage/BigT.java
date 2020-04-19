@@ -124,7 +124,7 @@ public class BigT {
         Iterator i = new BatchInsertIterator(inputFile, dfItr);
         AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
         short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
-        Iterator itr = new Sort(attrType, (short) 4, attrSize, i, getSortOrder(type), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
+        Iterator itr = new Sort(attrType, (short) 4, attrSize, i, getSortOrder(type), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.4));
         //NOTE: this will sort either RCT or CRT in all cases - for case 5, a second sort is required to put it back in correct ordering.
 
         Map tempMap = itr.get_next();
@@ -260,7 +260,7 @@ public class BigT {
 
         //if its type 5 - we have to resort to get in row,value order
         if(type == StorageType.TYPE_4) {
-            tempIterator = new Sort(attrType, (short) 4, attrSize, tempIterator, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
+            tempIterator = new Sort(attrType, (short) 4, attrSize, tempIterator, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.4));
         }
 
         //insert everything
