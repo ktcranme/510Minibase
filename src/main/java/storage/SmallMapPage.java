@@ -322,13 +322,6 @@ public class SmallMapPage extends HFPage {
         System.arraycopy(data, this.DPFIXED, page.data, this.DPFIXED, MAX_SPACE - this.DPFIXED);
     }
 
-    public int available_space() throws IOException {
-        int totalCapacity = (MAX_SPACE - this.DPFIXED) / (SmallMap.map_size + HFPage.SIZE_OF_SLOT);
-        short usedPtr = Convert.getShortValue(USED_PTR, data);
-        int availSpace = usedPtr - (this.DPFIXED + (totalCapacity * HFPage.SIZE_OF_SLOT));
-        return availSpace / SmallMap.map_size;
-    }
-
     public void migrateHalf(SmallMapPage page, Integer key) throws IOException, InvalidSlotNumberException {
         sort(key);
         short start = MAX_SPACE;
@@ -343,7 +336,7 @@ public class SmallMapPage extends HFPage {
             int offset = getSlotOffset(i);
             if (offset < usedPtr) {
                 setSlot(i, EMPTY_SLOT, 0); // mark slot free
-                page.setSlot(i, SmallMap.map_size, offset + lenToBeCopied);
+                page.setSlot(i, SmallMap.map_size, offset + lenToBeCopied + SmallMap.map_size);
             } else {
                 page.setSlot(i, EMPTY_SLOT, 0);
             }
@@ -353,15 +346,11 @@ public class SmallMapPage extends HFPage {
         Convert.setShortValue(usedPtr, USED_PTR, data);
         Convert.setShortValue(freeSpace, FREE_SPACE, data);
 
-//        for (int i = 0; i < recs / 2; i++) {
-//            page.setSlot(i, SmallMap.map_size, start - ((i + 1) * SmallMap.map_size));
-//        }
         freeSpace = Convert.getShortValue(FREE_SPACE, page.data);
-//        freeSpace -= lenToBeCopied + (recs) * HFPage.SIZE_OF_SLOT;
-        freeSpace -= lenToBeCopied;
+        freeSpace -= lenToBeCopied + slotCnt * HFPage.SIZE_OF_SLOT;
         Convert.setShortValue(freeSpace, FREE_SPACE, page.data);
         Convert.setShortValue((short) (start - lenToBeCopied), USED_PTR, page.data);
-        Convert.setShortValue((short) (recs), SLOT_CNT, page.data);
+        Convert.setShortValue((short) (slotCnt), SLOT_CNT, page.data);
     }
 
     public Map getMap(MID mid, Integer primaryKey) throws InvalidSlotNumberException, IOException {

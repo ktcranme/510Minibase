@@ -82,7 +82,7 @@ public class SmallMapFile extends Heapfile {
         };
 
         Iterator itr = getDirRecItr();
-        iterator.Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], pkLength, 10);
+        iterator.Sort sort = new Sort(attrType, (short) 3, attrSize, itr, 3, order[0], pkLength, 3);
 
         SmallDirpage dirpage = nextDirPage(null);
         dirpageList.add(dirpage);
@@ -532,7 +532,7 @@ public class SmallMapFile extends Heapfile {
     }
 
     private boolean pageHasSpace(SmallMapPage page) throws IOException {
-        return page.available_space() > 0;
+        return page.available_space() > SmallMap.map_size;
     }
 
     private RID insertMapUnsorted(SmallMap map, SmallMapPage startingDatapage, String primary) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
