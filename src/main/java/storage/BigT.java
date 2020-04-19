@@ -151,15 +151,16 @@ public class BigT {
         Map comboMap = i.get_next();
         Map delMap = new Map();
         while (comboMap != null) {
+//            comboMap.print();
             MID tmpmid = crIndexMapFind(comboMap, tempbtf);
 
             if (tmpmid != null) {
                 MID tm = tempMapFile.updateMap(tmpmid, comboMap, delMap);
-                if (tm == null)
-                    continue;
-                if (!tm.isReused) {
-                    tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
-                }
+//                if (tm == null)
+//                    continue;
+//                if (!tm.isReused) {
+//                    tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
+//                }
             } else {
                 MID tm = tempMapFile.insertMap(comboMap);
                 tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
