@@ -64,7 +64,7 @@ public class Driver {
                 handleQuery(tokens);
             } 
             // get counts
-            else if (tokens[0].toLowerCase().equals("getcounts") && tokens.length == 3) {
+            else if (tokens[0].toLowerCase().equals("getcounts") && tokens.length == 2) {
                 handleGetCount(tokens);
             } 
             // mapinsert
@@ -201,20 +201,23 @@ public class Driver {
     }
 
     public static void handleGetCount(String[] tokens) throws Exception {
-        if (!isInteger(tokens[2])) {
+        if (!isInteger(tokens[1])) {
             System.out.println("ERROR: The NUMBUF parameter must be an integer.");
         } else {
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-                int numbuf = Integer.parseInt(tokens[2]);
-                String bigtName = tokens[1];
-                BigT bigt = new BigT(bigtName);
-                mapCnt = bigt.getMapCount();
-                rowCnt =  bigt.getRowCount();
-                columnCnt = bigt.getColumnCount();
-                bigt.close();
-                System.out.println("Map Count : " + mapCnt);
-                System.out.println("Row Count : " + rowCnt);
-                System.out.println("Column Count : " + columnCnt);
+                rprev_count = PCounter.rcounter;
+                wprev_count = PCounter.wcounter;
+                prev_time = System.currentTimeMillis();
+                int numbuf = Integer.parseInt(tokens[1]);
+                storage.BigDB.getCounts(numbuf);
+                next_time = System.currentTimeMillis();
+                rnext_count = PCounter.rcounter;
+                wnext_count = PCounter.wcounter;
+                rcount = rnext_count-rprev_count;
+                wcount = wnext_count-wprev_count;
+                System.out.println("Write Count : "+wcount);
+                System.out.println("Read Count : "+rcount);
+                System.out.println("Time Taken : "+(next_time-prev_time));
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
         }
     }
