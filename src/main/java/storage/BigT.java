@@ -225,26 +225,12 @@ public class BigT {
                             storageThatNeedsADeletion.deleteMap(candidate.getMID());
                         } else {
                             SmallMapFile storageThatNeedsADeletion = (SmallMapFile) storageTypes.get(candidate.getType());
-                            BTreeFile indexThatNeedsADeletion = indexTypes.get(candidate.getType());
                             storageThatNeedsADeletion.deleteMap(candidate.getMID());
-                            KeyClass key;
-                            switch (candidate.getType()){
-                                case TYPE_1: key = new StringKey(candidate.getMap().getRowLabel());
-                                    break;
-                                case TYPE_2: key = new StringKey(candidate.getMap().getColumnLabel());
-                                    break;
-                                case TYPE_3: key = new StringKey(String.join(DELIMITER, candidate.getMap().getColumnLabel(), candidate.getMap().getRowLabel()));
-                                    break;
-                                case TYPE_4: key = new StringKey(String.join(DELIMITER, candidate.getMap().getRowLabel(), candidate.getMap().getValue()));
-                                    break;
-                                default:
-                                    throw new HFException(null, "Invalid Storage Type!");
-                            }
-                            indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
                         }
 
-                        System.out.print("deleting from type " + type + ": ");
+                        System.out.print("deleting from type " + candidate.getType() + ": ");
                         candidate.getMap().print();
+
                     }
                 }
             }
@@ -287,9 +273,11 @@ public class BigT {
             temptempMap = tempIterator.get_next();
         }
 
-        //rebuild the index
-        if(type != StorageType.TYPE_0) {
-            reIndex(type);
+        //rebuild the indexes
+        for(StorageType t : StorageType.values()) {
+            if (t != StorageType.TYPE_0) {
+                reIndex(t);
+            }
         }
 
         //cleanup
