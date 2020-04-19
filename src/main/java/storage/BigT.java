@@ -419,7 +419,7 @@ public class BigT {
         }
         SortTypeMap.init();
         MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
-        return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages * 0.8));
+        return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages * 0.6));
     }
 
     public Integer getRowCount() throws Exception {

@@ -12,7 +12,7 @@ public class RowSort implements GlobalConst {
     public static BigT rowSort(BigT b, String out ,String columnFilter, int num_pages) throws Exception {
         MultiTypeFileStream fs = new MultiTypeFileStream(b, FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
         LatestVersion lv = new LatestVersion(fs,num_pages);
-        Sort s = new Sort(attrType, (short) 4, attrSize, lv, new int[]{3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        Sort s = new Sort(attrType, (short) 4, attrSize, lv, new int[]{3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
         Map tempMap, tempWriteMap;
         BigT outB = new BigT(out);
         while ((tempMap = s.get_next())!=null){
@@ -43,7 +43,7 @@ public class RowSort implements GlobalConst {
         MultiTypeFileStream fs = new MultiTypeFileStream(b, null);
         MultiTypeFileStream fs1;
         BigT outB = new BigT(b.getName().concat("remfile"));
-        Sort s = new Sort(attrType, (short) 4, attrSize, fs, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        Sort s = new Sort(attrType, (short) 4, attrSize, fs, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
         Map tempMap, prevMap=null, retMap, tMap;
         while((tempMap = s.get_next())!=null) {
             if (prevMap == null) {
