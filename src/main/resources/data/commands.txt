@@ -1,0 +1,17 @@
+batchinsert type_1.csv 1 bigt1 300
+batchinsert type_2.csv 2 bigt1 300
+batchinsert type_3.csv 3 bigt1 300
+batchinsert type_4.csv 4 bigt1 300
+batchinsert type_5.csv 5 bigt1 300
+batchinsert type_4.csv 2 bigt1 300
+batchinsert type_4.csv 3 bigt1 300
+batchinsert type_4.csv 4 bigt1 300
+batchinsert type_4.csv 5 bigt1 300
+getCounts 300
+query bigt1 6 * * * 300
+batchinsert test_data_1a.csv 2 bigt2 500
+getCounts 300
+rowjoin bigt1 bigt2 join_result Reindeer 300
+query join_result 6 * * * 300
+rowsort bigt1 sort_result Reindeer 300
+query sort_result 6 * * * 300
