@@ -78,6 +78,30 @@ public class HFPage extends Page implements ConstSlot {
    */
   protected PageId curPage = new PageId();
 
+  public int returnRecord(RID rid) throws IOException, InvalidSlotNumberException {
+    short recLen;
+    short offset;
+    PageId pageNo = new PageId();
+    pageNo.pid = rid.pageNo.pid;
+
+    curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+    int slotNo = rid.slotNo;
+
+    // length of record being returned
+    recLen = getSlotLength(slotNo);
+    slotCnt = Convert.getShortValue(SLOT_CNT, data);
+
+    if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0) && (pageNo.pid == curPage.pid)) {
+
+      offset = getSlotOffset(slotNo);
+      return offset;
+    }
+
+    else {
+      throw new InvalidSlotNumberException(null, "HEAPFILE: INVALID_SLOTNO");
+    }
+  }
+
   /**
    * Default constructor
    */

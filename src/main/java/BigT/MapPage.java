@@ -23,6 +23,10 @@ public class MapPage extends HFPage implements Mapview {
         super();
     }
 
+    public PhysicalMap returnPhysicalMap(RID rid) throws IOException, InvalidSlotNumberException {
+        return new PhysicalMap(data, returnRecord(rid));
+    }
+
     public Map getMap(MID mid) throws InvalidSlotNumberException, IOException {
         byte[] rec = getRecord(new RID(mid.pageNo, mid.slotNo / 3));
         return PhysicalMap.physicalMapToMap(rec, mid.slotNo % 3);

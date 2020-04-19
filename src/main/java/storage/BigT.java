@@ -13,6 +13,7 @@ import BigT.Map;
 import BigT.Iterator;
 import BigT.DatafileIterator;
 import BigT.Sort;
+import BigT.Stream;
 import BigT.FileStreamIterator;
 import BigT.CandidateForDeletion;
 import BigT.StreamIterator;
@@ -108,6 +109,25 @@ public class BigT {
         }
     }
 
+    MID crIndexMapFind(Map findMap, BTreeFile index_f) throws IOException,
+            PinPageException,
+            IteratorException,
+            KeyNotMatchException,
+            UnpinPageException,
+            ConstructPageException,
+            ScanIteratorException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
+        BTFileScan bs = index_f.new_scan(new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()), new StringKey(findMap.getColumnLabel() + DELIMITER + findMap.getRowLabel()));
+        KeyDataEntry ky;
+        MID mid = null;
+        if ((ky = bs.get_next()) != null) {
+            mid = new MID(((LeafData) ky.data).getData());
+            bs.DestroyBTreeFileScan();
+            return mid;
+        }
+        bs.DestroyBTreeFileScan();
+        return null;
+    }
+
     public void batchInsert(Iterator inputFile, StorageType type, int numbuf) throws Exception {
         // Insert
         DatafileIterator dfItr;
@@ -120,14 +140,40 @@ public class BigT {
             dfItr = file.openStream();
         }
 
-
         Iterator i = new BatchInsertIterator(inputFile, dfItr);
         AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
         short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
-        Iterator itr = new Sort(attrType, (short) 4, attrSize, i, getSortOrder(type), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.4));
         //NOTE: this will sort either RCT or CRT in all cases - for case 5, a second sort is required to put it back in correct ordering.
 
-        Map tempMap = itr.get_next();
+        Mapfile tempMapFile = new Mapfile(generateBigTName(type) + "_phy_temp");
+        BTreeFile tempbtf = new BTreeFile(generateBigTName(type) + "_idx_temp", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1);
+
+        Map comboMap = i.get_next();
+        Map delMap = new Map();
+        while (comboMap != null) {
+            MID tmpmid = crIndexMapFind(comboMap, tempbtf);
+
+            if (tmpmid != null) {
+                MID tm = tempMapFile.updateMap(tmpmid, comboMap, delMap);
+                if (tm == null)
+                    continue;
+                if (!tm.isReused) {
+                    tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
+                }
+            } else {
+                MID tm = tempMapFile.insertMap(comboMap);
+                tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
+            }
+            comboMap = i.get_next();
+        }
+        i.close();
+        inputFile.close();
+        tempbtf.close();
+        tempbtf.destroyFile();
+
+        Stream itr = tempMapFile.openStream();
+        MID tmid = new MID();
+        Map tempMap = itr.getNext(tmid);
         String currMapRC = "";
         Map[] latestFromSort = new Map[3];
         while(tempMap != null){
@@ -139,7 +185,7 @@ public class BigT {
                 latestFromSort[c%3].mapCopy(tempMap); //Note: this only works since we sort in timestamp order at the end
                 c++;
 
-                tempMap = itr.get_next();
+                tempMap = itr.getNext(tmid);
             }
 
             //put a list of all the versions - starting with the 3 latest from sort
@@ -235,14 +281,12 @@ public class BigT {
                 }
             }
 
-
-
             //empty the latest 3 array for next pass
             latestFromSort[0] = null;
             latestFromSort[1] = null;
             latestFromSort[2] = null;
         }
-
+        itr.closestream();
 
         //AT THIS POINT we have removed all necessary old versions from other storage types
         //and have a temporary VMapFile that contains everything from
@@ -254,9 +298,6 @@ public class BigT {
         //lets recreate the file and insert into it
         createFileOfType(type);
         Iterator tempIterator = new StreamIterator(((VMapfile)tempFile).openStream());
-
-        //close one sort so another can open
-        itr.close();
 
         //if its type 5 - we have to resort to get in row,value order
         if(type == StorageType.TYPE_4) {
@@ -275,6 +316,7 @@ public class BigT {
 
             temptempMap = tempIterator.get_next();
         }
+        tempIterator.close();
 
         //rebuild the indexes
         for(StorageType t : StorageType.values()) {
@@ -286,10 +328,6 @@ public class BigT {
         //cleanup
         //delete temp VMapfile
         tempFile.deleteFile();
-        //close all iterators used in this scope
-        i.close();
-        tempIterator.close();
-        inputFile.close();
     }
 
     //this one should check for versions
@@ -538,7 +576,7 @@ public class BigT {
             IndexInsertRecException {
         BTreeFile bf = indexTypes.get(type);
         SmallMapFile hf = (SmallMapFile) storageTypes.get(type);
-        Stream s = hf.openStream();
+        storage.Stream s = hf.openStream();
         Map insMap;
         MID tmpM = new MID();
         bf.close();
