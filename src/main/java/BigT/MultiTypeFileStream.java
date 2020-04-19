@@ -53,7 +53,7 @@ public class MultiTypeFileStream extends Iterator {
         return null;
     }
 
-    private void switch_file() throws FileScanException, IOException, InvalidRelation, HFBufMgrException, InvalidTupleSizeException, PagePinnedException, PageUnpinnedException, HashOperationException, BufferPoolExceededException, BufMgrException, InvalidFrameNumberException, InvalidSlotNumberException, PageNotReadException, ReplacerException, HashEntryNotFoundException, InvalidMapSizeException {
+    private void switch_file() throws Exception {
         if(count_file!=0){
             fs.closestream();
         }
@@ -62,7 +62,7 @@ public class MultiTypeFileStream extends Iterator {
             if (StorageType.values()[count_file] == StorageType.TYPE_0) {
                 fs = new FileStreamIterator(((VMapfile) bigt.storageTypes.get(StorageType.values()[count_file])).openStream(), outF);
             } else {
-                fs = new FileStreamIterator(((SmallMapFile) bigt.storageTypes.get(StorageType.values()[count_file])).openStream(), outF);
+                fs = new FileStreamIterator(((SmallMapFile) bigt.storageTypes.get(StorageType.values()[count_file])).openSortedStream(), outF);
             }
         }
         count_file++;
