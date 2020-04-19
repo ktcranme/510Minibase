@@ -30,6 +30,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.BOMInputStream;
+import storage.BigT;
 
 import javax.sound.midi.MidiChannel;
 
@@ -93,7 +94,7 @@ class RowSortTestDriver extends TestDriver implements GlobalConst {
 
             System.out.println("Creating maps");
 
-            bigT b1 = new bigT("test_rs", 1);
+            BigT b1 = new BigT("test_rs");
 
             Reader reader = new InputStreamReader(new BOMInputStream(BatchInsert.class.getResourceAsStream("/data/project2_testdata.csv")), "UTF-8");
             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT);
@@ -108,17 +109,16 @@ class RowSortTestDriver extends TestDriver implements GlobalConst {
                 tempMap.setColumnLabel(csvRecord.get(1));
                 tempMap.setTimeStamp(Integer.parseInt(csvRecord.get(3)));
                 tempMap.setValue(csvRecord.get(2));
-                b1.insertMap(tempMap.getMapByteArray());
+                b1.insertMap(tempMap);
             }
             System.out.println("Buffers before Operation : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-            bigT outB = RowSort.rowSort(b1,"Mule",100);
-            Stream stream = new Stream(outB.getHf());
+            BigT outB = RowSort.rowSort(b1,"test123","Mule",100);
+            MultiTypeFileStream stream = new MultiTypeFileStream(outB,null);
             Map stMap;
-            MID m = new MID();
-            while ((stMap=stream.getNext(m))!=null){
+            while ((stMap=stream.get_next())!=null){
                 stMap.print();
             }
-            stream.closestream();
+            stream.close();
             System.out.println("Buffers after Operation : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             System.out.println("\n------------------------------------------");
             System.out.println("Testing Done - RowSort.java");

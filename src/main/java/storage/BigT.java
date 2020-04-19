@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import BigT.*;
 import BigT.VMapfile;
 import BigT.Map;
 import BigT.Iterator;
@@ -15,27 +16,27 @@ import BigT.Sort;
 import BigT.FileStreamIterator;
 import BigT.CandidateForDeletion;
 import BigT.StreamIterator;
-import btree.AddFileEntryException;
-import btree.BTreeFile;
-import btree.ConstructPageException;
-import btree.GetFileEntryException;
-import bufmgr.HashEntryNotFoundException;
-import bufmgr.InvalidFrameNumberException;
-import bufmgr.PageUnpinnedException;
-import bufmgr.ReplacerException;
+import btree.*;
+import bufmgr.*;
 import driver.BatchInsertIterator;
 import driver.FilterParser;
 import global.*;
 import heap.*;
 import iterator.CondExpr;
+import iterator.FileScanException;
+import iterator.InvalidRelation;
+import iterator.SortException;
 
 import static global.GlobalConst.*;
 
 public class BigT {
     String name;
-    HashMap<StorageType, Heapfile> storageTypes;
-    HashMap<StorageType, BTreeFile> indexTypes;
+    public HashMap<StorageType, Heapfile> storageTypes;
+    public HashMap<StorageType, BTreeFile> indexTypes;
     Random rand = new Random();
+    public final String DELIMITER = ",";
+    AttrType[] attrType = {new AttrType(AttrType.attrString), new AttrType(AttrType.attrString), new AttrType(AttrType.attrInteger), new AttrType(AttrType.attrString)};
+    short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
 
     public BigT(String name) throws HFBufMgrException, HFException, IOException, ConstructPageException, AddFileEntryException, GetFileEntryException, HFDiskMgrException {
         this.name = name;
@@ -45,6 +46,10 @@ public class BigT {
         for (StorageType type : StorageType.values()) {
             createStorageOfType(type);
         }
+    }
+
+    public String getName() {
+        return name;
     }
 
     private String generateBigTName(StorageType type) {
@@ -225,6 +230,7 @@ public class BigT {
 
                         System.out.print("deleting from type " + candidate.getType() + ": ");
                         candidate.getMap().print();
+
                     }
                 }
             }
@@ -249,6 +255,9 @@ public class BigT {
         createFileOfType(type);
         Iterator tempIterator = new StreamIterator(((VMapfile)tempFile).openStream());
 
+        //close one sort so another can open
+        itr.close();
+
         //if its type 5 - we have to resort to get in row,value order
         if(type == StorageType.TYPE_4) {
             tempIterator = new Sort(attrType, (short) 4, attrSize, tempIterator, new int[]{0,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(numbuf * 0.8));
@@ -267,56 +276,201 @@ public class BigT {
             temptempMap = tempIterator.get_next();
         }
 
-        //TODO REBUILD INDEX HERE
+        //rebuild the indexes
+        for(StorageType t : StorageType.values()) {
+            if (t != StorageType.TYPE_0) {
+                reIndex(t);
+            }
+        }
 
         //cleanup
         //delete temp VMapfile
         tempFile.deleteFile();
         //close all iterators used in this scope
         i.close();
-        itr.close();
         tempIterator.close();
+        inputFile.close();
     }
 
     //this one should check for versions
-    public MID mapInsert(Map map, StorageType type) throws HFDiskMgrException, InvalidTupleSizeException, HFException, IOException, InvalidSlotNumberException, HFBufMgrException, SpaceNotAvailableException, ConstructPageException, GetFileEntryException, AddFileEntryException {
-        if (!storageTypes.containsKey(type)) {
-            // Create
-            createStorageOfType(type);
+    public MID mapInsert(Map map, StorageType type) throws HFDiskMgrException, InvalidTupleSizeException, Exception, IOException, InvalidSlotNumberException, HFBufMgrException, SpaceNotAvailableException, ConstructPageException, GetFileEntryException, AddFileEntryException, FileScanException, InvalidRelation, InvalidMapSizeException {
+
+        //put a list of all the versions - we should only find 3
+        ArrayList<CandidateForDeletion> allVersions = new ArrayList<CandidateForDeletion>();
+
+        //search for other versions of the map and add them to list
+        for(StorageType t : StorageType.values()) {
+            CondExpr[] filter = FilterParser.parseCombine(String.join("##", map.getRowLabel(), map.getColumnLabel(), "*"));
+            DatafileIterator fileToBeSearched;
+            if(t==StorageType.TYPE_0) {
+                fileToBeSearched = ((VMapfile)storageTypes.get(t)).openStream();
+            } else {
+                fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).openStream();
+            }
+            DatafileIterator searchIterator = new FileStreamIterator(fileToBeSearched, filter);
+
+            MID mid = new MID();
+            Map tempMapFromSearch = searchIterator.getNext(mid);
+            while(tempMapFromSearch != null) {
+                allVersions.add(new CandidateForDeletion(tempMapFromSearch, mid, t));
+
+                tempMapFromSearch = searchIterator.getNext(mid);
+            }
+
+            //cleanup
+            fileToBeSearched.closestream();
+            searchIterator.closestream();
         }
 
-        // Insert
-        if (type == StorageType.TYPE_0) {
-            VMapfile file = (VMapfile) storageTypes.get(type);
-            return file.insertMap(map);
+        //add in the new map to the allVersions array incase it has an old timestamp
+        allVersions.add(new CandidateForDeletion(map, null, null));
+
+        //AT THIS POINT we have the list of all versions of the map
+        //if there are more than 3 total versions - we will either have to delete some
+        //or ignore some from the input map
+        //loop through 3 times, selecting the highest timestamp values and set those not for deletion
+        if(allVersions.size() > 3) {
+            for (int k = 0; k < 3; k++) {
+                int maxTimeStamp = -1;
+                int indexOfMaxTimeStamp = -1;
+
+                for(int j = 0; j < allVersions.size(); j++){
+                    if(allVersions.get(j).getMap().getTimeStamp() > maxTimeStamp && allVersions.get(j).getDeleteMe()) {
+                        maxTimeStamp = allVersions.get(j).getMap().getTimeStamp();
+                        indexOfMaxTimeStamp = j;
+                    }
+                }
+
+                //mark this highest time stamp(that hasn't already been marked) to not be deleted
+                allVersions.get(indexOfMaxTimeStamp).setDeleteMe(false);
+            }
+        } else {
+            //none are going to be deleted
+            for(int k = 0; k < allVersions.size(); k++) {
+                allVersions.get(k).setDeleteMe(false);
+            }
         }
 
+        //AT THIS POINT we have the same array of candidates but now 3 are set to not be deleted
+        //loop through and delete any that have DeleteMe == true (or if type = null just ignore it and return)
+        //insert all that have type = null and DeleteMe == false
+        MID mid = null;
+        for(int k = 0; k < allVersions.size(); k++) {
+            CandidateForDeletion candidate = allVersions.get(k);
+            if(candidate.getType() == null) {
+                //this is the version from the input map
+                if(!candidate.getDeleteMe()) {
+                    //insert
+                    if(type == StorageType.TYPE_0) {
+                        mid = ((VMapfile)storageTypes.get(type)).insertMap(candidate.getMap());
+                    } else {
+                        mid = ((SmallMapFile)storageTypes.get(type)).insertMap(candidate.getMap());
+                        //TODO THIS IS WHERE WE WOULD NEED TO HANDLE STUFF FOR THE INDEX
+                        //TODO I LEAVE THIS FOR SOMEONE ELSE TO DO
 
 
-        // Probably use index here?
-        // Maybe you should just let the file handle the sorting
-        SmallMapFile file = (SmallMapFile) storageTypes.get(type);
-        return file.insertMap(map);
+
+
+                    }
+                } else {
+                    return null;
+                }
+            } else {
+                //these are the versions from the other storages in this BigT
+                if(candidate.getDeleteMe()) {
+                    //delete
+                    if(candidate.getType() == StorageType.TYPE_0) {
+                        VMapfile storageThatNeedsADeletion = (VMapfile)storageTypes.get(candidate.getType());
+                        storageThatNeedsADeletion.deleteMap(candidate.getMID());
+                    } else {
+                        SmallMapFile storageThatNeedsADeletion = (SmallMapFile) storageTypes.get(candidate.getType());
+                        BTreeFile indexThatNeedsADeletion = indexTypes.get(candidate.getType());
+                        storageThatNeedsADeletion.deleteMap(candidate.getMID());
+                        KeyClass key;
+                        switch (candidate.getType()){
+                            case TYPE_1: key = new StringKey(candidate.getMap().getRowLabel());
+                                break;
+                            case TYPE_2: key = new StringKey(candidate.getMap().getColumnLabel());
+                                break;
+                            case TYPE_3: key = new StringKey(String.join(DELIMITER, candidate.getMap().getColumnLabel(), candidate.getMap().getRowLabel()));
+                                break;
+                            case TYPE_4: key = new StringKey(String.join(DELIMITER, candidate.getMap().getRowLabel(), candidate.getMap().getValue()));
+                                break;
+                            default:
+                                throw new HFException(null, "Invalid Storage Type!");
+                        }
+                        indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
+                    }
+
+                    System.out.print("deleting from type " + type + ": ");
+                    candidate.getMap().print();
+                }
+            }
+        }
+
+        return mid;
     }
 
-    public Iterator query(int orderType, String rowFilter, String columnFilter, String valueFilter) {
+    public Iterator query(int orderType, String rowFilter, String columnFilter, String valueFilter, int num_pages) throws FileScanException, IOException, InvalidRelation, SortException, HFBufMgrException {
         // Could use indexes, or filescan with filterstream or whatever
-        return null;
+        if(orderType == 6){
+            MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
+            return ms;
+        }
+        SortTypeMap.init();
+        MultiTypeFileStream ms = new MultiTypeFileStream(this, FilterParser.parseCombine(String.join("##", rowFilter, columnFilter, valueFilter)));
+        return new Sort(attrType, (short) 4, attrSize, ms, SortTypeMap.returnSortOrderArray(orderType - 1), new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages * 0.8));
     }
 
-    public Integer getRowCount() {
+    public Integer getRowCount() throws Exception {
         // Unique rows
-        return 0;
+        MultiTypeFileStream ms = new MultiTypeFileStream(this,null);
+        Sort st = new Sort(attrType, (short) 4, attrSize, ms, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        Map m = st.get_next();
+        String s = "";
+        int c = 0;
+        if (m != null) {
+            c = 1;
+            s = m.getRowLabel();
+            while ((m = st.get_next()) != null) {
+                if (!s.equalsIgnoreCase(m.getRowLabel()))
+                    c++;
+                s = m.getRowLabel();
+            }
+        }
+        st.close();
+        ms.close();
+        return c;
     }
 
-    public Integer getColumnCount() {
+    public Integer getColumnCount() throws Exception {
         // Unique columns
-        return 0;
+        MultiTypeFileStream ms = new MultiTypeFileStream(this,null);
+        Sort st = new Sort(attrType, (short) 4, attrSize, ms, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, 134);
+        Map m = st.get_next();
+        String s = "";
+        int c = 0;
+        if (m != null) {
+            c = 1;
+            s = m.getColumnLabel();
+            while ((m = st.get_next()) != null) {
+                if (!s.equalsIgnoreCase(m.getColumnLabel()))
+                    c++;
+                s = m.getColumnLabel();
+            }
+        }
+        st.close();
+        ms.close();
+        return c;
     }
 
-    public Integer getMapCount() {
+    public Integer getMapCount() throws HFBufMgrException, IOException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException {
         // Does this include all versions?
-        return 0;
+        int total_count = 0;
+        for (StorageType type : StorageType.values()) {
+            total_count += storageTypes.get(type).getMapCnt();
+        }
+        return total_count;
     }
 
     public BigT rowJoin(Integer amountOfMem, Iterator leftStream, String columnName) {
@@ -334,6 +488,11 @@ public class BigT {
         return null;
     }
 
+    //This is for rowJoin and rowSort - they only insert into a type 1 storage
+    public void insertMap(Map map) throws HFDiskMgrException, InvalidTupleSizeException, HFException, IOException, InvalidSlotNumberException, SpaceNotAvailableException, HFBufMgrException {
+        ((VMapfile)storageTypes.get(StorageType.TYPE_0)).insertMap(map);
+    }
+
     public void close() {
         for (BTreeFile file : indexTypes.values()) {
             try {
@@ -342,6 +501,76 @@ public class BigT {
                 // Force close these guys
             }
         }
+    }
+
+    // method to reindex a specific index file type.
+    public void reIndex(StorageType type) throws DeleteFileEntryException,
+            IteratorException,
+            PinPageException,
+            IOException,
+            ConstructPageException,
+            FreePageException,
+            UnpinPageException,
+            HFBufMgrException,
+            PageNotReadException,
+            PagePinnedException,
+            HashOperationException,
+            ReplacerException,
+            BufferPoolExceededException,
+            BufMgrException,
+            InvalidSlotNumberException,
+            InvalidTupleSizeException,
+            InvalidFrameNumberException,
+            PageUnpinnedException,
+            HashEntryNotFoundException,
+            HFException,
+            GetFileEntryException,
+            AddFileEntryException,
+            NodeNotMatchException,
+            LeafDeleteException,
+            LeafInsertRecException,
+            IndexSearchException,
+            InsertException,
+            ConvertException,
+            DeleteRecException,
+            KeyNotMatchException,
+            KeyTooLongException,
+            IndexInsertRecException {
+        BTreeFile bf = indexTypes.get(type);
+        SmallMapFile hf = (SmallMapFile) storageTypes.get(type);
+        Stream s = hf.openStream();
+        Map insMap;
+        MID tmpM = new MID();
+        bf.close();
+        bf.destroyFile();
+        switch (type){
+            case TYPE_1: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE, 1));
+                break;
+            case TYPE_2: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE, 1));
+                break;
+            case TYPE_3: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1));
+                break;
+            case TYPE_4: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE + GlobalConst.MAXVALUESIZE + 1, 1));
+                break;
+            default:
+                throw new HFException(null, "Invalid Storage Type!");
+        }
+        bf = indexTypes.get(type);
+        while((insMap = s.getNext(tmpM))!=null){
+            switch (type){
+                case TYPE_1: bf.insert(new StringKey(insMap.getRowLabel()), new RID(tmpM));
+                    break;
+                case TYPE_2: bf.insert(new StringKey(insMap.getColumnLabel()), new RID(tmpM));
+                    break;
+                case TYPE_3: bf.insert(new StringKey(String.join(DELIMITER, insMap.getColumnLabel(), insMap.getRowLabel())), new RID(tmpM));
+                    break;
+                case TYPE_4: bf.insert(new StringKey(String.join(DELIMITER, insMap.getRowLabel(), insMap.getValue())), new RID(tmpM));
+                    break;
+                default:
+                    throw new HFException(null, "Invalid Storage Type!");
+            }
+        }
+        s.closestream();
     }
 
 
@@ -362,5 +591,15 @@ public class BigT {
                 break;
         }
         return sortOrder;
+    }
+
+    public void delete_all_files() throws HFDiskMgrException, InvalidTupleSizeException, IOException, InvalidSlotNumberException, FileAlreadyDeletedException, HFBufMgrException, DeleteFileEntryException, IteratorException, PinPageException, ConstructPageException, FreePageException, UnpinPageException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
+        for (StorageType type : StorageType.values()) {
+            storageTypes.get(type).deleteFile();
+            if(type != StorageType.TYPE_0) {
+                indexTypes.get(type).close();
+                indexTypes.get(type).destroyFile();
+            }
+        }
     }
 }

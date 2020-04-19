@@ -3,7 +3,11 @@
 package diskmgr;
 
 import java.io.*;
-import bufmgr.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import global.*;
 
 public class DB implements GlobalConst {
@@ -123,6 +127,51 @@ public class DB implements GlobalConst {
     fp.close();
     File DBfile = new File(name);
     DBfile.delete();
+  }
+
+  public List<String> bigTlist() throws DiskMgrException, IOException {
+      Page apage = new Page();
+      PageId hpid = new PageId();
+      PageId nexthpid = new PageId(0);
+      PageId tmppid = new PageId();
+      DBHeaderPage dp;
+      Set<String> names = new HashSet<>();
+      do
+      { // startDO01
+          hpid.pid = nexthpid.pid;
+
+          // Pin the header page.
+          pinPage(hpid, apage, false/*read disk*/);
+
+          // This complication is because the first page has a different
+          // structure from that of subsequent pages.
+          if(hpid.pid==0)
+          {
+              dp = new DBFirstPage();
+              ((DBFirstPage)dp).openPage(apage);
+          }
+          else
+          {
+              dp = new DBDirectoryPage();
+              ((DBDirectoryPage) dp).openPage(apage);
+          }
+          nexthpid = dp.getNextPage();
+
+          int entry = 0;
+
+          String tmpname;
+          while(entry < dp.getNumOfEntries())
+          {
+              tmpname = dp.getFileEntry(tmppid, entry);
+              if(tmppid.pid != INVALID_PAGE) {
+                  names.add(tmpname.split("_")[0]);
+          }
+              entry ++;
+          }
+              unpinPage(hpid, false /*undirty*/);
+
+      } while(nexthpid.pid != INVALID_PAGE); // EndDO01
+      return new ArrayList<>(names);
   }
   
   /** Read the contents of the specified page into a Page object

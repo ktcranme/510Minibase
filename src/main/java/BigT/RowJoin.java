@@ -4,6 +4,7 @@ import driver.FilterParser;
 import global.AttrType;
 import global.GlobalConst;
 import global.TupleOrder;
+import storage.BigT;
 
 import java.io.IOException;
 
@@ -12,16 +13,15 @@ public class RowJoin implements GlobalConst {
     static short[] attrSize = {MAXROWLABELSIZE, MAXCOLUMNLABELSIZE, MAXVALUESIZE};
 
 
-    public static bigT rowJoin(bigT b1, bigT b2, String outbigTName, String columnFilter, int num_pages) throws Exception {
-        bigT outB = new bigT(outbigTName,1);
+    public static BigT rowJoin(BigT b1, BigT b2, String outbigTName, String columnFilter, int num_pages) throws Exception {
+        BigT outB = new BigT(outbigTName);
 
-
-        FileStream fs1 = new FileStream(b1.getHf(), FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
+        MultiTypeFileStream fs1 = new MultiTypeFileStream(b1, FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
         LatestVersion lv1 = new LatestVersion(fs1,num_pages);
 
         Map tempMap1;
         while ((tempMap1 = lv1.get_next())!=null){
-            FileStream fs2 = new FileStream(b2.getHf(), FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
+            MultiTypeFileStream fs2 = new MultiTypeFileStream(b2, FilterParser.parseSingle(columnFilter,2, AttrType.attrString));
             LatestVersion lv2 = new LatestVersion(fs2,num_pages);
 
             Map tempMap2;
@@ -29,7 +29,7 @@ public class RowJoin implements GlobalConst {
                 if(tempMap1.getValue().equalsIgnoreCase(tempMap2.getValue())){
                     //begin adding all maps from each row
                     String currRow1 = tempMap1.getRowLabel();
-                    FileStream fs1_1 = new FileStream(b1.getHf(), FilterParser.parseSingle(currRow1, 1, AttrType.attrString));
+                    MultiTypeFileStream fs1_1 = new MultiTypeFileStream(b1, FilterParser.parseSingle(currRow1,1, AttrType.attrString));
                     Sort s1 = new Sort(attrType, (short) 4, attrSize, fs1_1, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
 
                     //Loop through table one
@@ -38,7 +38,7 @@ public class RowJoin implements GlobalConst {
                         String currColumn1 = tempMap1_1.getColumnLabel();
                         String new_row_label = tempMap1.getRowLabel() + ":" + tempMap2.getRowLabel();
 
-                        FileStream fs2_2 = new FileStream(b2.getHf(), FilterParser.parseCombine(String.join("##", tempMap2.getRowLabel(), currColumn1)));
+                        MultiTypeFileStream fs2_2 = new MultiTypeFileStream(b2, FilterParser.parseCombine(String.join("##", tempMap2.getRowLabel(), currColumn1)));
                         Map tempMap2_2 = fs2_2.get_next();
                         if (tempMap2_2 == null) {
                             while(tempMap1_1.getColumnLabel().equals(currColumn1)) {
@@ -48,7 +48,7 @@ public class RowJoin implements GlobalConst {
                                 insertMap.setColumnLabel(currColumn1);
                                 insertMap.setTimeStamp(tempMap1_1.getTimeStamp());
                                 insertMap.setValue(tempMap1_1.getValue());
-                                outB.insertMap(insertMap.getMapByteArray());
+                                outB.insertMap(insertMap);
 
                                 tempMap1_1 = s1.get_next();
                                 if(tempMap1_1 == null) break;
@@ -83,7 +83,7 @@ public class RowJoin implements GlobalConst {
                                 for(int i = 0; i < latest.length; i++) {
                                     if(latest[i]==null) break;
                                     latest[i].setRowLabel(new_row_label);
-                                    outB.insertMap(latest[i].getMapByteArray());
+                                    outB.insertMap(latest[i]);
                                 }
                             } else {
                                 //both have same column but it isn't the column filter - include all of them
@@ -94,7 +94,7 @@ public class RowJoin implements GlobalConst {
                                     insertMap.setColumnLabel(tempMap1.getRowLabel() + "_" + currColumn1);
                                     insertMap.setTimeStamp(tempMap1_1.getTimeStamp());
                                     insertMap.setValue(tempMap1_1.getValue());
-                                    outB.insertMap(insertMap.getMapByteArray());
+                                    outB.insertMap(insertMap);
 
                                     tempMap1_1 = s1.get_next();
                                     if(tempMap1_1 == null) break;
@@ -111,7 +111,7 @@ public class RowJoin implements GlobalConst {
                     }
 
                     String currRow2 = tempMap2.getRowLabel();
-                    FileStream fs2_2 = new FileStream(b2.getHf(), FilterParser.parseSingle(currRow2, 1, AttrType.attrString));
+                    MultiTypeFileStream fs2_2 = new MultiTypeFileStream(b2, FilterParser.parseSingle(currRow2, 1, AttrType.attrString));
                     Sort s2 = new Sort(attrType, (short) 4, attrSize, fs2_2, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
 
                     //Loop through table two
@@ -120,7 +120,7 @@ public class RowJoin implements GlobalConst {
                         String currColumn2 = tempMap2_2.getColumnLabel();
                         String new_row_label = tempMap1.getRowLabel() + ":" + tempMap2.getRowLabel();
 
-                        FileStream fs1_1_1 = new FileStream(b1.getHf(), FilterParser.parseCombine(String.join("##", tempMap1.getRowLabel(), currColumn2)));
+                        MultiTypeFileStream fs1_1_1 = new MultiTypeFileStream(b1, FilterParser.parseCombine(String.join("##", tempMap1.getRowLabel(), currColumn2)));
                         Map tempMap1_1_1 = fs1_1_1.get_next();
                         if (tempMap1_1_1 == null) {
                             while(tempMap2_2.getColumnLabel().equals(currColumn2)) {
@@ -130,7 +130,7 @@ public class RowJoin implements GlobalConst {
                                 insertMap.setColumnLabel(currColumn2);
                                 insertMap.setTimeStamp(tempMap2_2.getTimeStamp());
                                 insertMap.setValue(tempMap2_2.getValue());
-                                outB.insertMap(insertMap.getMapByteArray());
+                                outB.insertMap(insertMap);
 
                                 tempMap2_2 = s2.get_next();
                                 if(tempMap2_2 == null) break;
@@ -155,7 +155,7 @@ public class RowJoin implements GlobalConst {
                                     insertMap.setColumnLabel(tempMap2.getRowLabel() + "_" + currColumn2);
                                     insertMap.setTimeStamp(tempMap2_2.getTimeStamp());
                                     insertMap.setValue(tempMap2_2.getValue());
-                                    outB.insertMap(insertMap.getMapByteArray());
+                                    outB.insertMap(insertMap);
 
                                     tempMap2_2 = s2.get_next();
                                     if(tempMap2_2 == null) break;
