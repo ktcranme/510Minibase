@@ -199,12 +199,18 @@ public class Driver {
 
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
-                Iterator it = bigt.query(orderType,rowFilter,columnFilter,valueFilter,numbuf);
-                Map m;
-                while((m=it.get_next())!=null){
-                    m.print();
+
+                Iterator it = null;
+                try {
+                    it = bigt.query(orderType,rowFilter,columnFilter,valueFilter,numbuf);
+                    Map m;
+                    while((m=it.get_next())!=null){
+                        m.print();
+                    }
+                    it.close();
+                } catch (Exception e) {
+                    if (it != null) it.close();
                 }
-                it.close();
                 bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
