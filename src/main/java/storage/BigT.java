@@ -325,6 +325,7 @@ public class BigT {
         //cleanup
         //delete temp VMapfile
         tempFile.deleteFile();
+        tempMapFile.deleteFile();
     }
 
     //this one should check for versions

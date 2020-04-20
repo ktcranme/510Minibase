@@ -9,6 +9,8 @@ import heap.*;
 
 public class Mapfile extends Heapfile implements Bigtablefile {
 	RID insertDatapageRID;
+	Dirpage currentDirPageToWrite;
+	MapPage currentDataPageToWrite;
 
     public Mapfile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
         super(name);
@@ -66,7 +68,7 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 //            throw new InvalidSlotNumberException();
 
         MID updatedRecord = dataPage.updateMap(rid, newtuple, deletedMap);
-        
+
 //        if (updatedRecord != null && !updatedRecord.isReused) {
 //            DataPageInfo dpinfo_ondirpage = dirPage.returnDatapageInfo(currentDataPageRid);
 //            dpinfo_ondirpage.recct++;
@@ -198,6 +200,11 @@ public class Mapfile extends Heapfile implements Bigtablefile {
     		rid = insertRecordAt(PhysicalMap.getMapByteArray(tuple));
 		} else {
 			rid = insertRecord(PhysicalMap.getMapByteArray(tuple));
+			currentDirPageToWrite = new Dirpage();
+			currentDataPageToWrite = new MapPage();
+			pinPage(insertDatapageRID.pageNo, currentDirPageToWrite, false);
+			DataPageInfo dpinfo = currentDirPageToWrite.getDatapageInfo(insertDatapageRID);
+			pinPage(dpinfo.getPageId(), currentDataPageToWrite, false);
 		}
 
         return new MID(rid.pageNo, rid.slotNo * 3);
@@ -205,19 +212,16 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 
     public RID insertRecordAt(byte[] recPtr) throws HFBufMgrException, InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFException, HFDiskMgrException {
 		Page pageinbuffer = new Page();
-    	Dirpage currentDirPage = new Dirpage();
-		HFPage currentDataPage = getNewDataPage();
 
 		Dirpage nextDirPage = new Dirpage();
 		PageId currentDirPageId = new PageId(insertDatapageRID.pageNo.pid);
 		PageId nextDirPageId = new PageId(); // OK
 		RID currentDataPageRid = new RID();
 
-		pinPage(currentDirPageId, currentDirPage, false);
-		DataPageInfo dpinfo = currentDirPage.getDatapageInfo(insertDatapageRID);
+		DataPageInfo dpinfo = currentDirPageToWrite.getDatapageInfo(insertDatapageRID);
 
 		if (dpinfo.availspace < recPtr.length) {
-			if (currentDirPage.available_space() < DataPageInfo.size) {
+			if (currentDirPageToWrite.available_space() < DataPageInfo.size) {
 				// new dirpage
 				nextDirPageId = newPage(pageinbuffer, 1);
 				// need check error!
@@ -232,49 +236,51 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 
 				// update current directory page and unpin it
 				// currentDirPage is already locked in the Exclusive mode
-				currentDirPage.setNextPage(nextDirPageId);
+				currentDirPageToWrite.setNextPage(nextDirPageId);
 				unpinPage(currentDirPageId, true/* dirty */);
 
 				currentDirPageId.pid = nextDirPageId.pid;
-				currentDirPage = new Dirpage(nextDirPage);
+				currentDirPageToWrite = new Dirpage(nextDirPage);
 			}
 
 			{
 				PageId currentPageId = new PageId(dpinfo.getPageId().pid);
-				pinPage(currentPageId, currentDataPage, false);
 				MapPage nextPage = new MapPage(_newDatapage(dpinfo));
-				currentDataPage.setNextPage(dpinfo.getPageId());
+				currentDataPageToWrite.setNextPage(dpinfo.getPageId());
 				nextPage.setPrevPage(currentPageId);
 				unpinPage(currentPageId, true);
-				currentDataPage = nextPage;
+				currentDataPageToWrite = nextPage;
 			}
 
 			Tuple atuple = dpinfo.convertToTuple();
 
 			byte[] tmpData = atuple.getTupleByteArray();
-			currentDataPageRid = currentDirPage.insertRecord(tmpData);
+			currentDataPageRid = currentDirPageToWrite.insertRecord(tmpData);
 			// need catch error here!
 			if (currentDataPageRid == null)
 				throw new HFException(null, "no space to insert rec.");
-			RID tmprid = currentDirPage.firstRecord();
 			insertDatapageRID = new RID(currentDataPageRid.pageNo, currentDataPageRid.slotNo);
-		} else {
-			pinPage(dpinfo.getPageId(), currentDataPage, false);
 		}
 
-		RID rid = currentDataPage.insertRecord(recPtr);
+		RID rid = currentDataPageToWrite.insertRecord(recPtr);
 		dpinfo.recct++;
-		dpinfo.availspace = currentDataPage.available_space();
-		unpinPage(dpinfo.getPageId(), true /* = DIRTY */);
+		dpinfo.availspace = currentDataPageToWrite.available_space();
 		// DataPage is now released
-		DataPageInfo dpinfo_ondirpage = currentDirPage.returnDatapageInfo(insertDatapageRID);
+		DataPageInfo dpinfo_ondirpage = currentDirPageToWrite.returnDatapageInfo(insertDatapageRID);
 		dpinfo_ondirpage.availspace = dpinfo.availspace;
 		dpinfo_ondirpage.recct = dpinfo.recct;
 		dpinfo_ondirpage.getPageId().pid = dpinfo.getPageId().pid;
 		dpinfo_ondirpage.flushToTuple();
-		unpinPage(currentDirPageId, true /* = DIRTY */);
 
 		return rid;
+	}
+
+	public void closeFastInsert() throws InvalidSlotNumberException, InvalidTupleSizeException, IOException, HFBufMgrException {
+		PageId currentDirPageId = new PageId(insertDatapageRID.pageNo.pid);
+		DataPageInfo dpinfo = currentDirPageToWrite.getDatapageInfo(insertDatapageRID);
+    	insertDatapageRID = null;
+    	unpinPage(dpinfo.getPageId(), true);
+    	unpinPage(currentDirPageId, true);
 	}
 
 	public RID insertRecord(byte[] recPtr) throws InvalidSlotNumberException, InvalidTupleSizeException,
