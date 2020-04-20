@@ -238,16 +238,17 @@ public class Mapfile extends Heapfile implements Bigtablefile {
 				currentDirPageId.pid = nextDirPageId.pid;
 				currentDirPage = new Dirpage(nextDirPage);
 			}
-			MapPage prevPage = getNewDataPage();
-			PageId prevPageId = new PageId(dpinfo.getPageId().pid);
-			currentDataPage = _newDatapage(dpinfo);
-			if (prevPageId.pid != INVALID_PAGE) {
-				pinPage(prevPageId, prevPage, false);
-				currentDataPage.setNextPage(prevPage.getNextPage());
-				prevPage.setNextPage(dpinfo.getPageId());
-				currentDataPage.setPrevPage(prevPageId);
-				unpinPage(prevPageId, true);
+
+			{
+				PageId currentPageId = new PageId(dpinfo.getPageId().pid);
+				pinPage(currentPageId, currentDataPage, false);
+				MapPage nextPage = new MapPage(_newDatapage(dpinfo));
+				currentDataPage.setNextPage(dpinfo.getPageId());
+				nextPage.setPrevPage(currentPageId);
+				unpinPage(currentPageId, true);
+				currentDataPage = nextPage;
 			}
+
 			Tuple atuple = dpinfo.convertToTuple();
 
 			byte[] tmpData = atuple.getTupleByteArray();
