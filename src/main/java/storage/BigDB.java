@@ -39,7 +39,7 @@ public class BigDB implements GlobalConst {
 
     public static void rowCount(List<String> names, int num_buf) throws Exception {
         BigDBIterator bdb = new BigDBIterator(names);
-        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_buf * 0.8));
+        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_buf * 0.4));
         Map m = st.get_next();
         String s = "";
         int c = 0;
@@ -59,7 +59,7 @@ public class BigDB implements GlobalConst {
 
     public static void columnCount(List<String> names, int num_buf) throws Exception {
         BigDBIterator bdb = new BigDBIterator(names);
-        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, (int)(num_buf * 0.8));
+        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, (int)(num_buf * 0.4));
         Map m = st.get_next();
         String s = "";
         int c = 0;
