@@ -137,7 +137,7 @@ public class BigT {
             dfItr = file.openStream();
         } else {
             SmallMapFile file = (SmallMapFile) storageTypes.get(type);
-            dfItr = file.openStream();
+            dfItr = file.openSortedStream();
         }
 
         Iterator i = new BatchInsertIterator(inputFile, dfItr);
@@ -206,8 +206,10 @@ public class BigT {
                     DatafileIterator fileToBeSearched;
                     if(t==StorageType.TYPE_0) {
                         fileToBeSearched = ((VMapfile)storageTypes.get(t)).openStream();
+                    } else if (type == StorageType.TYPE_1 || type == StorageType.TYPE_4) {
+                        fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).getPrimaryStream(latestFromSort[0].getRowLabel(), true);
                     } else {
-                        fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).openStream();
+                        fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).getPrimaryStream(latestFromSort[0].getColumnLabel(), true);
                     }
                     DatafileIterator searchIterator = new FileStreamIterator(fileToBeSearched, filter);
 

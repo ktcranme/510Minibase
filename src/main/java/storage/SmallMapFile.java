@@ -171,7 +171,7 @@ public class SmallMapFile extends Heapfile {
         SmallDirpage dirpage = findPrimaryLocationInDirectory(primary, datapageRid);
 
         if (dirpage == null) {
-            return null;
+            return new PrimaryIterator(new PageId(-1), primaryKey, pkLength, sort ? secondaryKey : null);
         }
 
         SmallDataPageInfo dpinfo = dirpage.getDatapageInfo(datapageRid, this.pkLength);
@@ -263,7 +263,15 @@ public class SmallMapFile extends Heapfile {
 
         RID recRid = new RID(rid.pageNo, rid.slotNo);
         RID datapageRid = new RID();
-        SmallDirpage dirpage = findPrimaryLocationInDirectory(dataPage.getPrimaryKey(), datapageRid);
+
+        SmallDirpage dirpage;
+
+        try {
+            dirpage = findPrimaryLocationInDirectory(dataPage.getPrimaryKey(), datapageRid);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
 
         if (dirpage == null)
             throw new HFException(null, "This shouldnt happen!");
