@@ -384,11 +384,11 @@ public class BigT {
                         if(type == StorageType.TYPE_0) {
                             mid = ((VMapfile)storageTypes.get(type)).insertMap(candidate.getMap());
                         } else {
-                            mid = ((SmallMapFile)storageTypes.get(type)).insertMap(candidate.getMap());
-                            //TODO THIS IS WHERE WE WOULD NEED TO HANDLE STUFF FOR THE INDEX
-                            //TODO I LEAVE THIS FOR SOMEONE ELSE TO DO
-
-
+                            SmallMapFile smf = (SmallMapFile)storageTypes.get(type);
+                            mid = smf.insertMap(candidate.getMap());
+                            if(smf.hasSplitPage()) {
+                                reIndex(type);
+                            }
 
 
                         }
