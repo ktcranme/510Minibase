@@ -109,6 +109,8 @@ public class Driver {
             System.out.println("Next command:\n");
             command = br.readLine();
         }
+
+        SystemDefs.JavabaseBM.flushAllPages();
     }
 
     public static void handleBatchInsert(String[] tokens) throws Exception {
