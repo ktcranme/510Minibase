@@ -593,6 +593,29 @@ public class BigT {
         return sortOrder;
     }
 
+    private int[] getSortOrder2(StorageType type) {
+        int[] sortOrder;
+        switch(type) {
+            case TYPE_0:
+            case TYPE_1:
+                sortOrder = new int[]{0};
+                break;
+            case TYPE_2:
+                sortOrder = new int[]{1};
+                break;
+            case TYPE_3:
+                sortOrder = new int[]{1,0};
+                break;
+            case TYPE_4:
+                sortOrder = new int[]{0,3};
+                break;
+            default:
+                sortOrder = null;
+                break;
+        }
+        return sortOrder;
+    }
+
     public void delete_all_files() throws HFDiskMgrException, InvalidTupleSizeException, IOException, InvalidSlotNumberException, FileAlreadyDeletedException, HFBufMgrException, DeleteFileEntryException, IteratorException, PinPageException, ConstructPageException, FreePageException, UnpinPageException, PageUnpinnedException, InvalidFrameNumberException, HashEntryNotFoundException, ReplacerException {
         for (StorageType type : StorageType.values()) {
             storageTypes.get(type).deleteFile();

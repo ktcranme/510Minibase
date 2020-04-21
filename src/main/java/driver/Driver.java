@@ -109,6 +109,15 @@ public class Driver {
             System.out.println("Next command:\n");
             command = br.readLine();
         }
+
+        //flush out the buffer
+        if(bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
+            SystemDefs.JavabaseBM.flushAllPages();
+            sysdef.MINIBASE_RESTART_FLAG = true;
+            sysdef.init(dbpath, sysdef.JavabaseLogName, 100000, 300000, bufSize, "Clock");
+        } else {
+            System.out.println("Pages were left unpinned!!!!");
+        }
     }
 
     public static void handleBatchInsert(String[] tokens) throws Exception {
