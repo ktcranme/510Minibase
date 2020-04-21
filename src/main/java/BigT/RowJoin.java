@@ -30,7 +30,7 @@ public class RowJoin implements GlobalConst {
                     //begin adding all maps from each row
                     String currRow1 = tempMap1.getRowLabel();
                     MultiTypeFileStream fs1_1 = new MultiTypeFileStream(b1, FilterParser.parseSingle(currRow1,1, AttrType.attrString));
-                    Sort s1 = new Sort(attrType, (short) 4, attrSize, fs1_1, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
+                    Sort s1 = new Sort(attrType, (short) 4, attrSize, fs1_1, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.2));
 
                     //Loop through table one
                     Map tempMap1_1 = s1.get_next();
@@ -112,7 +112,7 @@ public class RowJoin implements GlobalConst {
 
                     String currRow2 = tempMap2.getRowLabel();
                     MultiTypeFileStream fs2_2 = new MultiTypeFileStream(b2, FilterParser.parseSingle(currRow2, 1, AttrType.attrString));
-                    Sort s2 = new Sort(attrType, (short) 4, attrSize, fs2_2, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.4));
+                    Sort s2 = new Sort(attrType, (short) 4, attrSize, fs2_2, new int[]{1,3}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_pages*0.2));
 
                     //Loop through table two
                     Map tempMap2_2 = s2.get_next();
