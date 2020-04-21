@@ -151,16 +151,10 @@ public class BigT {
         Map comboMap = i.get_next();
         Map delMap = new Map();
         while (comboMap != null) {
-//            comboMap.print();
             MID tmpmid = crIndexMapFind(comboMap, tempbtf);
 
             if (tmpmid != null) {
                 MID tm = tempMapFile.updateMap(tmpmid, comboMap, delMap);
-//                if (tm == null)
-//                    continue;
-//                if (!tm.isReused) {
-//                    tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
-//                }
             } else {
                 MID tm = tempMapFile.insertMap(comboMap);
                 tempbtf.insert(new StringKey(String.join(DELIMITER, comboMap.getColumnLabel(), comboMap.getRowLabel())), new RID(tm));
@@ -206,7 +200,7 @@ public class BigT {
                     DatafileIterator fileToBeSearched;
                     if(t==StorageType.TYPE_0) {
                         fileToBeSearched = ((VMapfile)storageTypes.get(t)).openStream();
-                    } else if (type == StorageType.TYPE_1 || type == StorageType.TYPE_4) {
+                    } else if (t == StorageType.TYPE_1 || t == StorageType.TYPE_4) {
                         fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).getPrimaryStream(latestFromSort[0].getRowLabel(), true);
                     } else {
                         fileToBeSearched = ((SmallMapFile)storageTypes.get(t)).getPrimaryStream(latestFromSort[0].getColumnLabel(), true);
