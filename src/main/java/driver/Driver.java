@@ -312,7 +312,9 @@ public class Driver {
             BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
             bigt1.close();
             bigt2.close();
-            newBigT.close();
+            if(newBigT!=null) {
+                newBigT.close();
+            }
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
             rnext_count = PCounter.rcounter;
@@ -334,8 +336,6 @@ public class Driver {
             String columnName = tokens[3];
             int numbuf = Integer.parseInt(tokens[4]);
 
-            //do rowsort
-
             rprev_count = PCounter.rcounter;
             wprev_count = PCounter.wcounter;
             prev_time = System.currentTimeMillis();
@@ -343,15 +343,10 @@ public class Driver {
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             BigT bigt1 = new BigT(inBigT);
             BigT newBigT = rowSort(bigt1,outBigT,columnName,numbuf);
-            /*MultiTypeFileStream ms = new MultiTypeFileStream(newBigT,null);
-            Map tmp;
-            while((tmp=ms.get_next())!=null){
-                tmp.print();
+            if(newBigT!=null) {
+                newBigT.close();
             }
-            ms.close();*/
-            newBigT.close();
             bigt1.close();
-            //maybe iterate through to prove it worked
 
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
