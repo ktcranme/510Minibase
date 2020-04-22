@@ -65,8 +65,7 @@ public class Driver {
             String[] tokens = command.trim().split("\\s++");
 
             //flush out the buffer
-            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1]) && bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
-                SystemDefs.JavabaseBM.flushAllPages();
+            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1])) {
                 bufSize = Integer.parseInt(tokens[tokens.length-1]);
                 sysdef.MINIBASE_RESTART_FLAG = true;
                 sysdef.init(dbpath, sysdef.JavabaseLogName, 100000, 300000, bufSize, "Clock");
@@ -104,6 +103,13 @@ public class Driver {
                         "ERROR: The command you have entered does not match the corresponding number of parameters required.");
                 System.out.println("The required structures are as follows:");
                 printCommands();
+            }
+
+            //flush out the buffer if successful operation
+            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1]) && bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
+                SystemDefs.JavabaseBM.flushAllPages();
+            } else {
+                System.out.println("Pages were left unpinned!!!!");
             }
 
             System.out.println("Next command:\n");
@@ -249,7 +255,7 @@ public class Driver {
         }
     }
 
-    public static void handleMapInsert(String[] tokens) throws IOException, HFDiskMgrException, HFException, ConstructPageException, AddFileEntryException, GetFileEntryException, HFBufMgrException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException {
+    public static void handleMapInsert(String[] tokens) throws Exception {
         if (!isInteger(tokens[4]) || !isInteger(tokens[5]) || !isInteger(tokens[7])) {
             System.out.println("ERROR: The TS, TYPE, and NUMBUF parameter must be integers.");
         } else {
@@ -270,10 +276,14 @@ public class Driver {
                 temp.setTimeStamp(timeStamp);
                 temp.setValue(value);
 
+                rprev_count = PCounter.rcounter;
+                wprev_count = PCounter.wcounter;
+                prev_time = System.currentTimeMillis();
+
                 // insert into the bigtName table
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
-                bigt.insertMap(temp);
+                bigt.mapInsert(temp, get_storage_type(type));
                 bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
@@ -310,11 +320,12 @@ public class Driver {
             BigT bigt1 = new BigT(bigTName1);
             BigT bigt2 = new BigT(bigTName2);
             BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
-            bigt1.close();
-            bigt2.close();
+            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             if(newBigT!=null) {
                 newBigT.close();
             }
+            bigt1.close();
+            bigt2.close();
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
             rnext_count = PCounter.rcounter;
