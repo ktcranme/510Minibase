@@ -176,8 +176,9 @@ public class BigT {
             }
             i.close();
             inputFile.close();
-            tempbtf.close();
             tempbtf.destroyFile();
+//            tempbtf.close();
+//            SystemDefs.JavabaseDB.delete_file_entry(generateBigTName(type) + "_idx_temp");
             tempbtf = null;
 
             itr = tempMapFile.openStream();
