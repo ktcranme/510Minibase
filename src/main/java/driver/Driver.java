@@ -108,7 +108,7 @@ public class Driver {
             //flush out the buffer if successful operation
             if(tokens.length >= 2 && isInteger(tokens[tokens.length-1]) && bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
                 SystemDefs.JavabaseBM.flushAllPages();
-            } else {
+            } else if(bufSize != SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
                 System.out.println("Pages were left unpinned!!!!");
             }
 
@@ -320,7 +320,6 @@ public class Driver {
             BigT bigt1 = new BigT(bigTName1);
             BigT bigt2 = new BigT(bigTName2);
             BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
-            System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             if(newBigT!=null) {
                 newBigT.close();
             }
