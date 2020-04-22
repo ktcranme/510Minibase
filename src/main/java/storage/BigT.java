@@ -424,6 +424,8 @@ public class BigT {
                                     throw new HFException(null, "Invalid Storage Type!");
                             }
                             try {
+                                System.out.println(candidate.getMID().pageNo.pid);
+                                System.out.println(candidate.getMID().slotNo);
                                 indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
                             } catch(Exception e) {
                                 System.out.println("Issue deleting the map from index, reindexing...");
