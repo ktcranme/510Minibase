@@ -68,19 +68,19 @@ public class BigT {
                 break;
             case TYPE_1:
                 storageTypes.put(type, new SmallMapFile(generateBigTName(type), 1, null, MAXROWLABELSIZE));
-                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXROWLABELSIZE, 1));
+                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXROWLABELSIZE, 0));
                 break;
             case TYPE_2:
                 storageTypes.put(type, new SmallMapFile(generateBigTName(type), 2, null, MAXCOLUMNLABELSIZE));
-                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXCOLUMNLABELSIZE, 1));
+                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXCOLUMNLABELSIZE, 0));
                 break;
             case TYPE_3:
                 storageTypes.put(type, new SmallMapFile(generateBigTName(type), 2, 1, MAXCOLUMNLABELSIZE));
-                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXCOLUMNLABELSIZE + MAXROWLABELSIZE + 1, 1));
+                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXCOLUMNLABELSIZE + MAXROWLABELSIZE + 1, 0));
                 break;
             case TYPE_4:
                 storageTypes.put(type, new SmallMapFile(generateBigTName(type), 1, 3, MAXROWLABELSIZE));
-                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXROWLABELSIZE + MAXVALUESIZE + 1, 1));
+                indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, MAXROWLABELSIZE + MAXVALUESIZE + 1, 0));
                 break;
             default:
                 throw new HFException(null, "Invalid Storage Type!");
@@ -159,7 +159,7 @@ public class BigT {
             //NOTE: this will sort either RCT or CRT in all cases - for case 5, a second sort is required to put it back in correct ordering.
 
             tempMapFile = new Mapfile(generateBigTName(type) + "_phy_temp");
-            tempbtf = new BTreeFile(generateBigTName(type) + "_idx_temp", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1);
+            tempbtf = new BTreeFile(generateBigTName(type) + "_idx_temp", AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 0);
 
             Map comboMap = i.get_next();
             Map delMap = new Map();
@@ -645,13 +645,13 @@ public class BigT {
         bf.close();
         bf.destroyFile();
         switch (type){
-            case TYPE_1: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE, 1));
+            case TYPE_1: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE, 0));
                 break;
-            case TYPE_2: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE, 1));
+            case TYPE_2: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE, 0));
                 break;
-            case TYPE_3: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 1));
+            case TYPE_3: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXCOLUMNLABELSIZE + GlobalConst.MAXROWLABELSIZE + 1, 0));
                 break;
-            case TYPE_4: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE + GlobalConst.MAXVALUESIZE + 1, 1));
+            case TYPE_4: indexTypes.put(type, new BTreeFile(generateIndexName(type), AttrType.attrString, GlobalConst.MAXROWLABELSIZE + GlobalConst.MAXVALUESIZE + 1, 0));
                 break;
             default:
                 throw new HFException(null, "Invalid Storage Type!");
