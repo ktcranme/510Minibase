@@ -456,7 +456,7 @@ public class Driver {
     {
         System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
         System.out.println("query BIGTABLENAME ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
-        System.out.println("getCounts BIGTABLENAME NUMBUF");
+        System.out.println("getCounts NUMBUF");
         System.out.println("mapinsert RL CL VAL TS TYPE BIGTABLENAME NUMBUF");
         System.out.println("rowjoin BTNAME1 BTNAME2 OUTBTNAME COLUMNFILTER NUMBUF");
         System.out.println("rowsort INBTNAME OUTBTNAME COLUMNNAME NUMBUF");
