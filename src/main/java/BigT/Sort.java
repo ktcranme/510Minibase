@@ -524,9 +524,21 @@ public class Sort extends Iterator implements GlobalConst {
     bufs = new byte[_n_pages][];
 
     if (useBM) {
+      if (SystemDefs.JavabaseBM.getNumUnpinnedBuffers() < _n_pages) {
+        throw new SortException(null, "Sort.java: Not enough pages available to pin.");
+      }
       try {
         get_buffer_pages(_n_pages, bufs_pids, bufs);
       } catch (Exception e) {
+        for (int i = 0; i < _n_pages; i++) {
+          try {
+            if (bufs_pids[i] != null && bufs_pids[i].pid > 0) {
+              SystemDefs.JavabaseBM.unpinPage(bufs_pids[i], false);
+            }
+          } catch (Exception e1) {
+            // Pass
+          }
+        }
         throw new SortException(e, "Sort.java: BUFmgr error");
       }
     } else {
