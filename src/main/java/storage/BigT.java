@@ -446,6 +446,10 @@ public class BigT {
                 } else {
                     //these are the versions from the other storages in this BigT
                     if(candidate.getDeleteMe()) {
+
+                        System.out.print("deleting from type " + candidate.getType() + ": ");
+                        candidate.getMap().print();
+
                         //delete
                         if(candidate.getType() == StorageType.TYPE_0) {
                             VMapfile storageThatNeedsADeletion = (VMapfile)storageTypes.get(candidate.getType());
@@ -467,11 +471,14 @@ public class BigT {
                                 default:
                                     throw new HFException(null, "Invalid Storage Type!");
                             }
-                            indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
+                            try {
+                                indexThatNeedsADeletion.Delete(key, new RID(candidate.getMID()));
+                            } catch(Exception e) {
+                                System.out.println("Issue deleting the map from index, reindexing...");
+                                indexThatNeedsADeletion.destroyFile();
+                                reIndex(candidate.getType());
+                            }
                         }
-
-                        System.out.print("deleting from type " + type + ": ");
-                        candidate.getMap().print();
                     }
                 }
             }
@@ -582,6 +589,7 @@ public class BigT {
     //This is for rowJoin and rowSort - they only insert into a type 1 storage
     public void insertMap(Map map) throws HFDiskMgrException, InvalidTupleSizeException, HFException, IOException, InvalidSlotNumberException, SpaceNotAvailableException, HFBufMgrException {
         ((VMapfile)storageTypes.get(StorageType.TYPE_0)).insertMap(map);
+        map.print();
     }
 
     public void close() {
