@@ -31,7 +31,7 @@ public interface GlobalConst {
 
   public static final int INVALID_PAGE = -1;
 
-  public static final int MAXROWLABELSIZE  = 44;
-  public static final int MAXCOLUMNLABELSIZE = 44;
+  public static final int MAXROWLABELSIZE  = 24;
+  public static final int MAXCOLUMNLABELSIZE = 24;
   public static final int MAXVALUESIZE  = 8;
 }

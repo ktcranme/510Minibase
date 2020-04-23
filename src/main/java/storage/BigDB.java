@@ -38,42 +38,60 @@ public class BigDB implements GlobalConst {
     }
 
     public static void rowCount(List<String> names, int num_buf) throws Exception {
-        BigDBIterator bdb = new BigDBIterator(names);
-        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_buf * 0.8));
-        Map m = st.get_next();
-        String s = "";
-        int c = 0;
-        if (m != null) {
-            c = 1;
-            s = m.getRowLabel();
-            while ((m = st.get_next()) != null) {
-                if (!s.equalsIgnoreCase(m.getRowLabel()))
-                    c++;
+        Sort st = null;
+        BigDBIterator bdb = null;
+
+        try {
+            bdb = new BigDBIterator(names);
+            st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{0}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(num_buf * 0.4));
+            Map m = st.get_next();
+            String s = "";
+            int c = 0;
+            if (m != null) {
+                c = 1;
                 s = m.getRowLabel();
+                while ((m = st.get_next()) != null) {
+                    if (!s.equalsIgnoreCase(m.getRowLabel()))
+                        c++;
+                    s = m.getRowLabel();
+                }
             }
+            st.close();
+            bdb.close();
+            System.out.println("Row Count: "+ c);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (bdb != null) bdb.close();
+            if (st != null) st.close();
         }
-        st.close();
-        bdb.close();
-        System.out.println("Row Count: "+ c);
     }
 
     public static void columnCount(List<String> names, int num_buf) throws Exception {
-        BigDBIterator bdb = new BigDBIterator(names);
-        Sort st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, (int)(num_buf * 0.8));
-        Map m = st.get_next();
-        String s = "";
-        int c = 0;
-        if (m != null) {
-            c = 1;
-            s = m.getColumnLabel();
-            while ((m = st.get_next()) != null) {
-                if (!s.equalsIgnoreCase(m.getColumnLabel()))
-                    c++;
+        BigDBIterator bdb = null;
+        Sort st = null;
+
+        try {
+            bdb= new BigDBIterator(names);
+            st = new Sort(attrType, (short) 4, attrSize, bdb, new int[]{1}, new TupleOrder(TupleOrder.Ascending), MAXCOLUMNLABELSIZE, (int)(num_buf * 0.4));
+            Map m = st.get_next();
+            String s = "";
+            int c = 0;
+            if (m != null) {
+                c = 1;
                 s = m.getColumnLabel();
+                while ((m = st.get_next()) != null) {
+                    if (!s.equalsIgnoreCase(m.getColumnLabel()))
+                        c++;
+                    s = m.getColumnLabel();
+                }
             }
+            st.close();
+            bdb.close();
+            System.out.println("Column Count: "+ c);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (bdb != null) bdb.close();
+            if (st != null) st.close();
         }
-        st.close();
-        bdb.close();
-        System.out.println("Column Count: "+ c);
     }
 }

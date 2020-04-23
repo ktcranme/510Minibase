@@ -93,7 +93,7 @@ public class PhysicalMap implements GlobalConst {
 
 		// System.out.println("CURRENTLY: " + firstTs + ": " + fv + ", " + secondTs + ":
 		// " + sv + ", " + thirdTs + ": " + tv);
-		if (sv.isEmpty()) {
+		if (sv.isEmpty() && timestamp != firstTs) {
 			Convert.setIntValue(timestamp, fldOffset[4], data);
 			Convert.setStrValue(value, fldOffset[5], data);
 			// secondTs = Convert.getIntValue(fldOffset[4], data);
@@ -101,7 +101,7 @@ public class PhysicalMap implements GlobalConst {
 			// System.out.println("SECOND POS WAS EMPTY: " + firstTs + ": " + fv + ", " +
 			// secondTs + ": " + sv + ", " + thirdTs + ": " + tv);
 			return 1;
-		} else if (tv.isEmpty()) {
+		} else if (tv.isEmpty() && timestamp != firstTs && timestamp != secondTs) {
 			Convert.setIntValue(timestamp, fldOffset[6], data);
 			Convert.setStrValue(value, fldOffset[7], data);
 			// // thirdTs = Convert.getIntValue(fldOffset[6], data);
@@ -112,11 +112,11 @@ public class PhysicalMap implements GlobalConst {
 		} else {
 			// We have to replace the oldest timestamp
 			int pos = -1;
-			if (firstTs <= secondTs && firstTs <= thirdTs && timestamp >= firstTs) {
+			if (firstTs < secondTs && firstTs < thirdTs && timestamp > firstTs && timestamp != secondTs && timestamp != thirdTs) {
 				pos = 2;
-			} else if (secondTs <= firstTs && secondTs <= thirdTs && timestamp >= secondTs) {
+			} else if (secondTs < firstTs && secondTs < thirdTs && timestamp > secondTs && timestamp != firstTs && timestamp != thirdTs) {
 				pos = 4;
-			} else if (thirdTs <= firstTs && thirdTs <= secondTs && timestamp >= thirdTs) {
+			} else if (thirdTs < firstTs && thirdTs < secondTs && timestamp > thirdTs && timestamp != firstTs && timestamp != secondTs) {
 				pos = 6;
 			} else {
 				// This is not inserted at all

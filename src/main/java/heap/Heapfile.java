@@ -62,6 +62,87 @@ public class Heapfile implements Filetype, GlobalConst {
 		return hfp;
 	}
 
+	protected HFPage addNewPageToDir(Dirpage currentDirPage, DataPageInfo dpinfo, RID newdpagerid)
+			throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
+		assert currentDirPage.available_space() >= DataPageInfo.size : "Full Dirpage!";
+		// Start IF02
+		// case (2.1) : add a new data page record into the
+		// current directory page
+		HFPage currentDataPage = _newDatapage(dpinfo);
+		// currentDataPage is pinned! and dpinfo->pageId is also locked
+		// in the exclusive mode
+
+		// didn't check if currentDataPage==NULL, auto exception
+
+		// currentDataPage is pinned: insert its record
+		// calling a HFPage function
+
+		Tuple atuple = dpinfo.convertToTuple();
+
+		byte[] tmpData = atuple.getTupleByteArray();
+		RID currentDataPageRid = currentDirPage.insertRecord(tmpData);
+		newdpagerid.copyRid(currentDataPageRid);
+
+		// need catch error here!
+		if (currentDataPageRid == null)
+			throw new HFException(null, "no space to insert rec.");
+
+		return currentDataPage;
+	}
+
+	protected PageId loadNextDirPage(Dirpage currentDirPage, boolean dirty_dir)
+			throws IOException, HFBufMgrException, HFException {
+		Page pageinbuffer = new Page();
+		Dirpage nextDirPage = new Dirpage();
+		PageId nextDirPageId = currentDirPage.getNextPage();
+		// two sub-cases:
+		//
+		// (2.2.1) nextDirPageId != INVALID_PAGE:
+		// get the next directory page from the buffer manager
+		// and do another look
+		// (2.2.2) nextDirPageId == INVALID_PAGE:
+		// append a new directory page at the end of the current
+		// page and then do another loop
+
+		if (nextDirPageId.pid != INVALID_PAGE) { // Start IF03
+			// case (2.2.1): there is another directory page:
+			unpinPage(currentDirPage.curPage, dirty_dir);
+			pinPage(nextDirPageId, currentDirPage, false);
+
+			// now go back to the beginning of the outer while-loop and
+			// search on the current directory page for a suitable datapage
+		} // End of IF03
+		else { // Start Else03
+			// case (2.2): append a new directory page after currentDirPage
+			// since it is the last directory page
+			nextDirPageId = newPage(pageinbuffer, 1);
+			// need check error!
+			if (nextDirPageId == null)
+				throw new HFException(null, "can't new pae");
+
+			// initialize new directory page
+			nextDirPage.init(nextDirPageId, pageinbuffer);
+			PageId temppid = new PageId(INVALID_PAGE);
+			nextDirPage.setNextPage(temppid);
+			nextDirPage.setPrevPage(currentDirPage.curPage);
+
+			// update current directory page and unpin it
+			// currentDirPage is already locked in the Exclusive mode
+			currentDirPage.setNextPage(nextDirPageId);
+			unpinPage(currentDirPage.curPage, true/* dirty */);
+
+			currentDirPage.init(nextDirPageId, nextDirPage);
+
+			// remark that MINIBASE_BM->newPage already
+			// pinned the new directory page!
+			// Now back to the beginning of the while-loop, using the
+			// newly created directory page.
+
+		} // End of else03
+
+		return nextDirPageId;
+	}
+
 	public PageId getFirstDirPageId() {
 		return _firstDirPageId;
 	}

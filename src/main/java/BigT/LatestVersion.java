@@ -17,7 +17,7 @@ public class LatestVersion extends Iterator implements GlobalConst {
 
     public LatestVersion(Iterator am, int buff) throws IOException, SortException {
         currMap = null;
-        it = new Sort(attrType, (short) 4, attrSize, am, new int[]{0,1,2}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, 134);
+        it = new Sort(attrType, (short) 4, attrSize, am, new int[]{0,1,2}, new TupleOrder(TupleOrder.Ascending), MAXROWLABELSIZE, (int)(buff*0.2));
     }
 
     public Map get_next() throws Exception {

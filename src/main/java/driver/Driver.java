@@ -40,11 +40,20 @@ public class Driver {
     public static long prev_time, next_time;
     public static boolean countsUpToDate = false;
     public static SystemDefs sysdef;
+    public static int bufSize;
 
     public static void main(String[] args) throws Exception {
         usedDbMap = new HashMap<>();
         String dbpath = "D:\\minibase_db\\" + "hf" + System.getProperty("user.name") + ".minibase-db";
+
+        //check if the database exists
+        if(new File(dbpath).isFile()) {
+            sysdef.MINIBASE_RESTART_FLAG = true;
+            System.out.println("Loading previous DB");
+        }
+
         sysdef = new SystemDefs(dbpath, 100000, 3000, "Clock");
+        bufSize = 3000;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Welcome to the BigTable interface");
         System.out.println("You have 6 options: BatchInsert and Query. Their structures follow:");
@@ -54,6 +63,15 @@ public class Driver {
         String command = br.readLine();
         while (!command.toLowerCase().equals("quit") && !command.toLowerCase().equals("q")) {
             String[] tokens = command.trim().split("\\s++");
+
+            //flush out the buffer
+            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1])) {
+                bufSize = Integer.parseInt(tokens[tokens.length-1]);
+                sysdef.MINIBASE_RESTART_FLAG = true;
+                sysdef.init(dbpath, sysdef.JavabaseLogName, 100000, 300000, bufSize, "Clock");
+            } else {
+                System.out.println("Pages were left unpinned!!!!");
+            }
 
             // batchinsert
             if (tokens[0].toLowerCase().equals("batchinsert") && tokens.length == 5) {
@@ -87,9 +105,18 @@ public class Driver {
                 printCommands();
             }
 
+            //flush out the buffer if successful operation
+            if(tokens.length >= 2 && isInteger(tokens[tokens.length-1]) && bufSize == SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
+                SystemDefs.JavabaseBM.flushAllPages();
+            } else if(bufSize != SystemDefs.JavabaseBM.getNumUnpinnedBuffers()) {
+                System.out.println("Pages were left unpinned!!!!");
+            }
+
             System.out.println("Next command:\n");
             command = br.readLine();
         }
+
+        SystemDefs.JavabaseBM.flushAllPages();
     }
 
     public static void handleBatchInsert(String[] tokens) throws Exception {
@@ -180,12 +207,18 @@ public class Driver {
 
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
-                Iterator it = bigt.query(orderType,rowFilter,columnFilter,valueFilter,numbuf);
-                Map m;
-                while((m=it.get_next())!=null){
-                    m.print();
+
+                Iterator it = null;
+                try {
+                    it = bigt.query(orderType,rowFilter,columnFilter,valueFilter,numbuf);
+                    Map m;
+                    while((m=it.get_next())!=null){
+                        m.print();
+                    }
+                    it.close();
+                } catch (Exception e) {
+                    if (it != null) it.close();
                 }
-                it.close();
                 bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
@@ -222,7 +255,7 @@ public class Driver {
         }
     }
 
-    public static void handleMapInsert(String[] tokens) throws IOException, HFDiskMgrException, HFException, ConstructPageException, AddFileEntryException, GetFileEntryException, HFBufMgrException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException {
+    public static void handleMapInsert(String[] tokens) throws Exception {
         if (!isInteger(tokens[4]) || !isInteger(tokens[5]) || !isInteger(tokens[7])) {
             System.out.println("ERROR: The TS, TYPE, and NUMBUF parameter must be integers.");
         } else {
@@ -243,10 +276,14 @@ public class Driver {
                 temp.setTimeStamp(timeStamp);
                 temp.setValue(value);
 
+                rprev_count = PCounter.rcounter;
+                wprev_count = PCounter.wcounter;
+                prev_time = System.currentTimeMillis();
+
                 // insert into the bigtName table
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 BigT bigt = new BigT(bigtName);
-                bigt.insertMap(temp);
+                bigt.mapInsert(temp, get_storage_type(type));
                 bigt.close();
                 System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
                 next_time = System.currentTimeMillis();
@@ -283,9 +320,11 @@ public class Driver {
             BigT bigt1 = new BigT(bigTName1);
             BigT bigt2 = new BigT(bigTName2);
             BigT newBigT = rowJoin(bigt1,bigt2,outBigT,columnFilter,numbuf);
+            if(newBigT!=null) {
+                newBigT.close();
+            }
             bigt1.close();
             bigt2.close();
-            newBigT.close();
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
             rnext_count = PCounter.rcounter;
@@ -307,8 +346,6 @@ public class Driver {
             String columnName = tokens[3];
             int numbuf = Integer.parseInt(tokens[4]);
 
-            //do rowsort
-
             rprev_count = PCounter.rcounter;
             wprev_count = PCounter.wcounter;
             prev_time = System.currentTimeMillis();
@@ -316,15 +353,10 @@ public class Driver {
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             BigT bigt1 = new BigT(inBigT);
             BigT newBigT = rowSort(bigt1,outBigT,columnName,numbuf);
-            /*MultiTypeFileStream ms = new MultiTypeFileStream(newBigT,null);
-            Map tmp;
-            while((tmp=ms.get_next())!=null){
-                tmp.print();
+            if(newBigT!=null) {
+                newBigT.close();
             }
-            ms.close();*/
-            newBigT.close();
             bigt1.close();
-            //maybe iterate through to prove it worked
 
             System.out.println("Buffers : "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
             next_time = System.currentTimeMillis();
@@ -424,7 +456,7 @@ public class Driver {
     {
         System.out.println("batchinsert DATAFILENAME TYPE BIGTABLENAME NUMBUF");
         System.out.println("query BIGTABLENAME ORDERTYPE ROWFILTER COLUMNFILTER VALUEFILTER NUMBUF");
-        System.out.println("getCounts BIGTABLENAME NUMBUF");
+        System.out.println("getCounts NUMBUF");
         System.out.println("mapinsert RL CL VAL TS TYPE BIGTABLENAME NUMBUF");
         System.out.println("rowjoin BTNAME1 BTNAME2 OUTBTNAME COLUMNFILTER NUMBUF");
         System.out.println("rowsort INBTNAME OUTBTNAME COLUMNNAME NUMBUF");

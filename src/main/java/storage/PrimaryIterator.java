@@ -82,6 +82,13 @@ public class PrimaryIterator implements DatafileIterator {
         }
 
         Map map = page.getMap(currentMapId, primaryKey);
+        if (map == null) {
+            rid.pageNo.pid = -1;
+            rid.slotNo = -1;
+        } else {
+            rid.pageNo.pid = currentMapId.pageNo.pid;
+            rid.slotNo = currentMapId.slotNo;
+        }
 
         if (secondaryKey != null) {
             currentMapId = page.nextSorted(currentMapId);

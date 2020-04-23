@@ -171,7 +171,7 @@ public class SmallMapFile extends Heapfile {
         SmallDirpage dirpage = findPrimaryLocationInDirectory(primary, datapageRid);
 
         if (dirpage == null) {
-            return null;
+            return new PrimaryIterator(new PageId(-1), primaryKey, pkLength, sort ? secondaryKey : null);
         }
 
         SmallDataPageInfo dpinfo = dirpage.getDatapageInfo(datapageRid, this.pkLength);
@@ -263,7 +263,15 @@ public class SmallMapFile extends Heapfile {
 
         RID recRid = new RID(rid.pageNo, rid.slotNo);
         RID datapageRid = new RID();
-        SmallDirpage dirpage = findPrimaryLocationInDirectory(dataPage.getPrimaryKey(), datapageRid);
+
+        SmallDirpage dirpage;
+
+        try {
+            dirpage = findPrimaryLocationInDirectory(dataPage.getPrimaryKey(), datapageRid);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
 
         if (dirpage == null)
             throw new HFException(null, "This shouldnt happen!");
@@ -541,9 +549,9 @@ public class SmallMapFile extends Heapfile {
 
         PageId curDataPageId = new PageId(startingDatapage.getCurPage().pid);
         SmallMapPage curDataPage = startingDatapage;
-        PageId nextDataPageId = new PageId();
+        PageId nextDataPageId = new PageId(0);
 
-        while (curDataPageId.pid != INVALID_PAGE) {
+        while (nextDataPageId.pid != INVALID_PAGE) {
             if (pageHasSpace(curDataPage)) {
                 RID rid = curDataPage.insertRecord(map.getMapByteArray());
                 unpinPage(curDataPageId, true);
@@ -554,8 +562,8 @@ public class SmallMapFile extends Heapfile {
             if (nextDataPageId.pid != INVALID_PAGE) {
                 unpinPage(curDataPageId, false);
                 pinPage(nextDataPageId, curDataPage, false);
+                curDataPageId.pid = nextDataPageId.pid;
             }
-            curDataPageId.pid = nextDataPageId.pid;
         }
 
         // Update curDataPage with the next page ID and flush it

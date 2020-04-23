@@ -336,7 +336,7 @@ public class SmallMapPage extends HFPage {
             int offset = getSlotOffset(i);
             if (offset < usedPtr) {
                 setSlot(i, EMPTY_SLOT, 0); // mark slot free
-                page.setSlot(i, SmallMap.map_size, offset + lenToBeCopied + SmallMap.map_size);
+                page.setSlot(i, SmallMap.map_size, start - (usedPtr - offset));
             } else {
                 page.setSlot(i, EMPTY_SLOT, 0);
             }
